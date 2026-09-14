@@ -1,0 +1,1621 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<title>TerraFleet Prueba — CRM + Servicio técnico (datos reales)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f5f0; --panel:#ffffff; --ink:#0f271c; --muted:#68776e; --line:#e2e8e1;
+    --green:#14402c; --green2:#2f7a52; --lime:#c9f464; --lime-soft:#eefbd2;
+    --amber:#f1b94c; --amber-soft:#fdf1da; --red:#d95d4f; --red-soft:#fdeae6;
+    --blue:#4e7dbb; --blue-soft:#e8f1fd;
+    --shadow:0 14px 36px rgba(22,50,36,.09); --radius:18px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:radial-gradient(900px 420px at 110% -10%,rgba(201,244,100,.16),transparent 60%),
+      radial-gradient(700px 400px at -10% 30%,rgba(47,122,82,.07),transparent 60%),var(--bg);
+    color:var(--ink);-webkit-font-smoothing:antialiased;
+  }
+  button,input,select,textarea{font:inherit}
+  button{cursor:pointer}
+  b{font-weight:650}
+  .ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .ic-xs{width:14px;height:14px}.ic-sm{width:17px;height:17px}.ic-lg{width:26px;height:26px}
+
+  .app{min-height:100vh;display:grid;grid-template-columns:262px 1fr}
+  .sidebar{background:linear-gradient(180deg,#153f2b,#0d2b1d);color:white;padding:24px 18px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh;overflow:auto}
+  .brand{display:flex;align-items:center;gap:12px;padding:4px 7px 16px}
+  .brandmark{width:42px;height:42px;border-radius:13px;background:var(--lime);display:grid;place-items:center;color:var(--green)}
+  .brandname{font-size:20px;font-weight:750;letter-spacing:-.02em}
+  .brandsub{font-size:11px;opacity:.6;margin-top:1px}
+  .role-switch{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:6px;display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .role-switch button{border:0;border-radius:10px;padding:9px 8px;background:transparent;color:#dce9df;font-size:12.5px;font-weight:600;transition:.2s}
+  .role-switch button.active{background:white;color:var(--green)}
+  .nav{display:flex;flex-direction:column;gap:4px}
+  .nav button{display:flex;align-items:center;gap:12px;padding:11px 12px;border:0;border-radius:12px;background:transparent;color:#d9e7dc;text-align:left;font-size:14px;font-weight:500;transition:.18s}
+  .nav button:hover,.nav button.active{background:rgba(255,255,255,.11);color:white}
+  .nav .ico{width:24px;display:grid;place-items:center}
+  .sidebar-foot{margin-top:auto;background:rgba(255,255,255,.07);border-radius:14px;padding:14px;font-size:12px;color:#d2e0d6;line-height:1.45}
+  .sidebar-foot .status{display:flex;align-items:center;gap:8px;margin-bottom:6px;color:white;font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--lime)}
+  .dot.red{background:var(--red)}
+
+  main{min-width:0}
+  .topbar{min-height:76px;background:rgba(242,245,240,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 28px;position:sticky;top:0;z-index:5}
+  .crumb{font-size:12.5px;color:var(--muted)}
+  .page-title{font-size:22px;font-weight:750;letter-spacing:-.03em;margin-top:2px}
+  .top-actions{display:flex;align-items:center;gap:10px;position:relative}
+  .trialchip{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;padding:7px 11px;border-radius:999px;background:var(--amber-soft);color:#946713;white-space:nowrap}
+  .trialchip.expired{background:var(--red-soft);color:#ac4136}
+  .iconbtn{position:relative;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:white;display:grid;place-items:center;color:var(--ink);transition:.2s}
+  .iconbtn:hover{border-color:var(--green2);color:var(--green2)}
+  .bcount{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:99px;background:#d95d4f;color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px;border:2px solid var(--bg)}
+  .bcount.zero{display:none}
+  .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2f7a52,#14402c);color:white;display:grid;place-items:center;font-size:13px;font-weight:700}
+
+  .content{padding:26px 28px 60px;max-width:1500px;margin:auto}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 8px 22px rgba(28,54,41,.045);transition:transform .2s,box-shadow .2s}
+  .card.hov:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(28,54,41,.09)}
+  .kpi{padding:18px}
+  .kpi-top{display:flex;justify-content:space-between;align-items:center}
+  .tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}
+  .t-lime{background:var(--lime-soft);color:#3f7d22}.t-blue{background:var(--blue-soft);color:#3e6db3}
+  .t-amber{background:var(--amber-soft);color:#a1721d}.t-red{background:var(--red-soft);color:#b04a3d}
+  .t-green{background:#e4f3ea;color:#2f7a52}
+  .kpi .value{font-size:29px;font-weight:750;margin:13px 0 3px;letter-spacing:-.03em}
+  .kpi .label{font-size:13px;color:var(--muted)}
+  .trend{font-size:11px;padding:5px 8px;border-radius:999px;background:#eef7ef;color:#2b724b;font-weight:600}
+  .grid2{display:grid;grid-template-columns:1.35fr .9fr;gap:18px}
+  .section-card{padding:20px}
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .section-title{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .section-sub{font-size:12px;color:var(--muted);margin-top:3px}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;text-align:left;padding:9px 8px}
+  td{padding:13px 8px;border-top:1px solid var(--line);font-size:13px;vertical-align:middle}
+  .machine{display:flex;gap:11px;align-items:center}
+  .machine-icon{width:38px;height:38px;border-radius:11px;background:#edf4ec;display:grid;place-items:center;color:#2f7a52;flex:none}
+  .small{font-size:11px;color:var(--muted);margin-top:2px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:11px;white-space:nowrap;font-weight:600}
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .ok{background:#eef8ef;color:#2f754e}.warn{background:var(--amber-soft);color:#946713}
+  .bad{background:var(--red-soft);color:#ac4136}.info{background:#edf4ff;color:#4b70a2}
+  .btn{border:1px solid transparent;border-radius:12px;padding:10px 15px;background:white;color:var(--green);display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px;transition:.18s}
+  .btn.primary{background:var(--lime);color:#17321f;box-shadow:0 8px 20px rgba(150,200,70,.35)}
+  .btn.primary:hover{transform:translateY(-1px)}
+  .btn.dark{background:var(--green);color:white}
+  .btn.dark:hover{background:#1b5238}
+  .outline-btn{border:1px solid var(--line);background:white;border-radius:10px;padding:8px 11px;font-size:12px;color:var(--green);font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .outline-btn:hover{border-color:var(--green2);color:var(--green2)}
+  .solid-btn{border:0;background:var(--green);color:white;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .solid-btn:hover{background:#1b5238}
+  .mini-row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:12px;margin-top:12px;font-size:13px;gap:10px}
+  .timeline{display:flex;flex-direction:column;gap:13px}
+  .timeline-item{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:start}
+  .ticon{width:38px;height:38px;border-radius:12px;background:#f0f4ef;display:grid;place-items:center;color:#2f7a52;flex:none}
+  .tname{font-size:13px;font-weight:600}
+  .tdetail{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .date{font-size:11px;color:var(--muted);white-space:nowrap}
+  .page{display:none}
+  .page.active{display:block;animation:pagein .35s cubic-bezier(.2,.7,.3,1)}
+  @keyframes pagein{from{opacity:0;transform:translateY(10px)}}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+  .filter{border:1px solid var(--line);background:white;border-radius:10px;padding:8px 11px;font-size:12px;color:var(--muted);font-weight:600;transition:.15s}
+  .filter:hover{border-color:var(--green2);color:var(--green2)}
+  .filter.active{background:var(--green);color:white;border-color:var(--green)}
+  .machine-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+  .machine-card{padding:18px}
+  .machine-card-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .machine-hero-icon{width:54px;height:54px;border-radius:16px;background:var(--lime-soft);display:grid;place-items:center;color:#3f7d22}
+  .machine-card h3{font-size:17px;margin:15px 0 4px;letter-spacing:-.01em}
+  .serial{color:var(--muted);font-size:11px}
+  .meter{display:flex;justify-content:space-between;align-items:end;margin-top:17px;gap:8px}
+  .meter .big{font-size:24px;font-weight:750;letter-spacing:-.02em}
+  .progress{height:8px;background:#edf1ec;border-radius:999px;margin:9px 0 5px;overflow:hidden}
+  .progress > div{height:100%;background:linear-gradient(90deg,#6fae49,#2f7a52);border-radius:999px;transition:width .6s cubic-bezier(.2,.7,.3,1)}
+  .machine-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
+  .meta{background:#f7f9f6;border-radius:10px;padding:10px;font-size:11px;color:var(--muted)}
+  .meta span{display:block;color:var(--ink);font-size:12.5px;margin-top:2px;font-weight:600}
+  .action-row{display:flex;gap:8px;margin-top:15px;flex-wrap:wrap}
+  .notice{display:flex;gap:12px;padding:14px;border-radius:13px;background:var(--amber-soft);margin-top:12px;font-size:12.5px;line-height:1.5;align-items:flex-start}
+  .notice .ic{color:#a1721d;margin-top:1px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label{display:block;font-size:11px;color:var(--muted);margin:0 0 5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .field{width:100%;border:1px solid var(--line);background:white;border-radius:10px;padding:10px 11px;color:var(--ink);outline:none;transition:.15s;font-size:13.5px}
+  .field:focus{border-color:var(--green2);box-shadow:0 0 0 3px rgba(47,122,82,.12)}
+  .chart{height:185px;border-radius:14px;background:linear-gradient(to top,transparent 24%,#e7ece7 25%,transparent 26%,transparent 49%,#e7ece7 50%,transparent 51%,transparent 74%,#e7ece7 75%,transparent 76%),linear-gradient(180deg,#fbfcfa,#f6f8f5);position:relative;overflow:hidden;margin-top:12px}
+  .bars{height:100%;display:flex;align-items:flex-end;gap:11px;padding:18px 16px 20px}
+  .bar{flex:1;background:linear-gradient(180deg,#c9f464,#6fae49);border-radius:8px 8px 3px 3px;min-width:14px;position:relative}
+  .bar:hover:after{content:attr(data-v);position:absolute;top:-27px;left:50%;transform:translateX(-50%);font-size:10px;background:var(--ink);color:white;padding:4px 6px;border-radius:6px}
+  .months{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:7px;padding:0 16px}
+  .client-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-bottom:20px}
+  .client-intro{padding:26px}
+  .client-intro h2{font-size:28px;margin:8px 0;letter-spacing:-.03em}
+  .next-service{background:linear-gradient(150deg,#1b5238,#0f3521);color:white;padding:26px;border:0}
+  .next-service .badge{background:rgba(198,240,106,.15);color:var(--lime)}
+  .service-number{font-size:32px;font-weight:750;margin:16px 0 4px;letter-spacing:-.03em}
+  .stepper{display:inline-flex;align-items:center;gap:2px}
+  .stepper button{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:white;font-weight:700;color:var(--green);display:grid;place-items:center}
+  .stepper button:hover{border-color:var(--green2)}
+  select.statussel{border:1px solid var(--line);border-radius:9px;padding:6px 8px;font-size:12px;background:white;color:var(--ink)}
+  .empty{padding:34px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+  .empty .ic{width:34px;height:34px;opacity:.4;margin-bottom:10px}
+
+  .mini-btn{width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:white;display:inline-grid;place-items:center;color:var(--green2);transition:.15s;vertical-align:middle}
+  .mini-btn:hover{border-color:var(--green2)}
+  .mini-btn.wa{color:#1fae55}
+  .invoice-print{font-family:Inter,system-ui,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:28px}
+  .invoice-print table{width:100%;border-collapse:collapse;margin-top:14px}
+  .invoice-print th,.invoice-print td{border-bottom:1px solid #ddd;padding:9px 6px;font-size:13px;text-align:left}
+  .invoice-print .tot td{font-weight:700;font-size:15px}
+  @media print{body{background:#fff}}
+
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(9,24,16,.5);backdrop-filter:blur(3px);z-index:150;align-items:center;justify-content:center;padding:20px}
+  .modal-backdrop.show{display:flex}
+  .modal{width:min(560px,100%);max-height:88vh;overflow:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 30px 70px rgba(0,0,0,.28);animation:modin .3s cubic-bezier(.2,.7,.3,1)}
+  @keyframes modin{from{opacity:0;transform:translateY(14px) scale(.98)}}
+  .modal h3{margin:0 0 5px;font-size:19px;letter-spacing:-.02em}
+  .modal p{font-size:12.5px;color:var(--muted);margin:0 0 18px;line-height:1.5}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+  .toast{position:fixed;right:24px;bottom:24px;background:#0d2418;color:white;padding:13px 17px;border-radius:13px;opacity:0;transform:translateY(12px);pointer-events:none;transition:.3s cubic-bezier(.2,.7,.3,1);z-index:180;font-size:13px;display:flex;align-items:center;gap:9px;box-shadow:0 16px 40px rgba(0,0,0,.3);max-width:min(420px,calc(100vw - 48px))}
+  .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--lime);flex:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+
+  .notifpop{position:absolute;top:54px;right:0;width:360px;max-width:calc(100vw - 32px);background:white;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(20,40,28,.2);padding:8px;display:none;z-index:30}
+  .notifpop.show{display:block;animation:pop .25s cubic-bezier(.2,.7,.3,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(-6px)}}
+  .np-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 10px 6px}
+  .np-item{display:flex;gap:11px;padding:10px;border-radius:12px;align-items:flex-start}
+  .np-item:hover{background:#f6f9f5}
+  .np-item.unread{background:#f2f9ec}
+  .np-ic{width:34px;height:34px;border-radius:10px;background:var(--lime-soft);color:#3f7d22;display:grid;place-items:center;flex:none}
+  .np-ic .ic{width:16px;height:16px}
+  .np-t{font-size:13px;font-weight:600}
+  .np-d{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .np-m{font-size:10px;color:var(--muted);margin-left:auto;white-space:nowrap}
+
+  .overlay{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(1100px 560px at 18% -12%,rgba(47,122,82,.5),transparent 60%),linear-gradient(160deg,#0e2b1d,#081b11)}
+  .overlay.off{display:none}
+  .login-card{max-width:460px;width:100%;color:#eef6ef;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:30px;animation:modin .4s ease}
+  .login-card h2{margin:14px 0 8px;font-size:24px;letter-spacing:-.02em}
+  .login-card p{color:#a9c2b0;font-size:13px;line-height:1.6;margin:0 0 18px}
+  .login-card label{color:#93b39c}
+  .login-card select{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:white;padding:12px 13px;font-size:14px;outline:none}
+  .login-card select option{color:#0f271c}
+  .login-actions{display:flex;gap:10px;margin-top:16px}
+  .bigplay{border:0;background:var(--lime);color:#12331f;font-weight:750;font-size:15px;padding:14px 22px;border-radius:14px;display:inline-flex;align-items:center;gap:10px;box-shadow:0 14px 36px rgba(201,244,100,.25);transition:.18s}
+  .bigplay:hover{transform:translateY(-2px)}
+  .ghostlight{border:1px solid rgba(255,255,255,.22);background:transparent;color:#eef6ef;font-weight:600;font-size:14px;padding:14px 18px;border-radius:14px}
+  .welcome-card{max-width:560px;width:100%;color:#eef6ef;text-align:center;animation:modin .4s ease}
+  .welcome-card h2{font-size:28px;letter-spacing:-.03em;margin:14px 0 10px}
+  .welcome-card .lead{color:#a9c2b0;font-size:13.5px;line-height:1.65;margin:0 auto 22px;max-width:460px}
+  .wsteps{text-align:left;display:flex;flex-direction:column;gap:9px;margin:0 auto 24px;max-width:440px}
+  .wstep{display:flex;gap:11px;align-items:flex-start;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:12px 14px;font-size:13px;line-height:1.5}
+  .wstep .n{width:24px;height:24px;border-radius:8px;background:var(--lime);color:#12331f;font-weight:800;font-size:12px;display:grid;place-items:center;flex:none}
+  .setgrid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+  .kv{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;border-top:1px solid var(--line)}
+  .kv:first-of-type{border-top:0}
+  @media(max-width:1050px){
+    .app{grid-template-columns:84px 1fr}
+    .sidebar{padding:22px 12px}
+    .brandname,.brandsub,.nav span:not(.ico),.sidebar-foot,.role-switch{display:none}
+    .brand{justify-content:center;padding-left:0;padding-right:0}
+    .nav button{justify-content:center}
+    .grid2,.client-hero,.setgrid{grid-template-columns:1fr}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .machine-grid{grid-template-columns:repeat(2,1fr)}
+    .trialchip{display:none}
+  }
+  @media(max-width:720px){
+    .app{display:block}.sidebar{display:none}
+    .topbar{padding:10px 16px}
+    .content{padding:18px 14px 85px}
+    .kpis{grid-template-columns:1fr 1fr;gap:10px}
+    .machine-grid{grid-template-columns:1fr}
+    .form-row{grid-template-columns:1fr}
+    .page-title{font-size:18px}
+    .mobile-nav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;z-index:20;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:7px 4px 10px}
+    .mobile-nav button{border:0;background:transparent;color:var(--muted);font-size:9px;display:flex;flex-direction:column;gap:4px;align-items:center;font-weight:600}
+  }
+  .mobile-nav{display:none}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-tractor" viewBox="0 0 24 24"><circle cx="7" cy="16.5" r="3.4"/><circle cx="17.6" cy="17.4" r="2.4"/><path d="M3.5 13.5V6.5h4v3.2h4.4l3.1 4.3"/><path d="M10.4 16.9h4.9"/><path d="M7.5 6.5V4.2h3.4"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 15v-4"/><path d="M11 15V7"/><path d="M15 15v-6"/><path d="M19 15V9"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+    <symbol id="i-headset" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H3v-7a9 9 0 0 1 18 0v7h-3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
+    <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>
+    <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+    <symbol id="i-arrowr" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-replay" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+    <symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect width="14" height="8" x="5" y="14" rx="1"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brandmark"><svg class="ic"><use href="#i-tractor"/></svg></div>
+      <div>
+        <div class="brandname">TerraFleet</div>
+        <div class="brandsub">Prueba real · 30 días</div>
+      </div>
+    </div>
+
+    <div class="role-switch">
+      <button class="active" data-role="admin">Empresa</button>
+      <button data-role="client">Cliente</button>
+    </div>
+
+    <div class="nav admin-nav">
+      <button class="active" data-page="dashboard"><span class="ico"><svg class="ic"><use href="#i-grid"/></svg></span><span>Dashboard</span></button>
+      <button data-page="clients"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span><span>Clientes</span></button>
+      <button data-page="machines"><span class="ico"><svg class="ic"><use href="#i-tractor"/></svg></span><span>Maquinaria</span></button>
+      <button data-page="workshop"><span class="ico"><svg class="ic"><use href="#i-wrench"/></svg></span><span>Taller / OTs</span></button>
+      <button data-page="calls"><span class="ico"><svg class="ic"><use href="#i-phone"/></svg></span><span>Llamadas</span></button>
+      <button data-page="parts"><span class="ico"><svg class="ic"><use href="#i-package"/></svg></span><span>Recambios</span></button>
+      <button data-page="reports"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span><span>Informes</span></button>
+      <button data-page="settings"><span class="ico"><svg class="ic"><use href="#i-cog"/></svg></span><span>Ajustes y datos</span></button>
+    </div>
+
+    <div class="nav client-nav" style="display:none">
+      <button class="active" data-page="clienthome"><span class="ico"><svg class="ic"><use href="#i-home"/></svg></span><span>Inicio</span></button>
+      <button data-page="clientmachines"><span class="ico"><svg class="ic"><use href="#i-tractor"/></svg></span><span>Mis equipos</span></button>
+      <button data-page="clientservices"><span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span><span>Servicios</span></button>
+      <button data-page="clientdocs"><span class="ico"><svg class="ic"><use href="#i-file"/></svg></span><span>Documentos</span></button>
+      <button data-page="clientsupport"><span class="ico"><svg class="ic"><use href="#i-headset"/></svg></span><span>Soporte</span></button>
+      <button id="btnSwitchClient" style="margin-top:8px;color:#c9f464"><span class="ico"><svg class="ic"><use href="#i-swap"/></svg></span><span>Cambiar de cliente</span></button>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="status"><span class="dot" id="footDot"></span> <span id="footStatus">Datos guardados en este navegador</span></div>
+      <span id="footTrial">Prueba de 30 días</span>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <div class="crumb" id="crumb">Panel interno / Resumen</div>
+        <div class="page-title" id="pagetitle">Dashboard</div>
+      </div>
+      <div class="top-actions">
+        <span class="trialchip" id="trialChip"><span class="dot"></span>Prueba · 30 días</span>
+        <button class="iconbtn" id="btnBell" title="Notificaciones" aria-label="Notificaciones">
+          <svg class="ic ic-sm"><use href="#i-bell"/></svg>
+          <span class="bcount zero" id="notifCount">0</span>
+        </button>
+        <div class="avatar" id="avatar">AM</div>
+        <div class="notifpop" id="notifPop">
+          <div class="np-head">Notificaciones</div>
+          <div id="npList"></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ============ ADMIN ============ -->
+      <section class="page active" id="dashboard">
+        <div class="kpis" id="dashKpis"></div>
+        <div class="grid2">
+          <div class="card section-card">
+            <div class="section-head">
+              <div><div class="section-title">Mantenimientos prioritarios</div><div class="section-sub">Calculados por horas y calendario — se recalculan al actualizar el horómetro o cerrar una OT.</div></div>
+              <button class="outline-btn" onclick="APP.gotoPage('machines')">Ver maquinaria<svg class="ic ic-xs"><use href="#i-arrowr"/></svg></button>
+            </div>
+            <div id="dashTable"></div>
+          </div>
+          <div class="card section-card">
+            <div class="section-head"><div><div class="section-title">Actividad reciente</div><div class="section-sub">Todo lo que pasa en tu parque de máquinas.</div></div></div>
+            <div class="timeline" id="dashFeed"></div>
+          </div>
+        </div>
+        <div class="grid2" style="margin-top:18px">
+          <div class="card section-card">
+            <div class="section-head"><div><div class="section-title">Cómo funciona esta prueba</div><div class="section-sub">Datos reales: todo lo que registres queda guardado.</div></div></div>
+            <div class="timeline">
+              <div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-plus"/></svg></div><div><div class="tname">1 · Registra clientes y máquinas</div><div class="tdetail">En «Clientes» y «Maquinaria» puedes dar de alta tus equipos reales con su nº de serie.</div></div></div>
+              <div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-gauge"/></svg></div><div><div class="tname">2 · Actualiza las horas</div><div class="tdetail">Cuando las horas llegan al umbral de aviso, se generan notificaciones para ti y para el cliente.</div></div></div>
+              <div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-wrench"/></svg></div><div><div class="tname">3 · Crea y cierra órdenes de trabajo</div><div class="tdetail">Al cerrar una OT se actualiza el historial y se reinicia el contador de mantenimiento.</div></div></div>
+              <div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-swap"/></svg></div><div><div class="tname">4 · Prueba el portal del cliente</div><div class="tdetail">Cambia a rol «Cliente» y verás la otra cara: sus máquinas, citas y asistencia.</div></div></div>
+            </div>
+          </div>
+          <div class="card section-card">
+            <div class="section-head"><div><div class="section-title">Carga del taller</div><div class="section-sub">Órdenes por estado, en vivo.</div></div></div>
+            <div id="dashLoad"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="clients">
+        <div class="section-head">
+          <div><div class="section-title" style="font-size:24px">Clientes</div><div class="section-sub">CRM comercial + parque de maquinaria. Los cambios se guardan solos.</div></div>
+          <button class="btn dark" onclick="APP.openClientModal()"><svg class="ic ic-sm"><use href="#i-plus"/></svg>Nuevo cliente</button>
+        </div>
+        <div class="card section-card"><div id="cliTable"></div></div>
+      </section>
+
+      <section class="page" id="machines">
+        <div class="section-head">
+          <div><div class="section-title" style="font-size:24px">Maquinaria</div><div class="section-sub">Pasaporte digital: serie, horas, mantenimiento, garantía e historial.</div></div>
+          <div class="action-row" style="margin:0">
+            <button class="outline-btn" onclick="APP.openImport()"><svg class="ic ic-xs"><use href="#i-upload"/></svg>Importar planilla</button>
+            <button class="btn dark" onclick="APP.openMachineModal()"><svg class="ic ic-sm"><use href="#i-plus"/></svg>Registrar máquina</button>
+          </div>
+        </div>
+        <div class="filters" id="machFilters"></div>
+        <div class="machine-grid" id="machGrid"></div>
+      </section>
+
+      <section class="page" id="workshop">
+        <div class="section-head">
+          <div><div class="section-title" style="font-size:24px">Taller / órdenes de trabajo</div><div class="section-sub">Las solicitudes del portal del cliente aparecen aquí automáticamente.</div></div>
+          <button class="btn dark" onclick="APP.openOTModal()"><svg class="ic ic-sm"><use href="#i-plus"/></svg>Nueva OT</button>
+        </div>
+        <div class="card section-card"><div id="otTable"></div></div>
+      </section>
+
+      <section class="page" id="calls">
+        <div class="section-head">
+          <div><div class="section-title" style="font-size:24px">Llamadas de hoy</div><div class="section-sub">A quién contactar: servicios en alerta, horas sin actualizar, garantías y citas por confirmar. WhatsApp y email ya redactados.</div></div>
+        </div>
+        <div class="card section-card" style="margin-bottom:16px">
+          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Servicios en alerta</div><div class="section-sub">Vencidos o próximos: avisa con un clic.</div></div></div>
+          <div id="callsAlert"></div>
+        </div>
+        <div class="card section-card" style="margin-bottom:16px">
+          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Pedir horas actualizadas</div><div class="section-sub">Máquinas sin novedades hace más de 45 días.</div></div></div>
+          <div id="callsHours"></div>
+        </div>
+        <div class="grid2">
+          <div class="card section-card">
+            <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Garantías a vencer</div><div class="section-sub">Próximos 90 días.</div></div></div>
+            <div id="callsWarranty"></div>
+          </div>
+          <div class="card section-card">
+            <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Citas por confirmar</div><div class="section-sub">Solicitudes del portal del cliente.</div></div></div>
+            <div id="callsCitas"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="parts">
+        <div class="section-head"><div><div class="section-title" style="font-size:24px">Recambios</div><div class="section-sub">Stock de prueba: ajusta las cantidades con − y +.</div></div></div>
+        <div class="card section-card"><div id="partsTable"></div></div>
+      </section>
+
+      <section class="page" id="reports">
+        <div class="section-head"><div><div class="section-title" style="font-size:24px">Informes</div><div class="section-sub">Calculados con tus datos reales.</div></div></div>
+        <div class="kpis" id="repKpis"></div>
+        <div class="card section-card">
+          <div class="section-head"><div><div class="section-title">Servicios completados por mes</div><div class="section-sub">OTs cerradas · últimos 6 meses</div></div></div>
+          <div class="chart"><div class="bars" id="repBars"></div></div>
+          <div class="months" id="repMonths"></div>
+        </div>
+      </section>
+
+      <section class="page" id="settings">
+        <div class="section-head"><div><div class="section-title" style="font-size:24px">Ajustes y datos</div><div class="section-sub">Tus datos pertenecen a este navegador: expórtalos para guardar copia o moverlos a otro ordenador.</div></div></div>
+        <div class="setgrid">
+          <div class="card section-card">
+            <div class="section-title">Tu empresa</div>
+            <div class="section-sub" style="margin-bottom:10px">Aparece en las facturas y en los mensajes a clientes.</div>
+            <div class="form-row">
+              <div><label>Nombre</label><input class="field" id="bizName" placeholder="Mi Empresa S.L." /></div>
+              <div><label>CIF / NIF</label><input class="field" id="bizCif" placeholder="B00000000" /></div>
+            </div>
+            <div class="form-row" style="margin-top:12px">
+              <div><label>Teléfono</label><input class="field" id="bizPhone" placeholder="+34 600 000 000" /></div>
+              <div><label>Población</label><input class="field" id="bizCity" placeholder="Barcelona" /></div>
+            </div>
+            <div class="action-row"><button class="solid-btn" onclick="APP.saveBiz()">Guardar datos</button></div>
+          </div>
+          <div class="card section-card">
+            <div class="section-title">Compartir</div>
+            <div class="section-sub" style="margin-bottom:10px">Envía la app o tus datos a otro dispositivo (p. ej. al cliente).</div>
+            <div class="action-row" style="margin-top:6px">
+              <button class="solid-btn" onclick="APP.copyAppLink()"><svg class="ic ic-xs"><use href="#i-link"/></svg>Copiar enlace de la app</button>
+            </div>
+            <div class="action-row">
+              <button class="outline-btn" onclick="APP.copyDataLink()"><svg class="ic ic-xs"><use href="#i-link"/></svg>Copiar enlace con mis datos</button>
+            </div>
+            <div class="small" style="margin-top:10px;line-height:1.5">«Enlace con mis datos» incluye clientes y máquinas actuales: quien lo abra en otro dispositivo verá lo mismo y podrá seguir trabajando allí.</div>
+          </div>
+          <div class="card section-card">
+            <div class="section-title">Prueba</div>
+            <div class="section-sub" style="margin-bottom:10px">Periodo de evaluación de 30 días desde el primer uso.</div>
+            <div id="setTrial"></div>
+          </div>
+          <div class="card section-card">
+            <div class="section-title">Tus datos</div>
+            <div class="section-sub" style="margin-bottom:10px">Exportar / importar / reiniciar.</div>
+            <div class="action-row" style="margin-top:6px">
+              <button class="solid-btn" onclick="APP.exportData()"><svg class="ic ic-xs"><use href="#i-download"/></svg>Exportar copia (JSON)</button>
+              <button class="outline-btn" onclick="document.getElementById('impFile').click()"><svg class="ic ic-xs"><use href="#i-upload"/></svg>Importar copia</button>
+            </div>
+            <div class="action-row">
+              <button class="outline-btn" onclick="APP.reseed()"><svg class="ic ic-xs"><use href="#i-replay"/></svg>Cargar datos de ejemplo</button>
+              <button class="outline-btn" style="color:#ac4136" onclick="APP.wipe()"><svg class="ic ic-xs"><use href="#i-trash"/></svg>Empezar de cero</button>
+            </div>
+            <input type="file" id="impFile" accept=".json,application/json" style="display:none" />
+            <div id="setStats" style="margin-top:14px"></div>
+          </div>
+          <div class="card section-card" style="grid-column:1/-1">
+            <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div><b>Dónde viven tus datos:</b> esta prueba guarda todo en el almacenamiento local de este navegador (nada se envía a internet). Si pasas el archivo a otro ordenador, sus datos serán independientes. Para que tu taller y tus clientes compartan los mismos datos en tiempo real haría falta la versión con base de datos en la nube — es el siguiente paso si la prueba convence.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CLIENTE ============ -->
+      <section class="page" id="clienthome">
+        <div class="client-hero">
+          <div class="card client-intro">
+            <div class="eyebrow" style="font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600">Portal cliente</div>
+            <h2 id="chGreeting">Hola</h2>
+            <p style="color:var(--muted);line-height:1.65;font-size:14px">Este es el estado real de tus máquinas: horas, próximos mantenimientos e historial. Cuando toque revisar algo, te avisaremos nosotros.</p>
+            <div class="action-row">
+              <button class="solid-btn" onclick="APP.gotoPage('clientmachines')">Ver mis equipos<svg class="ic ic-xs"><use href="#i-arrowr"/></svg></button>
+              <button class="outline-btn" onclick="APP.gotoPage('clientsupport')"><svg class="ic ic-xs"><use href="#i-headset"/></svg>Solicitar asistencia</button>
+            </div>
+          </div>
+          <div class="card next-service" id="chNextCard"></div>
+        </div>
+        <div class="kpis" id="chKpis"></div>
+        <div class="card section-card">
+          <div class="section-head"><div><div class="section-title">Tus próximos hitos</div><div class="section-sub">Calculados con las horas registradas.</div></div></div>
+          <div class="timeline" id="chTimeline"></div>
+        </div>
+      </section>
+
+      <section class="page" id="clientmachines">
+        <div class="section-head"><div><div class="section-title" style="font-size:24px">Mis equipos</div><div class="section-sub">Actualiza las horas cuando quieras: recalculamos el próximo servicio al instante.</div></div></div>
+        <div class="machine-grid" style="grid-template-columns:repeat(2,1fr)" id="cmGrid"></div>
+      </section>
+
+      <section class="page" id="clientservices">
+        <div class="section-head"><div><div class="section-title" style="font-size:24px">Servicios y mantenimientos</div><div class="section-sub">Pide cita cuando te venga bien: la solicitud llega directa al taller.</div></div></div>
+        <div class="card section-card" style="margin-bottom:16px">
+          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Próximos servicios</div></div></div>
+          <div id="csTable"></div>
+        </div>
+        <div class="card section-card">
+          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">En curso con el taller</div></div></div>
+          <div id="csOpen"></div>
+        </div>
+      </section>
+
+      <section class="page" id="clientdocs">
+        <div class="section-head"><div><div class="section-title" style="font-size:24px">Documentos</div><div class="section-sub">En la versión real: facturas, garantías y manuales de cada equipo (PDF).</div></div></div>
+        <div class="machine-grid" id="cdGrid"></div>
+      </section>
+
+      <section class="page" id="clientsupport">
+        <div class="section-head"><div><div class="section-title" style="font-size:24px">Solicitar asistencia</div><div class="section-sub">La solicitud llega al taller vinculada a la máquina y a su historial.</div></div></div>
+        <div class="card section-card" style="max-width:720px">
+          <div class="form-row">
+            <div><label>Equipo</label><select class="field" id="supMach"></select></div>
+            <div><label>Tipo</label><select class="field" id="supType"><option>Avería / incidencia</option><option>Mantenimiento</option><option>Garantía</option><option>Consulta</option></select></div>
+          </div>
+          <div style="margin-top:12px"><label>¿Qué está pasando?</label><textarea id="supText" class="field" style="height:120px;resize:vertical" placeholder="Describe el problema, cuándo ocurre, ruidos, códigos de error…"></textarea></div>
+          <div class="action-row"><button class="solid-btn" onclick="APP.sendSAT()"><svg class="ic ic-xs"><use href="#i-send"/></svg>Enviar solicitud</button><button class="outline-btn" onclick="APP.toast('En la versión real podrás adjuntar fotos y vídeo')"><svg class="ic ic-xs"><use href="#i-image"/></svg>Adjuntar fotos / vídeo</button></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-backdrop" id="mClient">
+  <div class="modal">
+    <h3 id="mClientTitle">Nuevo cliente</h3><p>Datos del cliente y su plan de servicio.</p>
+    <input type="hidden" id="cliId" />
+    <div class="form-row">
+      <div><label>Nombre / empresa</label><input class="field" id="cliName" placeholder="Jardins del Vallès SL" /></div>
+      <div><label>Persona de contacto</label><input class="field" id="cliContact" placeholder="Jordi Rovira" /></div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <div><label>Teléfono</label><input class="field" id="cliPhone" placeholder="+34 600 000 000" /></div>
+      <div><label>Email</label><input class="field" id="cliEmail" placeholder="correo@empresa.com" /></div>
+    </div>
+    <div style="margin-top:12px"><label>Plan</label><select class="field" id="cliPlan"><option>Care</option><option selected>Premium</option><option>Premium+</option></select></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mClient')">Cancelar</button><button class="solid-btn" onclick="APP.saveClient()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mMachine">
+  <div class="modal">
+    <h3>Registrar máquina</h3><p>Crea el pasaporte digital del equipo. El contador de mantenimiento empieza ahora.</p>
+    <div class="form-row">
+      <div><label>Cliente</label><select class="field" id="maClient"></select></div>
+      <div><label>Tipo</label><select class="field" id="maIcon"><option value="tractor">Tractor</option><option value="leaf">Cortacéspedes</option><option value="scissors">Podadora</option><option value="sprout">Desbrozadora</option><option value="layers">Cargadora / otros</option></select></div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <div><label>Marca</label><input class="field" id="maBrand" placeholder="Kubota" /></div>
+      <div><label>Modelo</label><input class="field" id="maModel" placeholder="M5-112" /></div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <div><label>Nº de serie</label><input class="field" id="maSerial" placeholder="KBT-M5-00000" /></div>
+      <div><label>Horas actuales</label><input class="field" id="maHours" type="number" min="0" value="0" /></div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <div><label>Revisión cada (horas)</label><input class="field" id="maIntH" type="number" min="50" step="50" value="500" /></div>
+      <div><label>Revisión cada (meses)</label><input class="field" id="maIntM" type="number" min="1" value="12" /></div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <div><label>Fecha último servicio</label><input class="field" id="maLastDate" type="date" /></div>
+      <div><label>Garantía hasta</label><input class="field" id="maWarranty" type="date" /></div>
+    </div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mMachine')">Cancelar</button><button class="solid-btn" onclick="APP.saveMachine()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mHours">
+  <div class="modal">
+    <h3>Actualizar horómetro</h3><p id="mHoursSub">El nuevo valor recalcula el próximo mantenimiento y dispara avisos si cruza el umbral.</p>
+    <label>Horas actuales de la máquina</label><input id="mHoursInput" class="field" type="number" min="0" />
+    <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>Puedes leerlas del horómetro del salpicadero o de la foto que te mande el cliente. En la versión real esto llegará solo con telemetría.</div></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mHours')">Cancelar</button><button class="solid-btn" onclick="APP.saveHours()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mOT">
+  <div class="modal">
+    <h3>Nueva orden de trabajo</h3><p>Queda vinculada a la máquina y a su historial.</p>
+    <div class="form-row">
+      <div><label>Máquina</label><select class="field" id="otMach"></select></div>
+      <div><label>Tipo</label><select class="field" id="otType"><option>Revisión preventiva</option><option>Avería</option><option>Garantía</option></select></div>
+    </div>
+    <div style="margin-top:12px"><label>Descripción del trabajo</label><input class="field" id="otIssue" placeholder="Ej. revisión de 500 h · aceite y filtros" /></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mOT')">Cancelar</button><button class="solid-btn" onclick="APP.saveOT()">Crear OT</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mDone">
+  <div class="modal">
+    <h3>Cerrar orden de trabajo</h3><p id="mDoneSub"></p>
+    <input type="hidden" id="doneId" />
+    <div class="form-row">
+      <div><label>Técnico</label><input class="field" id="doneTech" placeholder="Marc" /></div>
+      <div><label>Horas de la máquina ahora</label><input class="field" id="doneHours" type="number" min="0" /></div>
+    </div>
+    <div style="margin-top:12px"><label>Trabajo realizado</label><input class="field" id="doneWork" placeholder="Aceite motor, filtros, engrase…" /></div>
+    <div class="notice"><svg class="ic"><use href="#i-checkc"/></svg><div>Al cerrar la OT se actualiza el historial de la máquina y el contador de mantenimiento vuelve a empezar.</div></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mDone')">Cancelar</button><button class="solid-btn" onclick="APP.completeOT()">Cerrar OT</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mHistory">
+  <div class="modal">
+    <h3 id="mHistoryTitle">Historial</h3><p>Todo lo que le ha pasado a esta máquina, en orden cronológico.</p>
+    <div class="timeline" id="mHistoryBody"></div>
+    <div class="modal-actions"><button class="solid-btn" onclick="APP.closeModal('mHistory')">Cerrar</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mImport">
+  <div class="modal">
+    <h3>Importar planilla (CSV)</h3>
+    <p>Exporta tu Excel como CSV y súbelo aquí: creamos los clientes y máquinas automáticamente. Una fila = una máquina.</p>
+    <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>Columnas reconocidas: <b>cliente, contacto, telefono, email, marca, modelo, serie, horas, revision_horas, revision_meses, ultimo_servicio, garantia</b>. Si la máquina ya existe (mismo nº de serie), se actualiza.</div></div>
+    <div class="action-row" style="margin:14px 0">
+      <button class="outline-btn" onclick="APP.downloadTemplate()"><svg class="ic ic-xs"><use href="#i-download"/></svg>Descargar plantilla</button>
+      <button class="solid-btn" onclick="document.getElementById('impCSV').click()"><svg class="ic ic-xs"><use href="#i-upload"/></svg>Elegir archivo CSV</button>
+    </div>
+    <input type="file" id="impCSV" accept=".csv,.txt,text/csv" style="display:none" />
+    <div id="impPreview"></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mImport')">Cerrar</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mInvoice">
+  <div class="modal">
+    <h3>Factura del servicio</h3><p id="invSub"></p>
+    <input type="hidden" id="invOtId" />
+    <div class="form-row">
+      <div><label>Base imponible (€)</label><input class="field" id="invBase" type="number" min="0" step="0.01" value="0" oninput="APP.invCalc()" /></div>
+      <div><label>IVA (%)</label><input class="field" id="invIva" type="number" min="0" step="1" value="21" oninput="APP.invCalc()" /></div>
+    </div>
+    <div style="margin-top:12px"><label>Concepto</label><input class="field" id="invConcept" /></div>
+    <div class="mini-row"><span>Total factura</span><b id="invTotal" style="font-size:19px">€ 0,00</b></div>
+    <div class="notice"><svg class="ic"><use href="#i-printer"/></svg><div>Se abre la vista de impresión: ahí puedes guardarla como PDF o imprimirla directamente.</div></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mInvoice')">Cancelar</button><button class="solid-btn" onclick="APP.printInvoice()"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Imprimir / PDF</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mShare">
+  <div class="modal">
+    <h3>Copiar el enlace</h3><p>Se ha copiado al portapapeles. Si no, selecciónalo y cópialo a mano:</p>
+    <textarea class="field" id="shareBox" style="height:110px;resize:vertical;font-size:11px" readonly></textarea>
+    <div class="modal-actions"><button class="solid-btn" onclick="APP.closeModal('mShare')">Listo</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<!-- CLIENT LOGIN -->
+<div class="overlay off" id="loginOverlay">
+  <div class="login-card">
+    <div class="np-ic" style="background:rgba(201,244,100,.14);color:#c9f464"><svg class="ic"><use href="#i-users"/></svg></div>
+    <h2>Entrar como cliente</h2>
+    <p>Esta es la vista que verían tus clientes. Elige con qué cliente quieres probar el portal:</p>
+    <label>Cliente</label>
+    <select id="loginSel"></select>
+    <div class="login-actions">
+      <button class="bigplay" id="loginBtn" style="width:100%;justify-content:center">Entrar al portal<svg class="ic ic-sm"><use href="#i-arrowr"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- WELCOME -->
+<div class="overlay off" id="welcomeOverlay">
+  <div class="welcome-card">
+    <div class="np-ic" style="width:54px;height:54px;background:var(--lime);color:#12331f;margin:0 auto"><svg class="ic" style="width:28px;height:28px"><use href="#i-tractor"/></svg></div>
+    <h2>TerraFleet · Prueba real</h2>
+    <p class="lead">Esta versión funciona con <b>datos de verdad</b>: todo lo que registres se guarda en este navegador y sigue aquí cuando vuelvas. Empieza con los datos de ejemplo o crea los tuyos.</p>
+    <div class="wsteps">
+      <div class="wstep"><span class="n">1</span><div><b>Registra</b> un cliente y una máquina reales (o juega con los de ejemplo).</div></div>
+      <div class="wstep"><span class="n">2</span><div><b>Actualiza las horas</b> de una máquina y mira cómo se generan avisos.</div></div>
+      <div class="wstep"><span class="n">3</span><div><b>Cierra una OT</b> en el taller y comprueba cómo se resetea el mantenimiento.</div></div>
+      <div class="wstep"><span class="n">4</span><div><b>Cámbiate a rol «Cliente»</b> y pide una cita desde el portal.</div></div>
+    </div>
+    <button class="bigplay" id="welcomeBtn" style="margin:0 auto">Empezar a probar<svg class="ic ic-sm"><use href="#i-arrowr"/></svg></button>
+  </div>
+</div>
+
+<div class="mobile-nav">
+  <button onclick="APP.gotoPage('dashboard')"><svg class="ic"><use href="#i-home"/></svg>Inicio</button>
+  <button onclick="APP.gotoPage('machines')"><svg class="ic"><use href="#i-tractor"/></svg>Equipos</button>
+  <button onclick="APP.gotoPage('workshop')"><svg class="ic"><use href="#i-wrench"/></svg>Taller</button>
+  <button onclick="APP.toggleRole()"><svg class="ic"><use href="#i-swap"/></svg>Rol</button>
+</div>
+
+<script>
+/* ================= UTILIDADES ================= */
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const nf=n=>Number(n||0).toLocaleString('es-ES');
+const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function fmtDate(iso){if(!iso)return '—';const p=String(iso).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:iso}
+function addMonths(iso,m){const d=new Date(iso+'T00:00:00');d.setMonth(d.getMonth()+Number(m||0));return d}
+function daysUntil(d){const t=new Date();t.setHours(0,0,0,0);return Math.ceil((d-t)/86400000)}
+function fmtTs(ts){const d=new Date(ts);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function toast(msg){const t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600)}
+
+/* ================= BASE DE DATOS LOCAL ================= */
+const DB_KEY='terrafleet_prueba_v1';
+let storageOk=true;
+try{const k='__tf';localStorage.setItem(k,'1');localStorage.removeItem(k)}catch(e){storageOk=false}
+
+function seedDb(){
+  const now=Date.now(),min=60000;
+  const db={
+    meta:{trialStart:now,otSeq:4100,satSeq:80,seenWelcome:false},
+    session:{clientId:null},
+    clients:[
+      {id:'c1',name:'Jardins del Vallès SL',contact:'Jordi Rovira',phone:'+34 620 11 22 33',email:'jordi@jardinsvalles.cat',plan:'Premium'},
+      {id:'c2',name:'GreenSport BCN',contact:'Marta Puig',phone:'+34 630 44 55 66',email:'marta@greensport.cat',plan:'Premium+'},
+      {id:'c3',name:'Masia Can Roca',contact:'Toni Ferret',phone:'+34 660 77 88 99',email:'toni@canroca.cat',plan:'Care'},
+      {id:'c4',name:'Serveis Maresme',contact:'Laura Vidal',phone:'+34 610 23 45 67',email:'laura@smareme.cat',plan:'Premium'}
+    ],
+    machines:[
+      {id:'m1',clientId:'c1',brand:'Kubota',model:'M5-112',serial:'KBT-M5-88421',iconKey:'tractor',hours:491,lastServiceHours:0,lastServiceDate:'2026-03-20',intervalH:500,intervalM:12,warrantyEnd:'2028-06-30',stage:'soon',
+       history:[{ts:now-90*86400000,title:'Servicio 250 h',detail:'Aceite motor + filtros · OT-2026-0291'},{ts:now-160*86400000,title:'Servicio inicial 50 h',detail:'Revisión de entrega · OT-2025-0110'},{ts:now-200*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 30/06/2028'}]},
+      {id:'m2',clientId:'c2',brand:'Toro',model:'Groundsmaster 4500-D',serial:'TR-4500-10231',iconKey:'leaf',hours:1014,lastServiceHours:0,lastServiceDate:'2025-11-01',intervalH:1000,intervalM:24,warrantyEnd:'2024-11-01',stage:'overdue',
+       history:[{ts:now-140*86400000,title:'Servicio 750 h',detail:'Filtros y comprobación hidráulica · OT-2025-0355'},{ts:now-400*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]},
+      {id:'m3',clientId:'c3',brand:'John Deere',model:'5075E',serial:'JD5075-72190',iconKey:'tractor',hours:726,lastServiceHours:0,lastServiceDate:'2025-10-01',intervalH:2000,intervalM:12,warrantyEnd:'2027-02-28',stage:'soon',
+       history:[{ts:now-180*86400000,title:'Revisión anual',detail:'Aceite, filtros y engrase · OT-2025-0301'},{ts:now-500*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 28/02/2027'}]},
+      {id:'m4',clientId:'c4',brand:'Husqvarna',model:'P 525DX',serial:'HQ525-40117',iconKey:'scissors',hours:358,lastServiceHours:0,lastServiceDate:'2026-06-15',intervalH:400,intervalM:12,warrantyEnd:'2027-11-30',stage:'soon',
+       history:[{ts:now-70*86400000,title:'Cambio de cuchillas',detail:'Kit BL-4500 · OT-2026-0415'},{ts:now-300*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]},
+      {id:'m5',clientId:'c1',brand:'Stihl',model:'RT 6112 ZL',serial:'ST6112-88912',iconKey:'sprout',hours:81,lastServiceHours:0,lastServiceDate:'2026-06-01',intervalH:200,intervalM:12,warrantyEnd:'2028-09-04',stage:'ok',
+       history:[{ts:now-100*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 04/09/2028'}]},
+      {id:'m6',clientId:'c2',brand:'Avant',model:'635',serial:'AV635-22013',iconKey:'layers',hours:1244,lastServiceHours:0,lastServiceDate:'2025-09-10',intervalH:1500,intervalM:24,warrantyEnd:'2023-09-10',stage:'ok',
+       history:[{ts:now-250*86400000,title:'Servicio 1.000 h',detail:'Transmisión e hidráulico · OT-2025-0280'},{ts:now-800*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]}
+    ],
+    ots:[
+      {id:'OT-0418',machineId:'m2',type:'Revisión preventiva',issue:'Revisión 1.000 h (vencida)',status:'taller',tech:'Marc',origin:'taller',createdAt:now-2*86400000},
+      {id:'OT-0417',machineId:'m1',type:'Revisión preventiva',issue:'Preventivo 500 h',status:'pendiente',tech:'',origin:'taller',createdAt:now-86400000},
+      {id:'OT-0416',machineId:'m6',type:'Avería',issue:'Fuga hidráulica en brazo',status:'taller',tech:'Pau',origin:'taller',createdAt:now-3*86400000},
+      {id:'OT-0415',machineId:'m4',type:'Revisión preventiva',issue:'Cambio de cuchillas',status:'terminada',tech:'Marc',origin:'taller',createdAt:now-70*86400000,closedAt:now-69*86400000}
+    ],
+    notifs:[
+      {id:uid('n'),audience:'admin',icon:'i-clock',title:'Servicio próximo',detail:'Kubota M5-112 · revisión 500 h en ~9 h',ts:now-40*min,read:false},
+      {id:uid('n'),audience:'client',clientId:'c1',icon:'i-clock',title:'Revisión 500 h próxima',detail:'Kubota M5-112 · te avisaremos para agendar',ts:now-40*min,read:false},
+      {id:uid('n'),audience:'admin',icon:'i-checkc',title:'OT-0415 completada',detail:'Husqvarna P 525DX · cambio de cuchillas',ts:now-69*86400000,read:true},
+      {id:uid('n'),audience:'admin',icon:'i-package',title:'Stock bajo mínimo',detail:'Filtro hidráulico HF-8821 · quedan 3',ts:now-5*3600000,read:false}
+    ],
+    parts:[
+      {id:'p1',ref:'HF-8821',name:'Filtro hidráulico',stock:3,min:5},
+      {id:'p2',ref:'OF-2210',name:'Filtro de aceite',stock:18,min:8},
+      {id:'p3',ref:'BL-4500',name:'Kit cuchillas 4500-D',stock:7,min:4}
+    ]
+  };
+  db.machines.forEach((m,i)=>{m.lastHoursUpdate=now-(6+i*9)*86400000});
+  return db;
+}
+function emptyDb(trialStart){
+  return {meta:{trialStart:trialStart||Date.now(),otSeq:4100,satSeq:80,invSeq:0,seenWelcome:true,biz:{name:'Mi Empresa S.L.',cif:'',phone:'',city:''}},session:{clientId:null},clients:[],machines:[],ots:[],notifs:[],parts:[]};
+}
+let db;
+function loadDb(){
+  if(storageOk){
+    try{const raw=localStorage.getItem(DB_KEY);if(raw){db=JSON.parse(raw);return}}catch(e){}
+  }
+  db=seedDb();
+  saveDb();
+}
+function saveDb(){if(!storageOk)return;try{localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){}}
+
+/* ================= CÁLCULOS ================= */
+function clientOf(id){return db.clients.find(c=>c.id===id)}
+function machineOf(id){return db.machines.find(m=>m.id===id)}
+function mLabel(m){return (m.brand+' '+m.model).trim()||'(sin nombre)'}
+function dueInfo(m){
+  const target=(Number(m.lastServiceHours)||0)+Number(m.intervalH||500);
+  const hoursLeft=target-Number(m.hours||0);
+  const dateLeftDays=daysUntil(addMonths(m.lastServiceDate||todayISO(),m.intervalM||12));
+  let state='ok';
+  if(hoursLeft<=0||dateLeftDays<=0)state='overdue';
+  else if(hoursLeft<=50||dateLeftDays<=30)state='soon';
+  let label;
+  if(hoursLeft<=0)label='vencido hace '+nf(-hoursLeft)+' h';
+  else if(dateLeftDays<=0)label='vencía el '+fmtDate(addMonths(m.lastServiceDate,m.intervalM).toISOString().slice(0,10));
+  else label=(hoursLeft<=50?nf(hoursLeft)+' h restantes':nf(dateLeftDays)+' días');
+  const pct=Math.max(0,Math.min(100,(Number(m.hours||0)-Number(m.lastServiceHours||0))/Number(m.intervalH||500)*100));
+  const warrantyLeft=m.warrantyEnd?daysUntil(new Date(m.warrantyEnd+'T00:00:00')):null;
+  return {hoursLeft,dateLeftDays,state,label,pct,warrantyLeft};
+}
+const STATE_BADGE={overdue:'<span class="badge bad">Vencido</span>',soon:'<span class="badge warn">Próximo</span>',ok:'<span class="badge ok">Correcto</span>'};
+const RANK={overdue:0,soon:1,ok:2};
+function machinesOf(clientId){return db.machines.filter(m=>m.clientId===clientId)}
+function urgencySort(list){return list.slice().sort((a,b)=>(RANK[dueInfo(a).state]-RANK[dueInfo(b).state])||((a.lastServiceHours+a.intervalH-a.hours)-(b.lastServiceHours+b.intervalH-b.hours)))}
+function trialDaysLeft(){return 30-Math.floor((Date.now()-db.meta.trialStart)/86400000)}
+function iconOf(m){return '#i-'+(m.iconKey||'tractor')}
+
+/* Notificaciones */
+function pushNotif(audience,icon,title,detail,clientId){
+  db.notifs.unshift({id:uid('n'),audience,icon,title,detail,ts:Date.now(),read:false,clientId:clientId||null});
+  if(db.notifs.length>60)db.notifs.length=60;
+}
+function checkStage(m,who){
+  const info=dueInfo(m);
+  if(m.stage!==info.state&&(info.state==='soon'||info.state==='overdue')){
+    const msg=info.state==='overdue'
+      ? 'Revisión vencida ('+info.label+') de '+mLabel(m)
+      : 'Revisión de '+mLabel(m)+' en '+info.label;
+    pushNotif('admin','i-alert','Aviso de mantenimiento',msg+(who&&who!=='taller'?' · registrado por '+who:''));
+    pushNotif('client','i-clock','Revisión próxima','Tu '+mLabel(m)+' necesita servicio: '+info.label,m.clientId);
+    toast('Aviso generado para '+mLabel(m));
+  }
+  m.stage=info.state;
+}
+function recomputeStages(silent){
+  db.machines.forEach(m=>{m.stage=dueInfo(m).state});
+  if(silent)saveDb();
+}
+
+/* ================= RENDER ================= */
+let currentRole='admin';
+let machFilter='all';
+const titles={
+  dashboard:['Dashboard','Panel interno / Resumen'],
+  clients:['Clientes','Panel interno / CRM'],
+  machines:['Maquinaria','Panel interno / Activos'],
+  workshop:['Taller / OTs','Panel interno / Servicio técnico'],
+  calls:['Llamadas','Panel interno / Seguimiento'],
+  parts:['Recambios','Panel interno / Inventario'],
+  reports:['Informes','Panel interno / Analytics'],
+  settings:['Ajustes y datos','Panel interno / Configuración'],
+  clienthome:['Mi maquinaria','Área cliente / Inicio'],
+  clientmachines:['Mis equipos','Área cliente / Activos'],
+  clientservices:['Servicios','Área cliente / Mantenimiento'],
+  clientdocs:['Documentos','Área cliente / Archivos'],
+  clientsupport:['Soporte','Área cliente / Asistencia']
+};
+function gotoPage(id){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  const p=document.getElementById(id);if(p)p.classList.add('active');
+  document.querySelectorAll('.nav button[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+  if(titles[id]){document.getElementById('pagetitle').textContent=titles[id][0];document.getElementById('crumb').textContent=titles[id][1]}
+  renderPage(id);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+  function renderPage(id){
+    ({
+      dashboard:renderDashboard,clients:renderClients,machines:renderMachines,workshop:renderWorkshop,
+      calls:renderCalls,parts:renderParts,reports:renderReports,settings:renderSettings,
+      clienthome:renderClientHome,clientmachines:renderClientMachines,clientservices:renderClientServices,
+      clientdocs:renderClientDocs,clientsupport:renderClientSupport
+    }[id]||(()=>{}))();
+  }
+function renderAll(){
+  updateTrialUI();renderBell();
+  const active=document.querySelector('.page.active');
+  if(active)renderPage(active.id);
+}
+function updateTrialUI(){
+  const left=trialDaysLeft();
+  const chip=$('#trialChip');
+  if(left>0){chip.className='trialchip';chip.innerHTML='<span class="dot"></span>Prueba · '+left+(left===1?' día':' días')}
+  else{chip.className='trialchip expired';chip.innerHTML='<span class="dot red"></span>Prueba finalizada · exporta tus datos'}
+  $('#footTrial').textContent=left>0?('Prueba · quedan '+left+' días'):'Prueba finalizada';
+  if(!storageOk){
+    $('#footDot').classList.add('red');
+    $('#footStatus').textContent='Advertencia: este navegador bloquea el guardado';
+  }
+}
+function machineRowHTML(m){
+  const c=clientOf(m.clientId),info=dueInfo(m);
+  return '<tr><td><div class="machine"><div class="machine-icon"><svg class="ic"><use href="'+iconOf(m)+'"/></svg></div><div><b>'+esc(mLabel(m))+'</b><div class="small">SN '+esc(m.serial||'—')+'</div></div></div></td>'+
+    '<td>'+esc(c?c.name:'—')+'</td><td>'+esc(info.label)+'</td><td>'+STATE_BADGE[info.state]+'</td>'+
+    '<td><button class="mini-btn wa" title="Avisar por WhatsApp" onclick="APP.notifyWA(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg></button> '+
+    '<button class="mini-btn" title="Avisar por email" onclick="APP.notifyMail(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-mail"/></svg></button></td></tr>';
+}
+function machineCardHTML(m,clientView){
+  const c=clientOf(m.clientId),info=dueInfo(m);
+  const badge=STATE_BADGE[info.state];
+  let actions='';
+  if(clientView){
+    actions='<button class="solid-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar horas</button>'+
+            '<button class="outline-btn" onclick="APP.openHistory(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clock"/></svg>Historial</button>';
+  }else{
+    actions='<button class="outline-btn" onclick="APP.openOTModal(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Nueva OT</button>'+
+            '<button class="outline-btn" onclick="APP.openHistory(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clock"/></svg>Historial</button>';
+  }
+  return '<div class="card machine-card hov">'+
+    '<div class="machine-card-top"><div class="machine-hero-icon"><svg class="ic ic-lg"><use href="'+iconOf(m)+'"/></svg></div>'+badge+'</div>'+
+    '<h3>'+esc(mLabel(m))+'</h3><div class="serial">SN '+esc(m.serial||'—')+(clientView?'':' · '+esc(c?c.name:'—'))+'</div>'+
+    '<div class="meter"><div><div class="small">Horómetro</div><div class="big">'+nf(m.hours)+' h</div></div><button class="outline-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar</button></div>'+
+    '<div class="progress"><div style="width:'+info.pct+'%'+(info.state==='overdue'?';background:var(--red)':'')+'"></div></div>'+
+    '<div class="small">Revisión cada '+nf(m.intervalH)+' h / '+m.intervalM+' meses · '+esc(info.label)+'</div>'+
+    '<div class="machine-meta"><div class="meta">Garantía<span>'+(info.warrantyLeft==null?'—':(info.warrantyLeft>0?fmtDate(m.warrantyEnd):'Finalizada'))+'</span></div><div class="meta">Último servicio<span>'+fmtDate(m.lastServiceDate)+'</span></div></div>'+
+    '<div class="action-row">'+actions+'</div></div>';
+}
+function emptyHTML(icon,text){return '<div class="empty"><svg class="ic"><use href="'+icon+'"/></svg><div>'+text+'</div></div>'}
+
+function renderDashboard(){
+  const open=db.ots.filter(o=>o.status!=='terminada');
+  const overdue=db.machines.filter(m=>dueInfo(m).state==='overdue');
+  const soon=db.machines.filter(m=>dueInfo(m).state==='soon');
+  $('#dashKpis').innerHTML=
+    kpi('t-lime','i-tractor',nf(db.machines.length),'Máquinas gestionadas',db.machines.length+' en '+db.clients.length+' clientes')+
+    kpi('t-blue','i-clock',nf(soon.length),'Servicios próximos','próximas 50 h / 30 días')+
+    kpi('t-amber','i-wrench',nf(open.length),'Órdenes abiertas',open.filter(o=>o.status==='taller').length+' en taller')+
+    kpi('t-red','i-alert',nf(overdue.length),'Mantenimientos vencidos',overdue.length?'requieren acción':'todo al día');
+  const prior=urgencySort(db.machines).filter(m=>dueInfo(m).state!=='ok');
+  $('#dashTable').innerHTML=prior.length
+    ?'<table><thead><tr><th>Equipo</th><th>Cliente</th><th>Próximo servicio</th><th>Estado</th><th>Avisar</th></tr></thead><tbody>'+prior.map(machineRowHTML).join('')+'</tbody></table>'
+    :emptyHTML('#i-checkc','Ninguna máquina en alerta. Actualiza horas o registra máquinas para ver los avisos.');
+  const feed=db.notifs.filter(n=>n.audience==='admin').slice(0,6);
+  $('#dashFeed').innerHTML=feed.length?feed.map(n=>
+    '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#'+n.icon+'"/></svg></div><div><div class="tname">'+esc(n.title)+'</div><div class="tdetail">'+esc(n.detail)+'</div></div><div class="date">'+fmtTs(n.ts)+'</div></div>'
+  ).join(''):emptyHTML('#i-bell','Sin actividad todavía.');
+  const byS={pendiente:0,cita:0,taller:0,terminada:0};
+  db.ots.forEach(o=>{byS[o.status]=(byS[o.status]||0)+1});
+  $('#dashLoad').innerHTML=
+    '<div class="mini-row"><span>Pendientes</span><span>'+byS.pendiente+'</span></div><div class="progress"><div style="width:'+(byS.pendiente/Math.max(1,db.ots.length)*100)+'%"></div></div>'+
+    '<div class="mini-row"><span>Citas solicitadas</span><span>'+byS.cita+'</span></div><div class="progress"><div style="width:'+(byS.cita/Math.max(1,db.ots.length)*100)+'%;background:var(--blue)"></div></div>'+
+    '<div class="mini-row"><span>En taller</span><span>'+byS.taller+'</span></div><div class="progress"><div style="width:'+(byS.taller/Math.max(1,db.ots.length)*100)+'%;background:var(--amber)"></div></div>'+
+    '<div class="mini-row"><span>Terminadas (histórico)</span><span>'+byS.terminada+'</span></div><div class="progress"><div style="width:'+(byS.terminada/Math.max(1,db.ots.length)*100)+'%"></div></div>';
+}
+function kpi(tile,icon,value,label,trend,red){
+  return '<div class="card kpi hov"><div class="kpi-top"><div class="tile '+tile+'"><svg class="ic"><use href="#'+icon+'"/></svg></div>'+(trend?'<span class="trend"'+(red?' style="background:var(--red-soft);color:#a33"':'')+'>'+esc(trend)+'</span>':'')+'</div><div class="value">'+value+'</div><div class="label">'+esc(label)+'</div></div>';
+}
+
+function renderClients(){
+  const t=$('#cliTable');
+  if(!db.clients.length){t.innerHTML=emptyHTML('#i-users','Aún no hay clientes. Crea el primero con «Nuevo cliente».');return}
+  t.innerHTML='<table><thead><tr><th>Cliente</th><th>Contacto</th><th>Equipos</th><th>Plan</th><th>Próx. servicio</th><th></th></tr></thead><tbody>'+
+    db.clients.map(c=>{
+      const ms=machinesOf(c.id);
+      const worst=ms.length?urgencySort(ms)[0]:null;
+      const wi=worst?dueInfo(worst):null;
+      return '<tr><td><b>'+esc(c.name)+'</b><div class="small">'+esc(c.phone||'')+'</div></td>'+
+        '<td>'+esc(c.contact||'—')+'<div class="small">'+esc(c.email||'')+'</div></td>'+
+        '<td>'+ms.length+'</td><td><span class="badge '+(c.plan==='Care'?'ok':'info')+'">'+esc(c.plan)+'</span></td>'+
+        '<td>'+(wi?esc(wi.label):'—')+'</td>'+
+        '<td><button class="outline-btn" onclick="APP.openClientModal(\''+c.id+'\')"><svg class="ic ic-xs"><use href="#i-cog"/></svg>Editar</button></td></tr>';
+    }).join('')+'</tbody></table>';
+}
+
+function renderMachines(){
+  const clients=db.clients.map(c=>'<button class="filter'+(machFilter===c.id?' active':'')+'" onclick="APP.setMachFilter(\''+c.id+'\')">'+esc(c.name)+' '+machinesOf(c.id).length+'</button>').join('');
+  $('#machFilters').innerHTML='<button class="filter'+(machFilter==='all'?' active':'')+'" onclick="APP.setMachFilter(\'all\')">Todos '+db.machines.length+'</button>'+clients+
+    '<button class="filter'+(machFilter==='alert'?' active':'')+'" onclick="APP.setMachFilter(\'alert\')">Con alerta '+db.machines.filter(m=>dueInfo(m).state!=='ok').length+'</button>';
+  let list=db.machines.slice();
+  if(machFilter==='alert')list=list.filter(m=>dueInfo(m).state!=='ok');
+  else if(machFilter!=='all')list=list.filter(m=>m.clientId===machFilter);
+  $('#machGrid').innerHTML=list.length?list.map(m=>machineCardHTML(m,false)).join(''):emptyHTML('#i-tractor','No hay máquinas con este filtro.');
+}
+function renderWorkshop(){
+  const t=$('#otTable');
+  if(!db.ots.length){t.innerHTML=emptyHTML('#i-wrench','Sin órdenes de trabajo. Crea una desde «Nueva OT» o desde una máquina.');return}
+  const order={cita:0,pendiente:1,taller:2,terminada:3};
+  const rows=db.ots.slice().sort((a,b)=>(order[a.status]-order[b.status])||String(b.id).localeCompare(String(a.id))).map(o=>{
+    const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
+    const badge={pendiente:'info',cita:'warn',taller:'warn',terminada:'ok'}[o.status]||'info';
+    const label={pendiente:'Pendiente',cita:'Cita solicitada',taller:'En taller',terminada:'Terminada'}[o.status]||o.status;
+    const origin=o.origin==='cliente'?'<span class="badge info" style="margin-left:6px">Portal cliente</span>':'';
+    const action=o.status!=='terminada'
+      ?'<button class="solid-btn" onclick="APP.openDone(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button>'
+      :'<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>'+(o.invoiced?'Ver factura':'Factura')+'</button>';
+    const sel='<select class="statussel" onchange="APP.setOTStatus(\''+o.id+'\',this.value)">'+
+      ['cita','pendiente','taller','terminada'].map(s=>'<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+({cita:'Cita solicitada',pendiente:'Pendiente',taller:'En taller',terminada:'Terminada'})[s]+'</option>').join('')+'</select>';
+    return '<tr><td><b>'+esc(o.id)+'</b></td><td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+'</div></td>'+
+      '<td>'+esc(o.type)+'<div class="small">'+esc(o.issue||'')+'</div></td><td>'+esc(o.tech||'—')+origin+'</td><td>'+sel+'</td><td>'+action+'</td></tr>';
+  }).join('');
+  t.innerHTML='<table><thead><tr><th>OT</th><th>Máquina</th><th>Trabajo</th><th>Técnico</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function renderParts(){
+  const t=$('#partsTable');
+  if(!db.parts.length){t.innerHTML=emptyHTML('#i-package','Sin recambios en esta prueba.');return}
+  t.innerHTML='<table><thead><tr><th>Ref.</th><th>Descripción</th><th>Stock</th><th>Mínimo</th><th>Estado</th></tr></thead><tbody>'+
+    db.parts.map(p=>'<tr><td><b>'+esc(p.ref)+'</b></td><td>'+esc(p.name)+'</td>'+
+    '<td><span class="stepper"><button onclick="APP.stockDelta(\''+p.id+'\',-1)">−</button><b style="min-width:30px;text-align:center">'+p.stock+'</b><button onclick="APP.stockDelta(\''+p.id+'\',1)">+</button></span></td>'+
+    '<td>'+p.min+'</td><td>'+(p.stock<p.min?'<span class="badge bad">Reponer</span>':'<span class="badge ok">Correcto</span>')+'</td></tr>').join('')+'</tbody></table>';
+}
+function renderReports(){
+  const done=db.ots.filter(o=>o.status==='terminada');
+  const prev=done.filter(o=>String(o.type).includes('preventi')).length;
+  const totalH=db.machines.reduce((s,m)=>s+Number(m.hours||0),0);
+  $('#repKpis').innerHTML=
+    kpi('t-lime','i-checkc',nf(done.length),'Servicios completados','histórico')+
+    kpi('t-blue','i-clock',(done.length?Math.round(prev/done.length*100):0)+'%','Preventivos sobre total','más previsible')+
+    kpi('t-green','i-tractor',nf(totalH),'Horas gestionadas','todos los equipos')+
+    kpi('t-amber','i-wrench',nf(db.ots.filter(o=>o.origin==='cliente').length),'Solicitudes del portal','clientes activos');
+  const months=[],counts=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);
+    months.push(d.toLocaleDateString('es-ES',{month:'short'}));
+    counts.push(done.filter(o=>{const c=new Date(o.closedAt||o.createdAt);return c.getMonth()===d.getMonth()&&c.getFullYear()===d.getFullYear()}).length);
+  }
+  const max=Math.max(1,...counts);
+  $('#repBars').innerHTML=counts.map(c=>'<div class="bar" style="height:'+Math.max(4,c/max*100)+'%" data-v="'+c+'"></div>').join('');
+  $('#repMonths').innerHTML=months.map(m=>'<span>'+m+'</span>').join('');
+}
+function renderSettings(){
+  const left=trialDaysLeft();
+  $('#setTrial').innerHTML=
+    '<div class="kv"><span>Estado</span><b>'+(left>0?'En curso':'Finalizada')+'</b></div>'+
+    '<div class="kv"><span>Días restantes</span><b>'+Math.max(0,left)+'</b></div>'+
+    '<div class="kv"><span>Inicio</span><b>'+fmtTs(db.meta.trialStart)+'</b></div>'+
+    '<div class="kv"><span>Guardado local</span><b>'+(storageOk?'Activo':'Bloqueado por el navegador')+'</b></div>';
+  const biz=db.meta.biz||{};
+  $('#bizName').value=biz.name||'';$('#bizCif').value=biz.cif||'';
+  $('#bizPhone').value=biz.phone||'';$('#bizCity').value=biz.city||'';
+  $('#setStats').innerHTML=
+    '<div class="kv"><span>Clientes</span><b>'+db.clients.length+'</b></div>'+
+    '<div class="kv"><span>Máquinas</span><b>'+db.machines.length+'</b></div>'+
+    '<div class="kv"><span>Órdenes de trabajo</span><b>'+db.ots.length+'</b></div>'+
+    '<div class="kv"><span>Tamaño de los datos</span><b>'+(storageOk?Math.round((localStorage.getItem(DB_KEY)||'').length/1024)+' KB':'—')+'</b></div>';
+}
+
+/* ---------- PORTAL CLIENTE ---------- */
+function sessionClient(){return db.session.clientId?clientOf(db.session.clientId):null}
+function requireClient(){const c=sessionClient();if(!c){showLogin();return null}return c}
+function renderClientHome(){
+  const c=requireClient();if(!c)return;
+  $('#chGreeting').textContent='Hola, '+(c.contact||c.name);
+  const ms=urgencySort(machinesOf(c.id));
+  const next=ms.length?ms[0]:null;
+  if(next){
+    const info=dueInfo(next);
+    $('#chNextCard').innerHTML='<span class="badge"><svg class="ic ic-xs"><use href="#i-clock"/></svg>Próximo mantenimiento</span>'+
+      '<div class="service-number">'+(info.hoursLeft>0?nf(info.hoursLeft)+' h':'¡Ya!')+'</div>'+
+      '<div style="font-size:13px;color:#d7e7dc">'+esc(mLabel(next))+' · revisión cada '+nf(next.intervalH)+' h</div>'+
+      '<div class="progress" style="background:rgba(255,255,255,.15);margin-top:22px"><div style="width:'+info.pct+'%;background:'+(info.state==='overdue'?'#f1b94c':'var(--lime)')+'"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#cde0d2"><span>'+nf(next.hours)+' h actuales</span><span>'+nf(next.lastServiceHours+next.intervalH)+' h servicio</span></div>'+
+      (info.state!=='ok'?'<div class="action-row" style="justify-content:center"><button class="solid-btn" style="background:var(--lime);color:#17321f" onclick="APP.requestCita(\''+next.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>Pedir cita ahora</button></div>':'');
+  }else{
+    $('#chNextCard').innerHTML='<span class="badge">Sin máquinas</span><div class="service-number">—</div><div style="font-size:13px;color:#d7e7dc">Cuando el taller registre tus equipos, aparecerán aquí.</div>';
+  }
+  const warrantyAct=ms.filter(m=>{const w=dueInfo(m).warrantyLeft;return w!=null&&w>0}).length;
+  const open=ms.reduce((s,m)=>s+db.ots.filter(o=>o.machineId===m.id&&o.status!=='terminada').length,0);
+  $('#chKpis').innerHTML=
+    kpi('t-lime','i-tractor',nf(ms.length),'Equipos registrados')+
+    kpi('t-green','i-shield',nf(warrantyAct),'Garantías activas')+
+    kpi('t-blue','i-clock',nf(ms.filter(m=>dueInfo(m).state!=='ok').length),'Servicios próximos')+
+    kpi('t-amber','i-wrench',nf(open),'Trabajos en curso');
+  const items=ms.filter(m=>dueInfo(m).state!=='ok').map(m=>'<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-clock"/></svg></div><div><div class="tname">'+esc(mLabel(m))+' · '+esc(dueInfo(m).label)+'</div><div class="tdetail">Aceite, filtros, engrase y chequeo general.</div></div><div class="date">pronto</div></div>').join('');
+  const hist=ms.flatMap(m=>m.history.slice(0,2).map(h=>({...h,m}))).sort((a,b)=>b.ts-a.ts).slice(0,4)
+    .map(h=>'<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-checkc"/></svg></div><div><div class="tname">'+esc(h.title)+' · '+esc(mLabel(h.m))+'</div><div class="tdetail">'+esc(h.detail||'')+'</div></div><div class="date">'+fmtTs(h.ts)+'</div></div>').join('');
+  $('#chTimeline').innerHTML=(items||'')+hist||emptyHTML('#i-clock','Sin hitos todavía.');
+}
+function renderClientMachines(){
+  const c=requireClient();if(!c)return;
+  const ms=machinesOf(c.id);
+  $('#cmGrid').innerHTML=ms.length?ms.map(m=>machineCardHTML(m,true)).join(''):emptyHTML('#i-tractor','Aún no tienes equipos registrados.');
+}
+function renderClientServices(){
+  const c=requireClient();if(!c)return;
+  const ms=urgencySort(machinesOf(c.id));
+  $('#csTable').innerHTML=ms.length?'<table><thead><tr><th>Equipo</th><th>Servicio</th><th>Vencimiento</th><th>Estado</th><th></th></tr></thead><tbody>'+
+    ms.map(m=>{
+      const info=dueInfo(m);
+      const already=db.ots.some(o=>o.machineId===m.id&&o.origin==='cliente'&&o.status!=='terminada');
+      return '<tr><td><b>'+esc(mLabel(m))+'</b></td><td>Revisión '+nf(m.intervalH)+' h</td><td>'+esc(info.label)+'</td><td>'+STATE_BADGE[info.state]+'</td>'+
+        '<td>'+(already?'<span class="badge ok">Solicitada</span>':'<button class="solid-btn" onclick="APP.requestCita(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>Pedir cita</button>')+'</td></tr>';
+    }).join('')+'</tbody></table>':emptyHTML('#i-clock','Sin equipos registrados.');
+  const open=db.ots.filter(o=>o.status!=='terminada'&&ms.some(m=>m.id===o.machineId));
+  $('#csOpen').innerHTML=open.length?'<table><thead><tr><th>Solicitud</th><th>Trabajo</th><th>Estado</th></tr></thead><tbody>'+
+    open.map(o=>'<tr><td><b>'+esc(o.id)+'</b></td><td>'+esc(o.type)+'<div class="small">'+esc(o.issue||'')+'</div></td><td>'+({cita:'<span class="badge warn">Cita solicitada</span>',pendiente:'<span class="badge info">Pendiente</span>',taller:'<span class="badge warn">En taller</span>'}[o.status]||'')+'</td></tr>').join('')+'</tbody></table>'
+    :emptyHTML('#i-checkc','Sin trabajos en curso con el taller.');
+}
+function renderClientDocs(){
+  const c=requireClient();if(!c)return;
+  const ms=machinesOf(c.id);
+  $('#cdGrid').innerHTML=ms.length?ms.map(m=>
+    '<div class="card machine-card hov"><div class="machine-hero-icon t-blue"><svg class="ic ic-lg"><use href="#i-file"/></svg></div><h3>Factura de compra</h3><div class="serial">'+esc(mLabel(m))+' · PDF</div><div class="action-row"><button class="outline-btn" onclick="APP.toast(\'Documento de ejemplo — disponible en la versión real\')">Ver</button></div></div>'+
+    '<div class="card machine-card hov"><div class="machine-hero-icon t-green"><svg class="ic ic-lg"><use href="#i-shield"/></svg></div><h3>Certificado de garantía</h3><div class="serial">'+(m.warrantyEnd?'Hasta '+fmtDate(m.warrantyEnd):'Sin garantía')+' · PDF</div><div class="action-row"><button class="outline-btn" onclick="APP.toast(\'Documento de ejemplo — disponible en la versión real\')">Ver</button></div></div>'
+  ).join(''):emptyHTML('#i-file','Sin equipos registrados.');
+}
+function renderClientSupport(){
+  const c=requireClient();if(!c)return;
+  const ms=machinesOf(c.id);
+  $('#supMach').innerHTML=ms.length?ms.map(m=>'<option value="'+m.id+'">'+esc(mLabel(m))+' · '+esc(m.serial||'')+'</option>').join(''):'<option value="">— sin máquinas —</option>';
+}
+
+/* ---------- LOGIN CLIENTE ---------- */
+function showLogin(){
+  const sel=$('#loginSel');
+  sel.innerHTML=db.clients.length?db.clients.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join(''):'<option value="">— aún no hay clientes —</option>';
+  $('#loginOverlay').classList.remove('off');
+}
+function hideLogin(){$('#loginOverlay').classList.add('off')}
+
+/* ---------- CAMPANA ---------- */
+function myNotifs(){
+  if(currentRole==='admin')return db.notifs.filter(n=>n.audience==='admin');
+  const cid=db.session.clientId;
+  return db.notifs.filter(n=>n.audience==='client'&&(!n.clientId||n.clientId===cid));
+}
+function renderBell(){
+  const list=myNotifs();
+  const unread=list.filter(n=>!n.read).length;
+  const bc=$('#notifCount');
+  bc.textContent=unread;bc.classList.toggle('zero',unread===0);
+  $('#npList').innerHTML=list.length?list.slice(0,10).map(n=>
+    '<div class="np-item'+(n.read?'':' unread')+'"><span class="np-ic"><svg class="ic"><use href="#'+n.icon+'"/></svg></span>'+
+    '<div><div class="np-t">'+esc(n.title)+'</div><div class="np-d">'+esc(n.detail)+'</div></div><span class="np-m">'+fmtTs(n.ts)+'</span></div>'
+  ).join(''):'<div class="np-item"><div><div class="np-d">Sin notificaciones.</div></div></div>';
+}
+
+/* ================= APP (ACCIONES) ================= */
+const APP={
+  db:()=>db,
+  gotoPage,toast(msg){toast(msg)},
+  openModal(id){document.getElementById(id).classList.add('show')},
+  closeModal(id){document.getElementById(id).classList.remove('show')},
+
+  toggleRole(){this.switchRole(currentRole==='admin'?'client':'admin')},
+
+  switchRole(role){
+    currentRole=role;
+    document.querySelectorAll('.role-switch button').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
+    document.querySelector('.admin-nav').style.display=role==='admin'?'flex':'none';
+    document.querySelector('.client-nav').style.display=role==='client'?'flex':'none';
+    if(role==='admin'){$('#avatar').textContent='AM'}
+    else{
+      const c=sessionClient();
+      $('#avatar').textContent=c?(c.contact||c.name).split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase():'?';
+      if(!c){showLogin()}
+    }
+    gotoPage(role==='admin'?'dashboard':'clienthome');
+  },
+
+  /* ---- clientes ---- */
+  openClientModal(id){
+    const c=id?clientOf(id):null;
+    $('#mClientTitle').textContent=c?'Editar cliente':'Nuevo cliente';
+    $('#cliId').value=c?c.id:'';
+    $('#cliName').value=c?c.name:'';$('#cliContact').value=c?c.contact:'';
+    $('#cliPhone').value=c?c.phone:'';$('#cliEmail').value=c?c.email:'';
+    $('#cliPlan').value=c?c.plan:'Premium';
+    this.openModal('mClient');
+  },
+  saveClient(){
+    const name=$('#cliName').value.trim();
+    if(!name){this.toast('El nombre del cliente es obligatorio');return}
+    const id=$('#cliId').value;
+    const data={name,contact:$('#cliContact').value.trim(),phone:$('#cliPhone').value.trim(),email:$('#cliEmail').value.trim(),plan:$('#cliPlan').value};
+    if(id){Object.assign(clientOf(id),data)}
+    else{db.clients.push({id:uid('c'),...data});pushNotif('admin','i-users','Cliente registrado',name)}
+    saveDb();this.closeModal('mClient');this.toast(id?'Cliente actualizado':'Cliente registrado');renderAll();
+  },
+
+  /* ---- máquinas ---- */
+  openMachineModal(){
+    if(!db.clients.length){this.toast('Primero crea un cliente');return}
+    $('#maClient').innerHTML=db.clients.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
+    $('#maLastDate').value=todayISO();
+    this.openModal('mMachine');
+  },
+  saveMachine(){
+    const brand=$('#maBrand').value.trim(),model=$('#maModel').value.trim();
+    if(!brand||!model){this.toast('Marca y modelo son obligatorios');return}
+    const hours=Math.max(0,Number($('#maHours').value||0));
+    const m={id:uid('m'),clientId:$('#maClient').value,brand,model,serial:$('#maSerial').value.trim(),
+      iconKey:$('#maIcon').value,hours,lastServiceHours:hours,
+      lastServiceDate:$('#maLastDate').value||todayISO(),
+      intervalH:Math.max(50,Number($('#maIntH').value||500)),intervalM:Math.max(1,Number($('#maIntM').value||12)),
+      warrantyEnd:$('#maWarranty').value||null,stage:'ok',
+      history:[{ts:Date.now(),title:'Equipo registrado',detail:'Pasaporte digital creado · contador de mantenimiento iniciado en '+nf(hours)+' h'}]};
+    db.machines.push(m);
+    pushNotif('admin','i-tractor','Máquina registrada',mLabel(m)+' · SN '+(m.serial||'—'));
+    saveDb();this.closeModal('mMachine');this.toast('Máquina registrada');machFilter='all';renderAll();
+  },
+  setMachFilter(f){machFilter=f;renderMachines()},
+  openHours(machineId){
+    hoursTarget=machineId;
+    const m=machineOf(machineId);if(!m)return;
+    $('#mHoursSub').textContent=mLabel(m)+' · SN '+(m.serial||'—')+' · últimas horas conocidas: '+nf(m.hours)+' h';
+    const inp=$('#mHoursInput');inp.min=m.hours;inp.value=m.hours;
+    this.openModal('mHours');inp.focus();
+  },
+  saveHours(){
+    const m=machineOf(hoursTarget);if(!m)return;
+    const v=Math.max(m.hours,Number($('#mHoursInput').value||m.hours));
+    if(v===m.hours){this.closeModal('mHours');this.toast('Sin cambios');return}
+    const who=currentRole==='client'?'cliente':'taller';
+    m.history.unshift({ts:Date.now(),title:'Actualización de horómetro',detail:nf(m.hours)+' h → '+nf(v)+' h · registrado por '+who});
+    m.hours=v;
+    m.lastHoursUpdate=Date.now();
+    checkStage(m,who);
+    saveDb();this.closeModal('mHours');this.toast('Horómetro actualizado · '+nf(v)+' h');renderAll();
+  },
+  openHistory(id){
+    const m=machineOf(id);if(!m)return;
+    $('#mHistoryTitle').textContent='Historial · '+mLabel(m);
+    $('#mHistoryBody').innerHTML=(m.history&&m.history.length)?m.history.map(h=>
+      '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-clock"/></svg></div><div><div class="tname">'+esc(h.title)+'</div><div class="tdetail">'+esc(h.detail||'')+'</div></div><div class="date">'+fmtTs(h.ts)+'</div></div>'
+    ).join(''):emptyHTML('#i-clock','Sin historial todavía.');
+    this.openModal('mHistory');
+  },
+
+  /* ---- OTs ---- */
+  openOTModal(machineId){
+    if(!db.machines.length){this.toast('Primero registra una máquina');return}
+    $('#otMach').innerHTML=db.machines.map(m=>'<option value="'+m.id+'"'+(m.id===machineId?' selected':'')+'>'+esc(mLabel(m))+' · '+esc(clientOf(m.clientId)?clientOf(m.clientId).name:'')+'</option>').join('');
+    $('#otType').value='Revisión preventiva';$('#otIssue').value='';
+    this.openModal('mOT');
+  },
+  saveOT(){
+    const m=machineOf($('#otMach').value);if(!m){this.toast('Selecciona una máquina');return}
+    db.meta.otSeq=(db.meta.otSeq||4100)+1;
+    const ot={id:'OT-'+db.meta.otSeq,machineId:m.id,type:$('#otType').value,issue:$('#otIssue').value.trim(),status:'pendiente',tech:'',origin:'taller',createdAt:Date.now()};
+    db.ots.unshift(ot);
+    m.history.unshift({ts:Date.now(),title:'OT creada · '+ot.id,detail:ot.type+(ot.issue?' · '+ot.issue:'')});
+    pushNotif('admin','i-clip','OT creada',ot.id+' · '+mLabel(m));
+    saveDb();this.closeModal('mOT');this.toast('Orden '+ot.id+' creada');renderAll();
+  },
+  setOTStatus(id,status){
+    const ot=db.ots.find(o=>o.id===id);if(!ot)return;
+    if(status==='terminada'){this.openDone(id);return}
+    ot.status=status;saveDb();this.toast(ot.id+' → '+status);renderAll();
+  },
+  openDone(id){
+    const ot=db.ots.find(o=>o.id===id);if(!ot)return;
+    const m=machineOf(ot.machineId);if(!m){this.toast('Máquina no encontrada');return}
+    $('#doneId').value=id;
+    $('#mDoneSub').textContent=ot.id+' · '+mLabel(m)+' · '+ot.type;
+    $('#doneTech').value=ot.tech||'';
+    $('#doneHours').value=m.hours;
+    $('#doneWork').value=ot.issue||'';
+    this.openModal('mDone');
+  },
+  completeOT(){
+    const ot=db.ots.find(o=>o.id===$('#doneId').value);if(!ot)return;
+    const m=machineOf(ot.machineId);if(!m)return;
+    ot.status='terminada';ot.closedAt=Date.now();
+    ot.tech=$('#doneTech').value.trim()||'—';
+    const newH=Math.max(m.hours,Number($('#doneHours').value||m.hours));
+    if(newH!==m.hours){m.history.unshift({ts:Date.now(),title:'Actualización de horómetro',detail:nf(m.hours)+' h → '+nf(newH)+' h · en taller'});m.hours=newH}
+    m.lastServiceHours=m.hours;m.lastServiceDate=todayISO();
+    m.history.unshift({ts:Date.now(),title:'Servicio completado · '+ot.id,detail:($('#doneWork').value.trim()||ot.type)+' · técnico '+ot.tech});
+    m.stage=dueInfo(m).state;
+    pushNotif('client','i-checkc','Servicio completado','Tu '+mLabel(m)+' está lista · '+ot.id,m.clientId);
+    pushNotif('admin','i-checkc','OT cerrada',ot.id+' · '+mLabel(m));
+    saveDb();this.closeModal('mDone');this.toast(ot.id+' cerrada · mantenimiento reiniciado');renderAll();
+  },
+
+  /* ---- portal cliente ---- */
+  loginClient(){
+    const v=$('#loginSel').value;
+    if(!v){this.toast('No hay clientes creados todavía');return}
+    db.session.clientId=v;
+    saveDb();hideLogin();
+    this.switchRole('client');
+    this.toast('Sesión iniciada como '+(clientOf(v)?clientOf(v).name:''));
+  },
+  changeClient(){db.session.clientId=null;saveDb();showLogin()},
+  requestCita(machineId){
+    const m=machineOf(machineId);if(!m)return;
+    if(db.ots.some(o=>o.machineId===machineId&&o.origin==='cliente'&&o.status!=='terminada')){this.toast('Ya tienes una solicitud abierta para esta máquina');return}
+    db.meta.otSeq=(db.meta.otSeq||4100)+1;
+    const ot={id:'OT-'+db.meta.otSeq,machineId:m.id,type:'Cita preventiva',issue:'Solicitada desde el portal · '+dueInfo(m).label,status:'cita',tech:'',origin:'cliente',createdAt:Date.now()};
+    db.ots.unshift(ot);
+    m.history.unshift({ts:Date.now(),title:'Cita solicitada · '+ot.id,detail:'El cliente pidió cita desde el portal'});
+    pushNotif('admin','i-cal','Cita solicitada',clientOf(m.clientId)?clientOf(m.clientId).name+' · '+mLabel(m):mLabel(m));
+    saveDb();this.toast('Cita solicitada · te confirmaremos pronto');renderAll();
+  },
+  sendSAT(){
+    const mid=$('#supMach').value;
+    if(!mid){this.toast('Primero registra una máquina');return}
+    const text=$('#supText').value.trim();
+    if(!text){this.toast('Describe brevemente qué está pasando');return}
+    const m=machineOf(mid);
+    db.meta.satSeq=(db.meta.satSeq||80)+1;
+    const ot={id:'SAT-'+db.meta.satSeq,machineId:m.id,type:$('#supType').value,issue:text,status:'pendiente',tech:'',origin:'cliente',createdAt:Date.now()};
+    db.ots.unshift(ot);
+    m.history.unshift({ts:Date.now(),title:'Asistencia solicitada · '+ot.id,detail:text});
+    pushNotif('admin','i-alert','Asistencia solicitada',mLabel(m)+' · '+text.slice(0,60));
+    $('#supText').value='';
+    saveDb();this.toast('Solicitud registrada: '+ot.id);renderAll();
+  },
+
+  /* ---- recambios / datos ---- */
+  stockDelta(id,d){
+    const p=db.parts.find(x=>x.id===id);if(!p)return;
+    p.stock=Math.max(0,p.stock+d);
+    if(p.stock<p.min)pushNotif('admin','i-package','Stock bajo mínimo',p.name+' '+p.ref+' · quedan '+p.stock);
+    saveDb();renderAll();
+  },
+  exportData(){
+    try{
+      const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='terrafleet-datos-'+todayISO()+'.json';
+      document.body.appendChild(a);a.click();a.remove();
+      this.toast('Copia exportada (archivo JSON)');
+    }catch(e){this.toast('No se pudo exportar en este navegador')}
+  },
+  importData(file){
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const obj=JSON.parse(r.result);
+        if(!obj||!Array.isArray(obj.clients)||!Array.isArray(obj.machines)||!obj.meta)throw 0;
+        if(!confirm('Esto sustituirá los datos actuales por los de la copia. ¿Continuar?'))return;
+        db=obj;saveDb();recomputeStages(true);renderAll();
+        this.toast('Datos importados correctamente');
+      }catch(e){this.toast('El archivo no es una copia válida')}
+    };
+    r.readAsText(file);
+  },
+  reseed(){
+    if(!confirm('Se cargarán los datos de ejemplo y se perderán los cambios propios. ¿Continuar?'))return;
+    const keep=db.meta.trialStart;
+    db=seedDb();db.meta.trialStart=keep;db.meta.seenWelcome=true;
+    saveDb();renderAll();this.toast('Datos de ejemplo cargados');
+  },
+  wipe(){
+    if(!confirm('Se borrarán TODOS los datos (clientes, máquinas, OTs). ¿Seguro?'))return;
+    const keep=db.meta.trialStart;
+    db=emptyDb(keep);
+    machFilter='all';currentRole='admin';
+    saveDb();this.switchRole('admin');
+    this.toast('Listo: empieza registrando tu primer cliente');
+  }
+};
+let hoursTarget=null;
+window.APP=APP;
+window.gotoPage=gotoPage;
+
+/* ================= AVISOS WA/EMAIL · CSV · FACTURA · COMPARTIR · LLAMADAS ================= */
+function normHeader(h){return String(h||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
+function parseCSVText(text){
+  const lines=String(text||'').split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)return{rows:[],errors:['El archivo no tiene filas de datos.']};
+  const head=lines[0];
+  const delim=(head.split(';').length>head.split(',').length)?';':',';
+  const cols=head.split(delim).map(normHeader);
+  const ALIAS={cliente:['cliente','clientes','customer','nombrecliente','empresa'],contacto:['contacto','contact','personadecontacto'],telefono:['telefono','tel','phone','movil','celular'],email:['email','correo','mail','emailcliente'],marca:['marca','brand','fabricante'],modelo:['modelo','model'],serie:['serie','serial','sn','numserie','numerodeserie','nserie','numeroserie'],horas:['horas','horometro','hours','horasactuales','horasuso'],revision_horas:['revisionhoras','intervalohoras','cadahoras','serviciocadahoras'],revision_meses:['revisionmeses','intervalomeses','cadameses'],ultimo_servicio:['ultimoservicio','fechaultimoservicio','fechaultimo','ultimarevision'],garantia:['garantia','garantiahasta','fechagarantia','garantiahastafecha']};
+  const map={};Object.keys(ALIAS).forEach(k=>ALIAS[k].forEach(a=>{map[a]=k}));
+  const idx={};cols.forEach((c,i)=>{if(map[c])idx[map[c]]=i});
+  const rows=[],errors=[];
+  if(idx.marca==null&&idx.modelo==null){return{rows:[],errors:['No encuentro las columnas "marca" y "modelo". Descarga la plantilla para ver el formato.']}}
+  for(let i=1;i<lines.length;i++){
+    const cells=lines[i].split(delim).map(s=>s.trim().replace(/^"|"$/g,''));
+    const get=k=>idx[k]!=null?(cells[idx[k]]||''):'';
+    if(!get('marca')&&!get('modelo'))continue;
+    if(!get('cliente')){errors.push('Fila '+(i+1)+': falta el nombre del cliente');continue}
+    rows.push({cliente:get('cliente'),contacto:get('contacto'),telefono:get('telefono'),email:get('email'),marca:get('marca'),modelo:get('modelo'),serie:get('serie'),horas:get('horas'),revision_horas:get('revision_horas'),revision_meses:get('revision_meses'),ultimo_servicio:get('ultimo_servicio'),garantia:get('garantia')});
+  }
+  return {rows,errors};
+}
+function normDate(v){
+  v=String(v||'').trim();if(!v)return null;
+  let m=v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){let y=+m[3];if(y<100)y+=2000;return y+'-'+String(+m[2]).padStart(2,'0')+'-'+String(+m[1]).padStart(2,'0')}
+  m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m)return m[1]+'-'+String(+m[2]).padStart(2,'0')+'-'+String(+m[3]).padStart(2,'0');
+  return null;
+}
+function normHours(v){const d=String(v||'').replace(/[^\d]/g,'');return d?parseInt(d,10):0}
+function phoneDigits(p){let d=String(p||'').replace(/[^\d]/g,'');if(d.length===9&&'6789'.indexOf(d[0])>=0)d='34'+d;return d}
+function alertMsg(m,kind){
+  const c=clientOf(m.clientId),info=dueInfo(m),biz=(db.meta.biz&&db.meta.biz.name)||'TerraFleet';
+  const nombre=(c&&c.contact)?c.contact.split(' ')[0]:(c?c.name:'');
+  if(kind==='hours')return 'Hola '+nombre+', ¿cuántas horas marca ahora tu '+mLabel(m)+'? Respondes con el número (o una foto del cuadro) y lo actualizamos. Gracias — '+biz;
+  const estado=info.state==='overdue'?'tiene la revisión vencida ('+info.label+')':'está cerca de su revisión ('+info.label+')';
+  return 'Hola '+nombre+', te escribimos de '+biz+'. Tu '+mLabel(m)+' '+estado+'. ¿Quieres que agendemos la cita? — Responde y lo organizamos.';
+}
+function b64enc(s){try{return btoa(unescape(encodeURIComponent(s)))}catch(e){return ''}}
+function b64dec(s){try{return decodeURIComponent(escape(atob(s)))}catch(e){return null}}
+let importPending=null;
+
+function renderCalls(){
+  const alertList=urgencySort(db.machines).filter(m=>dueInfo(m).state!=='ok');
+  $('#callsAlert').innerHTML=alertList.length?'<table><thead><tr><th>Equipo</th><th>Cliente</th><th>Situación</th><th>Avisar</th></tr></thead><tbody>'+
+    alertList.map(m=>{const c=clientOf(m.clientId);const info=dueInfo(m);
+      return '<tr><td><div class="machine"><div class="machine-icon"><svg class="ic"><use href="'+iconOf(m)+'"/></svg></div><div><b>'+esc(mLabel(m))+'</b><div class="small">SN '+esc(m.serial||'—')+'</div></div></div></td>'+
+      '<td>'+esc(c?c.name:'—')+'<div class="small">'+esc(c&&c.phone?c.phone:'sin teléfono')+'</div></td>'+
+      '<td>'+esc(info.label)+'</td><td>'+STATE_BADGE[info.state]+'</td>'+
+      '<td><button class="mini-btn wa" title="WhatsApp" onclick="APP.notifyWA(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg></button> <button class="mini-btn" title="Email" onclick="APP.notifyMail(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-mail"/></svg></button></td></tr>'}).join('')+'</tbody></table>'
+    :emptyHTML('#i-checkc','Ninguna máquina en alerta.');
+
+  const stale=db.machines.filter(m=>(Date.now()-(m.lastHoursUpdate||0))>45*86400000);
+  $('#callsHours').innerHTML=stale.length?'<table><thead><tr><th>Equipo</th><th>Cliente</th><th>Última novedad</th><th>Pedir horas</th></tr></thead><tbody>'+
+    stale.map(m=>{const c=clientOf(m.clientId);const days=Math.round((Date.now()-(m.lastHoursUpdate||0))/86400000);
+      return '<tr><td><b>'+esc(mLabel(m))+'</b><div class="small">'+nf(m.hours)+' h registradas</div></td>'+
+      '<td>'+esc(c?c.name:'—')+'<div class="small">'+esc(c&&c.phone?c.phone:'sin teléfono')+'</div></td>'+
+      '<td>hace '+days+' días</td>'+
+      '<td><button class="mini-btn wa" title="WhatsApp" onclick="APP.notifyWA(\''+m.id+'\',\'hours\')"><svg class="ic ic-xs"><use href="#i-send"/></svg></button> <button class="mini-btn" title="Email" onclick="APP.notifyMail(\''+m.id+'\',\'hours\')"><svg class="ic ic-xs"><use href="#i-mail"/></svg></button></td></tr>'}).join('')+'</tbody></table>'
+    :emptyHTML('#i-checkc','Todas las máquinas tienen horas recientes.');
+
+  const warr=db.machines.filter(m=>{const w=dueInfo(m).warrantyLeft;return w!=null&&w>0&&w<=90});
+  $('#callsWarranty').innerHTML=warr.length?'<div class="timeline">'+warr.map(m=>{const c=clientOf(m.clientId);
+    return '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-shield"/></svg></div><div><div class="tname">'+esc(mLabel(m))+'</div><div class="tdetail">'+esc(c?c.name:'—')+' · '+fmtDate(m.warrantyEnd)+' ('+dueInfo(m).warrantyLeft+' días)</div></div></div>'}).join('')+'</div>'
+    :emptyHTML('#i-shield','Ninguna garantía vence en los próximos 90 días.');
+
+  const citas=db.ots.filter(o=>o.status==='cita');
+  $('#callsCitas').innerHTML=citas.length?'<div class="timeline">'+citas.map(o=>{const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
+    return '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-cal"/></svg></div><div><div class="tname">'+esc(o.id)+' · '+esc(m?mLabel(m):'—')+'</div><div class="tdetail">'+esc(c?c.name:'—')+(c&&c.phone?' · <a href="tel:'+esc(c.phone.replace(/\s/g,''))+'">'+esc(c.phone)+'</a>':'')+'</div></div><div class="date">'+fmtTs(o.createdAt)+'</div></div>'}).join('')+'</div>'
+    :emptyHTML('#i-cal','Sin citas pendientes de confirmar.');
+}
+
+Object.assign(APP,{
+  notifyWA(machineId,kind){
+    const m=machineOf(machineId);if(!m)return;
+    const c=clientOf(m.clientId);
+    const digits=c?phoneDigits(c.phone):'';
+    if(!digits){toast('Este cliente no tiene teléfono (edítalo en Clientes)');return}
+    window.open('https://wa.me/'+digits+'?text='+encodeURIComponent(alertMsg(m,kind||'alert')),'_blank');
+    m.history.unshift({ts:Date.now(),title:kind==='hours'?'Petición de horas por WhatsApp':'Aviso de revisión por WhatsApp',detail:(c?c.name:'')+' · '+dueInfo(m).label});
+    saveDb();renderAll();
+  },
+  notifyMail(machineId,kind){
+    const m=machineOf(machineId);if(!m)return;
+    const c=clientOf(m.clientId);
+    if(!c||!c.email){toast('Este cliente no tiene email (edítalo en Clientes)');return}
+    location.href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent('Revisión de tu '+mLabel(m))+'&body='+encodeURIComponent(alertMsg(m,kind||'alert'));
+    m.history.unshift({ts:Date.now(),title:kind==='hours'?'Petición de horas por email':'Aviso de revisión por email',detail:(c?c.name:'')+' · '+dueInfo(m).label});
+    saveDb();renderAll();
+  },
+
+  openImport(){importPending=null;document.getElementById('impPreview').innerHTML='';this.openModal('mImport')},
+  downloadTemplate(){
+    const csv='cliente;contacto;telefono;email;marca;modelo;serie;horas;revision_horas;revision_meses;ultimo_servicio;garantia\n'+
+      'Jardins Example SL;Jordi;+34 600 111 222;jordi@example.com;Kubota;M5-112;KBT-12345;1230;500;12;15/03/2026;30/06/2028\n'+
+      'Jardins Example SL;Jordi;+34 600 111 222;jordi@example.com;Husqvarna;P 525DX;HQ-99887;410;400;12;10/05/2026;\n'+
+      'Finca La Sierra;Ana;+34 600 333 444;ana@sierra.es;John Deere;5075E;JD-556677;680;2000;12;01/09/2025;01/09/2027';
+    const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='plantilla-terrafleet.csv';
+    document.body.appendChild(a);a.click();a.remove();
+  },
+  importCSVText(text){
+    const res=parseCSVText(text);
+    if(!res.rows.length){
+      document.getElementById('impPreview').innerHTML='<div class="notice" style="background:var(--red-soft)"><svg class="ic" style="color:#ac4136"><use href="#i-alert"/></svg><div>'+(res.errors&&res.errors[0]||'No se pudo leer el archivo.')+'</div></div>';
+      return;
+    }
+    importPending=res.rows;
+    document.getElementById('impPreview').innerHTML=
+      '<div class="notice"><svg class="ic"><use href="#i-checkc"/></svg><div><b>'+res.rows.length+' máquinas listas para importar.</b> '+(res.errors.length?('Avisos: '+res.errors.slice(0,3).join(' · ')+((res.errors.length>3)?'…':'')):'Sin errores.')+'</div></div>'+
+      '<div class="action-row"><button class="solid-btn" onclick="APP.doImport()"><svg class="ic ic-xs"><use href="#i-check"/></svg>Importar '+res.rows.length+' máquinas</button></div>';
+  },
+  doImport(){
+    if(!importPending)return;
+    let created=0,updated=0,newClients=0;
+    importPending.forEach(r=>{
+      let c=db.clients.find(x=>x.name.toLowerCase()===r.cliente.toLowerCase());
+      if(!c){c={id:uid('c'),name:r.cliente,contact:r.contacto||'',phone:r.telefono||'',email:r.email||'',plan:'Care'};db.clients.push(c);newClients++}
+      else{if(r.telefono&&!c.phone)c.phone=r.telefono;if(r.email&&!c.email)c.email=r.email;if(r.contacto&&!c.contact)c.contact=r.contacto}
+      const hours=normHours(r.horas);
+      const existing=r.serie?db.machines.find(m=>m.serial&&m.serial.toLowerCase()===r.serie.toLowerCase()):null;
+      if(existing){
+        if(hours>existing.hours)existing.hours=hours;
+        existing.lastHoursUpdate=Date.now();
+        const w=normDate(r.garantia);if(w)existing.warrantyEnd=w;
+        existing.stage=dueInfo(existing).state;
+        existing.history.unshift({ts:Date.now(),title:'Actualizada desde planilla',detail:'Importación CSV · '+nf(hours)+' h'});
+        updated++;
+      }else{
+        db.machines.push({id:uid('m'),clientId:c.id,brand:r.marca||'',model:r.modelo||'',serial:r.serie||'',iconKey:'tractor',
+          hours:hours,lastServiceHours:hours,lastHoursUpdate:Date.now(),
+          lastServiceDate:normDate(r.ultimo_servicio)||todayISO(),
+          intervalH:Math.max(50,normHours(r.revision_horas)||500),intervalM:Math.max(1,normHours(r.revision_meses)||12),
+          warrantyEnd:normDate(r.garantia)||null,stage:'ok',
+          history:[{ts:Date.now(),title:'Importada de planilla',detail:'Alta CSV · '+nf(hours)+' h registradas'}]});
+        created++;
+      }
+    });
+    pushNotif('admin','i-upload','Planilla importada',created+' máquinas nuevas · '+updated+' actualizadas · '+newClients+' clientes nuevos');
+    saveDb();importPending=null;this.closeModal('mImport');
+    toast('Importación lista: '+created+' nuevas, '+updated+' actualizadas');
+    machFilter='all';renderAll();
+  },
+
+  openInvoice(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    document.getElementById('invOtId').value=otId;
+    document.getElementById('invSub').textContent=ot.id+' · '+(m?mLabel(m):'')+' · '+(c?c.name:'');
+    document.getElementById('invBase').value=ot.invoiceBase!=null?ot.invoiceBase:0;
+    document.getElementById('invIva').value=ot.invoiceIva!=null?ot.invoiceIva:21;
+    document.getElementById('invConcept').value=ot.invoiceConcept||(ot.type+(ot.issue?' · '+ot.issue:''));
+    this.invCalc();this.openModal('mInvoice');
+  },
+  invCalc(){
+    const base=Number(document.getElementById('invBase').value||0);
+    const iva=Number(document.getElementById('invIva').value||0);
+    document.getElementById('invTotal').textContent='€ '+(base*(1+iva/100)).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
+  },
+  printInvoice(){
+    const otId=document.getElementById('invOtId').value;
+    const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    const base=Number(document.getElementById('invBase').value||0);
+    const iva=Number(document.getElementById('invIva').value||0);
+    const concept=document.getElementById('invConcept').value||ot.type;
+    if(!ot.invoiceNo){db.meta.invSeq=(db.meta.invSeq||0)+1;ot.invoiceNo='F-'+new Date().getFullYear()+'-'+String(db.meta.invSeq).padStart(3,'0')}
+    ot.invoiced=true;ot.invoiceBase=base;ot.invoiceIva=iva;ot.invoiceConcept=concept;ot.invoiceDate=todayISO();
+    const biz=db.meta.biz||{};
+    const html='<!doctype html><html><head><meta charset="utf-8"><title>'+ot.invoiceNo+'</title>'+
+      '<style>body{font-family:Inter,system-ui,sans-serif;color:#111;margin:0;padding:32px;font-size:13px}'+
+      '.wrap{max-width:700px;margin:0 auto}'+
+      '.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #14402c;padding-bottom:16px}'+
+      '.biz h1{margin:0;font-size:20px;color:#14402c}.biz div{color:#555;margin-top:3px}'+
+      '.num{text-align:right}.num b{font-size:22px;display:block}.num div{color:#555;margin-top:3px}'+
+      '.client{margin:22px 0;background:#f4f7f3;border-radius:10px;padding:14px}'+
+      'table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#777;border-bottom:1px solid #ddd;padding:8px 4px}'+
+      'td{padding:10px 4px;border-bottom:1px solid #eee}.r{text-align:right}'+
+      '.tot td{border:0;font-size:15px;padding:6px 4px}.tot.big td{font-weight:800;font-size:18px;color:#14402c}'+
+      '.foot{margin-top:34px;color:#888;font-size:11px;text-align:center}</style></head><body><div class="wrap">'+
+      '<div class="head"><div class="biz"><h1>'+esc(biz.name||'Mi Empresa S.L.')+'</h1>'+(biz.cif?'<div>CIF: '+esc(biz.cif)+'</div>':'')+(biz.phone?'<div>Tel. '+esc(biz.phone)+'</div>':'')+(biz.city?'<div>'+esc(biz.city)+'</div>':'')+'</div>'+
+      '<div class="num"><b>FACTURA</b><div>'+ot.invoiceNo+'</div><div>'+fmtDate(todayISO())+'</div></div></div>'+
+      '<div class="client"><b>Cliente</b><br>'+esc(c?c.name:'—')+(c&&c.contact?' · '+esc(c.contact):'')+(c&&c.phone?'<br>Tel. '+esc(c.phone):'')+(c&&c.email?' · '+esc(c.email):'')+'<br>'+(m?'Equipo: '+esc(mLabel(m))+' · SN '+esc(m.serial||'—')+' · OT '+esc(ot.id):'')+'</div>'+
+      '<table><thead><tr><th>Concepto</th><th class="r">Importe</th></tr></thead><tbody>'+
+      '<tr><td>'+esc(concept)+'</td><td class="r">'+base.toLocaleString('es-ES',{minimumFractionDigits:2})+' €</td></tr>'+
+      '<tr class="tot"><td class="r">Base imponible</td><td class="r">'+base.toLocaleString('es-ES',{minimumFractionDigits:2})+' €</td></tr>'+
+      '<tr class="tot"><td class="r">IVA ('+iva+'%)</td><td class="r">'+(base*iva/100).toLocaleString('es-ES',{minimumFractionDigits:2})+' €</td></tr>'+
+      '<tr class="tot big"><td class="r">Total</td><td class="r">'+(base*(1+iva/100)).toLocaleString('es-ES',{minimumFractionDigits:2})+' €</td></tr>'+
+      '</tbody></table><div class="foot">Gracias por confiar en nuestro servicio.<br>Documento generado con TerraFleet · demo</div></div></body></html>';
+    saveDb();this.closeModal('mInvoice');renderAll();
+    toast('Factura '+ot.invoiceNo+' generada');
+    const f=document.createElement('iframe');
+    f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    f.srcdoc=html;
+    f.onload=function(){try{f.contentWindow.print()}catch(e){}};
+    document.body.appendChild(f);
+    setTimeout(function(){f.remove()},60000);
+  },
+
+  copyText(t,msg){
+    const done=()=>toast(msg||'Copiado al portapapeles');
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(done).catch(()=>this.showShareBox(t));
+    }else this.showShareBox(t);
+  },
+  showShareBox(t){document.getElementById('shareBox').value=t;this.openModal('mShare');document.getElementById('shareBox').select()},
+  copyAppLink(){this.copyText(location.href.split('#')[0],'Enlace de la app copiado')},
+  copyDataLink(){
+    const b=b64enc(JSON.stringify(db));
+    if(!b||b.length>50000){toast('Demasiados datos para el enlace: usa «Exportar copia (JSON)»');return}
+    this.copyText(location.href.split('#')[0]+'#datos='+b,'Enlace con tus datos copiado');
+  },
+  applyHashData(){
+    if(location.hash.indexOf('#datos=')!==0)return false;
+    const obj=(()=>{try{const raw=b64dec(decodeURIComponent(location.hash.slice(7)));if(!raw)return null;const o=JSON.parse(raw);return (o&&Array.isArray(o.clients)&&Array.isArray(o.machines)&&o.meta)?o:null}catch(e){return null}})();
+    history.replaceState(null,'',location.pathname+location.search);
+    if(!obj){toast('El enlace traía datos pero no se pudieron leer');return false}
+    if(!confirm('Este enlace contiene datos de una copia ('+obj.clients.length+' clientes, '+obj.machines.length+' máquinas). ¿Cargarlos y sustituir los actuales?'))return false;
+    db=obj;
+    db.session={clientId:null};
+    db.meta.biz=db.meta.biz||{name:'Mi Empresa S.L.',cif:'',phone:'',city:''};
+    recomputeStages(true);
+    saveDb();renderAll();
+    toast('Datos del enlace cargados ('+obj.clients.length+' clientes)');
+    return true;
+  },
+  saveBiz(){
+    db.meta.biz={name:document.getElementById('bizName').value.trim()||'Mi Empresa S.L.',cif:document.getElementById('bizCif').value.trim(),phone:document.getElementById('bizPhone').value.trim(),city:document.getElementById('bizCity').value.trim()};
+    saveDb();toast('Datos de la empresa guardados');
+  }
+});
+
+/* ================= WIRING ================= */
+document.querySelectorAll('.nav button[data-page]').forEach(btn=>btn.addEventListener('click',()=>gotoPage(btn.dataset.page)));
+document.querySelectorAll('.role-switch button').forEach(btn=>btn.addEventListener('click',()=>APP.switchRole(btn.dataset.role)));
+document.getElementById('btnSwitchClient').addEventListener('click',()=>APP.changeClient());
+document.getElementById('loginBtn').addEventListener('click',()=>APP.loginClient());
+document.getElementById('welcomeBtn').addEventListener('click',()=>{db.meta.seenWelcome=true;saveDb();$('#welcomeOverlay').classList.add('off')});
+document.getElementById('btnBell').addEventListener('click',e=>{
+  e.stopPropagation();
+  const pop=$('#notifPop');pop.classList.toggle('show');
+  if(pop.classList.contains('show')){
+    myNotifs().forEach(n=>n.read=true);saveDb();renderBell();
+  }
+});
+document.addEventListener('click',e=>{
+  const pop=$('#notifPop');
+  if(pop.classList.contains('show')&&!pop.contains(e.target)&&e.target.id!=='btnBell')pop.classList.remove('show');
+});
+document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+document.getElementById('impFile').addEventListener('change',e=>{if(e.target.files[0])APP.importData(e.target.files[0]);e.target.value=''});
+document.getElementById('impCSV').addEventListener('change',e=>{
+  const f=e.target.files[0];e.target.value='';
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>APP.importCSVText(String(r.result||''));
+  r.readAsText(f,'utf-8');
+});
+
+/* ================= INICIO ================= */
+loadDb();
+db.meta.biz=db.meta.biz||{name:'Mi Empresa S.L.',cif:'',phone:'',city:''};
+db.meta.invSeq=db.meta.invSeq||0;
+recomputeStages(true);
+updateTrialUI();
+renderBell();
+if(!db.meta.seenWelcome)$('#welcomeOverlay').classList.remove('off');
+APP.applyHashData();
+gotoPage('dashboard');
+</script>
+</body>
+</html>
