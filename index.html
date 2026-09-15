@@ -452,8 +452,8 @@
       <section class="page" id="reports">
         <div class="section-head"><div><div class="section-title" style="font-size:24px">Informes</div><div class="section-sub">Calculados con tus datos reales.</div></div></div>
         <div class="kpis" id="repKpis"></div>
-        <div class="card section-card">
-          <div class="section-head"><div><div class="section-title">Servicios completados por mes</div><div class="section-sub">OTs cerradas · últimos 6 meses</div></div></div>
+          <div class="card section-card">
+            <div class="section-head"><div><div class="section-title">Facturado por mes</div><div class="section-sub">OTs facturadas · últimos 6 meses</div></div></div>
           <div class="chart"><div class="bars" id="repBars"></div></div>
           <div class="months" id="repMonths"></div>
         </div>
@@ -611,6 +611,11 @@
       <div><label>Fecha último servicio</label><input class="field" id="maLastDate" type="date" /></div>
       <div><label>Garantía hasta</label><input class="field" id="maWarranty" type="date" /></div>
     </div>
+    <div class="form-row" style="margin-top:12px">
+      <div><label>Precio de venta ($)</label><input class="field" id="maSalePrice" type="number" min="0" step="1000" placeholder="Ej. 95000000" /></div>
+      <div><label>Precio de la revisión ($)</label><input class="field" id="maServicePrice" type="number" min="0" step="1000" placeholder="Ej. 750000" /></div>
+    </div>
+    <p style="font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.5">El precio de revisión prellena la factura cuando cierres una OT preventiva de esta máquina.</p>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mMachine')">Cancelar</button><button class="solid-btn" onclick="APP.saveMachine()">Guardar</button></div>
   </div>
 </div>
@@ -662,7 +667,7 @@
   <div class="modal">
     <h3>Importar planilla (CSV)</h3>
     <p>Exporta tu Excel como CSV y súbelo aquí: creamos los clientes y máquinas automáticamente. Una fila = una máquina.</p>
-    <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>Columnas reconocidas: <b>cliente, contacto, telefono, email, marca, modelo, serie, horas, revision_horas, revision_meses, ultimo_servicio, garantia</b>. Si la máquina ya existe (mismo nº de serie), se actualiza.</div></div>
+    <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>Columnas reconocidas: <b>cliente, contacto, telefono, email, marca, modelo, serie, horas, revision_horas, revision_meses, ultimo_servicio, garantia, precio_venta, precio_servicio</b>. Si la máquina ya existe (mismo nº de serie), se actualiza.</div></div>
     <div class="action-row" style="margin:14px 0">
       <button class="outline-btn" onclick="APP.downloadTemplate()"><svg class="ic ic-xs"><use href="#i-download"/></svg>Descargar plantilla</button>
       <button class="solid-btn" onclick="document.getElementById('impCSV').click()"><svg class="ic ic-xs"><use href="#i-upload"/></svg>Elegir archivo CSV</button>
@@ -766,6 +771,7 @@ const $$=s=>document.querySelectorAll(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const nf=n=>Number(n||0).toLocaleString('es-ES');
+const money=v=>'$ '+Number(v||0).toLocaleString('es-AR',{maximumFractionDigits:0});
 const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function fmtDate(iso){if(!iso)return '—';const p=String(iso).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:iso}
 function addMonths(iso,m){const d=new Date(iso+'T00:00:00');d.setMonth(d.getMonth()+Number(m||0));return d}
@@ -790,17 +796,17 @@ function seedDb(){
       {id:'c4',name:'Serveis Maresme',contact:'Laura Vidal',phone:'+34 610 23 45 67',email:'laura@smareme.cat',plan:'Premium'}
     ],
     machines:[
-      {id:'m1',clientId:'c1',brand:'Kubota',model:'M5-112',serial:'KBT-M5-88421',iconKey:'tractor',hours:491,lastServiceHours:0,lastServiceDate:'2026-03-20',intervalH:500,intervalM:12,warrantyEnd:'2028-06-30',stage:'soon',
+      {id:'m1',clientId:'c1',brand:'Kubota',model:'M5-112',serial:'KBT-M5-88421',iconKey:'tractor',hours:491,lastServiceHours:0,lastServiceDate:'2026-03-20',intervalH:500,intervalM:12,warrantyEnd:'2028-06-30',salePrice:95000000,servicePrice:750000,stage:'soon',
        history:[{ts:now-90*86400000,title:'Servicio 250 h',detail:'Aceite motor + filtros · OT-2026-0291'},{ts:now-160*86400000,title:'Servicio inicial 50 h',detail:'Revisión de entrega · OT-2025-0110'},{ts:now-200*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 30/06/2028'}]},
-      {id:'m2',clientId:'c2',brand:'Toro',model:'Groundsmaster 4500-D',serial:'TR-4500-10231',iconKey:'leaf',hours:1014,lastServiceHours:0,lastServiceDate:'2025-11-01',intervalH:1000,intervalM:24,warrantyEnd:'2024-11-01',stage:'overdue',
+      {id:'m2',clientId:'c2',brand:'Toro',model:'Groundsmaster 4500-D',serial:'TR-4500-10231',iconKey:'leaf',hours:1014,lastServiceHours:0,lastServiceDate:'2025-11-01',intervalH:1000,intervalM:24,warrantyEnd:'2024-11-01',salePrice:62000000,servicePrice:480000,stage:'overdue',
        history:[{ts:now-140*86400000,title:'Servicio 750 h',detail:'Filtros y comprobación hidráulica · OT-2025-0355'},{ts:now-400*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]},
-      {id:'m3',clientId:'c3',brand:'John Deere',model:'5075E',serial:'JD5075-72190',iconKey:'tractor',hours:726,lastServiceHours:0,lastServiceDate:'2025-10-01',intervalH:2000,intervalM:12,warrantyEnd:'2027-02-28',stage:'soon',
+      {id:'m3',clientId:'c3',brand:'John Deere',model:'5075E',serial:'JD5075-72190',iconKey:'tractor',hours:726,lastServiceHours:0,lastServiceDate:'2025-10-01',intervalH:2000,intervalM:12,warrantyEnd:'2027-02-28',salePrice:88000000,servicePrice:700000,stage:'soon',
        history:[{ts:now-180*86400000,title:'Revisión anual',detail:'Aceite, filtros y engrase · OT-2025-0301'},{ts:now-500*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 28/02/2027'}]},
-      {id:'m4',clientId:'c4',brand:'Husqvarna',model:'P 525DX',serial:'HQ525-40117',iconKey:'scissors',hours:358,lastServiceHours:0,lastServiceDate:'2026-06-15',intervalH:400,intervalM:12,warrantyEnd:'2027-11-30',stage:'soon',
+      {id:'m4',clientId:'c4',brand:'Husqvarna',model:'P 525DX',serial:'HQ525-40117',iconKey:'scissors',hours:358,lastServiceHours:0,lastServiceDate:'2026-06-15',intervalH:400,intervalM:12,warrantyEnd:'2027-11-30',salePrice:12000000,servicePrice:180000,stage:'soon',
        history:[{ts:now-70*86400000,title:'Cambio de cuchillas',detail:'Kit BL-4500 · OT-2026-0415'},{ts:now-300*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]},
-      {id:'m5',clientId:'c1',brand:'Stihl',model:'RT 6112 ZL',serial:'ST6112-88912',iconKey:'sprout',hours:81,lastServiceHours:0,lastServiceDate:'2026-06-01',intervalH:200,intervalM:12,warrantyEnd:'2028-09-04',stage:'ok',
+      {id:'m5',clientId:'c1',brand:'Stihl',model:'RT 6112 ZL',serial:'ST6112-88912',iconKey:'sprout',hours:81,lastServiceHours:0,lastServiceDate:'2026-06-01',intervalH:200,intervalM:12,warrantyEnd:'2028-09-04',salePrice:9500000,servicePrice:95000,stage:'ok',
        history:[{ts:now-100*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 04/09/2028'}]},
-      {id:'m6',clientId:'c2',brand:'Avant',model:'635',serial:'AV635-22013',iconKey:'layers',hours:1244,lastServiceHours:0,lastServiceDate:'2025-09-10',intervalH:1500,intervalM:24,warrantyEnd:'2023-09-10',stage:'ok',
+      {id:'m6',clientId:'c2',brand:'Avant',model:'635',serial:'AV635-22013',iconKey:'layers',hours:1244,lastServiceHours:0,lastServiceDate:'2025-09-10',intervalH:1500,intervalM:24,warrantyEnd:'2023-09-10',salePrice:78000000,servicePrice:520000,stage:'ok',
        history:[{ts:now-250*86400000,title:'Servicio 1.000 h',detail:'Transmisión e hidráulico · OT-2025-0280'},{ts:now-800*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]}
     ],
     ots:[
@@ -960,7 +966,8 @@ function machineCardHTML(m,clientView){
     '<div class="meter"><div><div class="small">Horómetro</div><div class="big">'+nf(m.hours)+' h</div></div><button class="outline-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar</button></div>'+
     '<div class="progress"><div style="width:'+info.pct+'%'+(info.state==='overdue'?';background:var(--red)':'')+'"></div></div>'+
     '<div class="small">Revisión cada '+nf(m.intervalH)+' h / '+m.intervalM+' meses · '+esc(info.label)+'</div>'+
-    '<div class="machine-meta"><div class="meta">Garantía<span>'+(info.warrantyLeft==null?'—':(info.warrantyLeft>0?fmtDate(m.warrantyEnd):'Finalizada'))+'</span></div><div class="meta">Último servicio<span>'+fmtDate(m.lastServiceDate)+'</span></div></div>'+
+    '<div class="machine-meta"><div class="meta">Garantía<span>'+(info.warrantyLeft==null?'—':(info.warrantyLeft>0?fmtDate(m.warrantyEnd):'Finalizada'))+'</span></div><div class="meta">Último servicio<span>'+fmtDate(m.lastServiceDate)+'</span></div>'+
+    '<div class="meta">Precio venta<span>'+(m.salePrice?money(m.salePrice):'—')+'</span></div><div class="meta">Precio revisión<span>'+(m.servicePrice?money(m.servicePrice):'—')+'</span></div></div>'+
     '<div class="action-row">'+actions+'</div></div>';
 }
 function emptyHTML(icon,text){return '<div class="empty"><svg class="ic"><use href="'+icon+'"/></svg><div>'+text+'</div></div>'}
@@ -997,14 +1004,16 @@ function kpi(tile,icon,value,label,trend,red){
 function renderClients(){
   const t=$('#cliTable');
   if(!db.clients.length){t.innerHTML=emptyHTML('#i-users','Aún no hay clientes. Crea el primero con «Nuevo cliente».');return}
-  t.innerHTML='<table><thead><tr><th>Cliente</th><th>Contacto</th><th>Equipos</th><th>Plan</th><th>Próx. servicio</th><th></th></tr></thead><tbody>'+
+  t.innerHTML='<table><thead><tr><th>Cliente</th><th>Contacto</th><th>Equipos</th><th>Plan</th><th>Venta equipos</th><th>Próx. servicio</th><th></th></tr></thead><tbody>'+
     db.clients.map(c=>{
       const ms=machinesOf(c.id);
       const worst=ms.length?urgencySort(ms)[0]:null;
       const wi=worst?dueInfo(worst):null;
+      const ventas=ms.reduce((s,m)=>s+Number(m.salePrice||0),0);
       return '<tr><td><b>'+esc(c.name)+'</b><div class="small">'+esc(c.phone||'')+'</div></td>'+
         '<td>'+esc(c.contact||'—')+'<div class="small">'+esc(c.email||'')+'</div></td>'+
         '<td>'+ms.length+'</td><td><span class="badge '+(c.plan==='Care'?'ok':'info')+'">'+esc(c.plan)+'</span></td>'+
+        '<td>'+(ventas?money(ventas):'—')+'</td>'+
         '<td>'+(wi?esc(wi.label):'—')+'</td>'+
         '<td><button class="outline-btn" onclick="APP.openClientModal(\''+c.id+'\')"><svg class="ic ic-xs"><use href="#i-cog"/></svg>Editar</button></td></tr>';
     }).join('')+'</tbody></table>';
@@ -1033,7 +1042,7 @@ function renderWorkshop(){
       :'<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>'+(o.invoiced?'Ver factura':'Factura')+'</button>';
     const sel='<select class="statussel" onchange="APP.setOTStatus(\''+o.id+'\',this.value)">'+
       ['cita','pendiente','taller','terminada'].map(s=>'<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+({cita:'Cita solicitada',pendiente:'Pendiente',taller:'En taller',terminada:'Terminada'})[s]+'</option>').join('')+'</select>';
-    return '<tr><td><b>'+esc(o.id)+'</b></td><td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+'</div></td>'+
+    return '<tr><td><b>'+esc(o.id)+'</b></td><td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div></td>'+
       '<td>'+esc(o.type)+'<div class="small">'+esc(o.issue||'')+'</div></td><td>'+esc(o.tech||'—')+origin+'</td><td>'+sel+'</td><td>'+action+'</td></tr>';
   }).join('');
   t.innerHTML='<table><thead><tr><th>OT</th><th>Máquina</th><th>Trabajo</th><th>Técnico</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
@@ -1048,21 +1057,26 @@ function renderParts(){
 }
 function renderReports(){
   const done=db.ots.filter(o=>o.status==='terminada');
-  const prev=done.filter(o=>String(o.type).includes('preventi')).length;
-  const totalH=db.machines.reduce((s,m)=>s+Number(m.hours||0),0);
+  const prev=done.filter(o=>String(o.type).includes('preventi')||String(o.type).includes('Revisión')).length;
+  const facturado=db.ots.reduce((s,o)=>s+(o.invoiced?(Number(o.invoiceBase||0)*(1+Number(o.invoiceIva||0)/100)):0),0);
+  const ventas=db.machines.reduce((s,m)=>s+Number(m.salePrice||0),0);
   $('#repKpis').innerHTML=
-    kpi('t-lime','i-checkc',nf(done.length),'Servicios completados','histórico')+
-    kpi('t-blue','i-clock',(done.length?Math.round(prev/done.length*100):0)+'%','Preventivos sobre total','más previsible')+
-    kpi('t-green','i-tractor',nf(totalH),'Horas gestionadas','todos los equipos')+
-    kpi('t-amber','i-wrench',nf(db.ots.filter(o=>o.origin==='cliente').length),'Solicitudes del portal','clientes activos');
-  const months=[],counts=[];
+    kpi('t-lime','i-checkc',money(facturado),'Facturado (servicios)','OTs facturadas')+
+    kpi('t-blue','i-tractor',money(ventas),'Ventas registradas','valor de los equipos')+
+    kpi('t-green','i-wrench',nf(done.length),'Servicios completados','histórico')+
+    kpi('t-amber','i-clock',(done.length?Math.round(prev/done.length*100):0)+'%','Preventivos sobre total','más previsible');
+  const months=[],sums=[];
   for(let i=5;i>=0;i--){
     const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);
     months.push(d.toLocaleDateString('es-ES',{month:'short'}));
-    counts.push(done.filter(o=>{const c=new Date(o.closedAt||o.createdAt);return c.getMonth()===d.getMonth()&&c.getFullYear()===d.getFullYear()}).length);
+    sums.push(db.ots.reduce((s,o)=>{
+      if(!o.invoiced)return s;
+      const c=new Date(o.closedAt||o.createdAt);
+      return s+((c.getMonth()===d.getMonth()&&c.getFullYear()===d.getFullYear())?(Number(o.invoiceBase||0)*(1+Number(o.invoiceIva||0)/100)):0);
+    },0));
   }
-  const max=Math.max(1,...counts);
-  $('#repBars').innerHTML=counts.map(c=>'<div class="bar" style="height:'+Math.max(4,c/max*100)+'%" data-v="'+c+'"></div>').join('');
+  const max=Math.max(1,...sums);
+  $('#repBars').innerHTML=sums.map(v=>'<div class="bar" style="height:'+Math.max(4,v/max*100)+'%" data-v="'+money(v)+'"></div>').join('');
   $('#repMonths').innerHTML=months.map(m=>'<span>'+m+'</span>').join('');
 }
 function renderSettings(){
@@ -1239,7 +1253,10 @@ const APP={
       iconKey:$('#maIcon').value,hours,lastServiceHours:hours,
       lastServiceDate:$('#maLastDate').value||todayISO(),
       intervalH:Math.max(50,Number($('#maIntH').value||500)),intervalM:Math.max(1,Number($('#maIntM').value||12)),
-      warrantyEnd:$('#maWarranty').value||null,stage:'ok',
+      warrantyEnd:$('#maWarranty').value||null,
+      salePrice:Math.max(0,Number($('#maSalePrice').value||0))||null,
+      servicePrice:Math.max(0,Number($('#maServicePrice').value||0))||null,
+      stage:'ok',
       history:[{ts:Date.now(),title:'Equipo registrado',detail:'Pasaporte digital creado · contador de mantenimiento iniciado en '+nf(hours)+' h'}]};
     db.machines.push(m);
     pushNotif('admin','i-tractor','Máquina registrada',mLabel(m)+' · SN '+(m.serial||'—'));
@@ -1276,7 +1293,7 @@ const APP={
   /* ---- OTs ---- */
   openOTModal(machineId){
     if(!db.machines.length){this.toast('Primero registra una máquina');return}
-    $('#otMach').innerHTML=db.machines.map(m=>'<option value="'+m.id+'"'+(m.id===machineId?' selected':'')+'>'+esc(mLabel(m))+' · '+esc(clientOf(m.clientId)?clientOf(m.clientId).name:'')+'</option>').join('');
+    $('#otMach').innerHTML=db.machines.map(m=>'<option value="'+m.id+'"'+(m.id===machineId?' selected':'')+'>'+esc(mLabel(m))+(m.serial?' · SN '+esc(m.serial):'')+' · '+esc(clientOf(m.clientId)?clientOf(m.clientId).name:'')+'</option>').join('');
     $('#otType').value='Revisión preventiva';$('#otIssue').value='';
     this.openModal('mOT');
   },
@@ -1298,7 +1315,7 @@ const APP={
     const ot=db.ots.find(o=>o.id===id);if(!ot)return;
     const m=machineOf(ot.machineId);if(!m){this.toast('Máquina no encontrada');return}
     $('#doneId').value=id;
-    $('#mDoneSub').textContent=ot.id+' · '+mLabel(m)+' · '+ot.type;
+    $('#mDoneSub').textContent=ot.id+' · '+mLabel(m)+(m.serial?' · SN '+m.serial:'')+' · '+ot.type;
     $('#doneTech').value=ot.tech||'';
     $('#doneHours').value=m.hours;
     $('#doneWork').value=ot.issue||'';
@@ -1411,7 +1428,7 @@ function parseCSVText(text){
   const head=lines[0];
   const delim=(head.split(';').length>head.split(',').length)?';':',';
   const cols=head.split(delim).map(normHeader);
-  const ALIAS={cliente:['cliente','clientes','customer','nombrecliente','empresa'],contacto:['contacto','contact','personadecontacto'],telefono:['telefono','tel','phone','movil','celular'],email:['email','correo','mail','emailcliente'],marca:['marca','brand','fabricante'],modelo:['modelo','model'],serie:['serie','serial','sn','numserie','numerodeserie','nserie','numeroserie'],horas:['horas','horometro','hours','horasactuales','horasuso'],revision_horas:['revisionhoras','intervalohoras','cadahoras','serviciocadahoras'],revision_meses:['revisionmeses','intervalomeses','cadameses'],ultimo_servicio:['ultimoservicio','fechaultimoservicio','fechaultimo','ultimarevision'],garantia:['garantia','garantiahasta','fechagarantia','garantiahastafecha']};
+  const ALIAS={cliente:['cliente','clientes','customer','nombrecliente','empresa'],contacto:['contacto','contact','personadecontacto'],telefono:['telefono','tel','phone','movil','celular'],email:['email','correo','mail','emailcliente'],marca:['marca','brand','fabricante'],modelo:['modelo','model'],serie:['serie','serial','sn','numserie','numerodeserie','nserie','numeroserie'],horas:['horas','horometro','hours','horasactuales','horasuso'],revision_horas:['revisionhoras','intervalohoras','cadahoras','serviciocadahoras'],revision_meses:['revisionmeses','intervalomeses','cadameses'],ultimo_servicio:['ultimoservicio','fechaultimoservicio','fechaultimo','ultimarevision'],garantia:['garantia','garantiahasta','fechagarantia','garantiahastafecha'],precio_venta:['precioventa','precio','valorventa','preciodeventa'],precio_servicio:['precioservicio','preciorevision','preciodeservicio','tarifa']};
   const map={};Object.keys(ALIAS).forEach(k=>ALIAS[k].forEach(a=>{map[a]=k}));
   const idx={};cols.forEach((c,i)=>{if(map[c])idx[map[c]]=i});
   const rows=[],errors=[];
@@ -1421,7 +1438,7 @@ function parseCSVText(text){
     const get=k=>idx[k]!=null?(cells[idx[k]]||''):'';
     if(!get('marca')&&!get('modelo'))continue;
     if(!get('cliente')){errors.push('Fila '+(i+1)+': falta el nombre del cliente');continue}
-    rows.push({cliente:get('cliente'),contacto:get('contacto'),telefono:get('telefono'),email:get('email'),marca:get('marca'),modelo:get('modelo'),serie:get('serie'),horas:get('horas'),revision_horas:get('revision_horas'),revision_meses:get('revision_meses'),ultimo_servicio:get('ultimo_servicio'),garantia:get('garantia')});
+    rows.push({cliente:get('cliente'),contacto:get('contacto'),telefono:get('telefono'),email:get('email'),marca:get('marca'),modelo:get('modelo'),serie:get('serie'),horas:get('horas'),revision_horas:get('revision_horas'),revision_meses:get('revision_meses'),ultimo_servicio:get('ultimo_servicio'),garantia:get('garantia'),precio_venta:get('precio_venta'),precio_servicio:get('precio_servicio')});
   }
   return {rows,errors};
 }
@@ -1497,10 +1514,10 @@ Object.assign(APP,{
 
   openImport(){importPending=null;document.getElementById('impPreview').innerHTML='';this.openModal('mImport')},
   downloadTemplate(){
-    const csv='cliente;contacto;telefono;email;marca;modelo;serie;horas;revision_horas;revision_meses;ultimo_servicio;garantia\n'+
-      'Jardins Example SL;Jordi;+34 600 111 222;jordi@example.com;Kubota;M5-112;KBT-12345;1230;500;12;15/03/2026;30/06/2028\n'+
-      'Jardins Example SL;Jordi;+34 600 111 222;jordi@example.com;Husqvarna;P 525DX;HQ-99887;410;400;12;10/05/2026;\n'+
-      'Finca La Sierra;Ana;+34 600 333 444;ana@sierra.es;John Deere;5075E;JD-556677;680;2000;12;01/09/2025;01/09/2027';
+    const csv='cliente;contacto;telefono;email;marca;modelo;serie;horas;revision_horas;revision_meses;ultimo_servicio;garantia;precio_venta;precio_servicio\n'+
+      'Jardins Example SL;Jordi;+34 600 111 222;jordi@example.com;Kubota;M5-112;KBT-12345;1230;500;12;15/03/2026;30/06/2028;95000000;750000\n'+
+      'Jardins Example SL;Jordi;+34 600 111 222;jordi@example.com;Husqvarna;P 525DX;HQ-99887;410;400;12;10/05/2026;;12000000;180000\n'+
+      'Finca La Sierra;Ana;+34 600 333 444;ana@sierra.es;John Deere;5075E;JD-556677;680;2000;12;01/09/2025;01/09/2027;88000000;700000';
     const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='plantilla-terrafleet.csv';
     document.body.appendChild(a);a.click();a.remove();
@@ -1529,6 +1546,8 @@ Object.assign(APP,{
         if(hours>existing.hours)existing.hours=hours;
         existing.lastHoursUpdate=Date.now();
         const w=normDate(r.garantia);if(w)existing.warrantyEnd=w;
+        const sp=normHours(r.precio_venta);if(sp)existing.salePrice=sp;
+        const pp=normHours(r.precio_servicio);if(pp)existing.servicePrice=pp;
         existing.stage=dueInfo(existing).state;
         existing.history.unshift({ts:Date.now(),title:'Actualizada desde planilla',detail:'Importación CSV · '+nf(hours)+' h'});
         updated++;
@@ -1537,7 +1556,10 @@ Object.assign(APP,{
           hours:hours,lastServiceHours:hours,lastHoursUpdate:Date.now(),
           lastServiceDate:normDate(r.ultimo_servicio)||todayISO(),
           intervalH:Math.max(50,normHours(r.revision_horas)||500),intervalM:Math.max(1,normHours(r.revision_meses)||12),
-          warrantyEnd:normDate(r.garantia)||null,stage:'ok',
+          warrantyEnd:normDate(r.garantia)||null,
+          salePrice:normHours(r.precio_venta)||null,
+          servicePrice:normHours(r.precio_servicio)||null,
+          stage:'ok',
           history:[{ts:Date.now(),title:'Importada de planilla',detail:'Alta CSV · '+nf(hours)+' h registradas'}]});
         created++;
       }
@@ -1552,8 +1574,9 @@ Object.assign(APP,{
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
     const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
     document.getElementById('invOtId').value=otId;
-    document.getElementById('invSub').textContent=ot.id+' · '+(m?mLabel(m):'')+' · '+(c?c.name:'');
-    document.getElementById('invBase').value=ot.invoiceBase!=null?ot.invoiceBase:0;
+    document.getElementById('invSub').textContent=ot.id+' · '+(m?mLabel(m):'')+(m&&m.serial?' · SN '+m.serial:'')+' · '+(c?c.name:'');
+    const prefill=(ot.invoiceBase!=null)?ot.invoiceBase:((m&&m.servicePrice&&ot.type==='Revisión preventiva')?m.servicePrice:0);
+    document.getElementById('invBase').value=prefill;
     document.getElementById('invIva').value=ot.invoiceIva!=null?ot.invoiceIva:21;
     document.getElementById('invConcept').value=ot.invoiceConcept||(ot.type+(ot.issue?' · '+ot.issue:''));
     this.invCalc();this.openModal('mInvoice');
