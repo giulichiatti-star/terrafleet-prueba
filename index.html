@@ -655,11 +655,11 @@
     <h3>Factura del servicio</h3><p id="invSub"></p>
     <input type="hidden" id="invOtId" />
     <div class="form-row">
-      <div><label>Base imponible (€)</label><input class="field" id="invBase" type="number" min="0" step="0.01" value="0" oninput="APP.invCalc()" /></div>
+      <div><label>Base imponible ($)</label><input class="field" id="invBase" type="number" min="0" step="0.01" value="0" oninput="APP.invCalc()" /></div>
       <div><label>IVA (%)</label><input class="field" id="invIva" type="number" min="0" step="1" value="21" oninput="APP.invCalc()" /></div>
     </div>
     <div style="margin-top:12px"><label>Concepto</label><input class="field" id="invConcept" /></div>
-    <div class="mini-row"><span>Total factura</span><b id="invTotal" style="font-size:19px">€ 0,00</b></div>
+    <div class="mini-row"><span>Total factura</span><b id="invTotal" style="font-size:19px">$ 0,00</b></div>
     <div class="notice"><svg class="ic"><use href="#i-printer"/></svg><div>Se abre la vista de impresión: ahí puedes guardarla como PDF o imprimirla directamente.</div></div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mInvoice')">Cancelar</button><button class="solid-btn" onclick="APP.printInvoice()"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Imprimir / PDF</button></div>
   </div>
@@ -1504,7 +1504,7 @@ Object.assign(APP,{
   invCalc(){
     const base=Number(document.getElementById('invBase').value||0);
     const iva=Number(document.getElementById('invIva').value||0);
-    document.getElementById('invTotal').textContent='€ '+(base*(1+iva/100)).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('invTotal').textContent='$ '+(base*(1+iva/100)).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
   },
   printInvoice(){
     const otId=document.getElementById('invOtId').value;
@@ -1531,10 +1531,10 @@ Object.assign(APP,{
       '<div class="num"><b>FACTURA</b><div>'+ot.invoiceNo+'</div><div>'+fmtDate(todayISO())+'</div></div></div>'+
       '<div class="client"><b>Cliente</b><br>'+esc(c?c.name:'—')+(c&&c.contact?' · '+esc(c.contact):'')+(c&&c.phone?'<br>Tel. '+esc(c.phone):'')+(c&&c.email?' · '+esc(c.email):'')+'<br>'+(m?'Equipo: '+esc(mLabel(m))+' · SN '+esc(m.serial||'—')+' · OT '+esc(ot.id):'')+'</div>'+
       '<table><thead><tr><th>Concepto</th><th class="r">Importe</th></tr></thead><tbody>'+
-      '<tr><td>'+esc(concept)+'</td><td class="r">'+base.toLocaleString('es-ES',{minimumFractionDigits:2})+' €</td></tr>'+
-      '<tr class="tot"><td class="r">Base imponible</td><td class="r">'+base.toLocaleString('es-ES',{minimumFractionDigits:2})+' €</td></tr>'+
-      '<tr class="tot"><td class="r">IVA ('+iva+'%)</td><td class="r">'+(base*iva/100).toLocaleString('es-ES',{minimumFractionDigits:2})+' €</td></tr>'+
-      '<tr class="tot big"><td class="r">Total</td><td class="r">'+(base*(1+iva/100)).toLocaleString('es-ES',{minimumFractionDigits:2})+' €</td></tr>'+
+      '<tr><td>'+esc(concept)+'</td><td class="r">'+'$ '+base.toLocaleString('es-AR',{minimumFractionDigits:2})+'</td></tr>'+
+      '<tr class="tot"><td class="r">Base imponible</td><td class="r">'+'$ '+base.toLocaleString('es-AR',{minimumFractionDigits:2})+'</td></tr>'+
+      '<tr class="tot"><td class="r">IVA ('+iva+'%)</td><td class="r">'+'$ '+(base*iva/100).toLocaleString('es-AR',{minimumFractionDigits:2})+'</td></tr>'+
+      '<tr class="tot big"><td class="r">Total</td><td class="r">'+'$ '+(base*(1+iva/100)).toLocaleString('es-AR',{minimumFractionDigits:2})+'</td></tr>'+
       '</tbody></table><div class="foot">Gracias por confiar en nuestro servicio.<br>Documento generado con TerraFleet · demo</div></div></body></html>';
     saveDb();this.closeModal('mInvoice');renderAll();
     toast('Factura '+ot.invoiceNo+' generada');
