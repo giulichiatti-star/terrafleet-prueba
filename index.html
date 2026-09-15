@@ -377,7 +377,7 @@
         </div>
         <div class="grid2" style="margin-top:18px">
           <div class="card section-card">
-            <div class="section-head"><div><div class="section-title">Cómo funciona esta prueba</div><div class="section-sub">Datos reales: todo lo que registres queda guardado.</div></div></div>
+            <div class="section-head"><div><div class="section-title">Cómo funciona esta prueba</div><div class="section-sub">Datos reales: todo lo que registres queda guardado.</div></div><button class="linkbtn" onclick="window.open('https://giulichiatti-star.github.io/terrafleet-prueba/guia.html','_blank')">Guía ilustrada<svg class="ic ic-xs"><use href="#i-arrowr"/></svg></button></div>
             <div class="timeline">
               <div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-plus"/></svg></div><div><div class="tname">1 · Registra clientes y máquinas</div><div class="tdetail">En «Clientes» y «Maquinaria» puedes dar de alta tus equipos reales con su nº de serie.</div></div></div>
               <div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-gauge"/></svg></div><div><div class="tname">2 · Actualiza las horas</div><div class="tdetail">Cuando las horas llegan al umbral de aviso, se generan notificaciones para ti y para el cliente.</div></div></div>
@@ -716,15 +716,16 @@
 <div class="overlay off" id="welcomeOverlay">
   <div class="welcome-card">
     <div class="np-ic" style="width:54px;height:54px;background:var(--lime);color:#12331f;margin:0 auto"><svg class="ic" style="width:28px;height:28px"><use href="#i-tractor"/></svg></div>
-    <h2>TerraFleet · Prueba real</h2>
-    <p class="lead">Esta versión funciona con <b>datos de verdad</b>: todo lo que registres se guarda en este navegador y sigue aquí cuando vuelvas. Empieza con los datos de ejemplo o crea los tuyos.</p>
+    <h2>TerraFleet · Tu prueba real</h2>
+    <p class="lead">La app arranca <b>vacía</b>: es tuya. Registra tus clientes y máquinas reales y todo quedará guardado en este dispositivo. Si prefieres verla con datos de ejemplo primero, están en <b>Ajustes</b>.</p>
     <div class="wsteps">
-      <div class="wstep"><span class="n">1</span><div><b>Registra</b> un cliente y una máquina reales (o juega con los de ejemplo).</div></div>
-      <div class="wstep"><span class="n">2</span><div><b>Actualiza las horas</b> de una máquina y mira cómo se generan avisos.</div></div>
-      <div class="wstep"><span class="n">3</span><div><b>Cierra una OT</b> en el taller y comprueba cómo se resetea el mantenimiento.</div></div>
-      <div class="wstep"><span class="n">4</span><div><b>Cámbiate a rol «Cliente»</b> y pide una cita desde el portal.</div></div>
+      <div class="wstep"><span class="n">1</span><div><b>Crea tu primer cliente</b> — Clientes → Nuevo cliente.</div></div>
+      <div class="wstep"><span class="n">2</span><div><b>Registra sus máquinas</b> — a mano o importando tu planilla Excel (CSV).</div></div>
+      <div class="wstep"><span class="n">3</span><div><b>Actualiza las horas</b> — los avisos de revisión se generan solos, con WhatsApp ya redactado.</div></div>
+      <div class="wstep"><span class="n">4</span><div><b>Cierra OTs y factura</b> — cada servicio queda en el historial y se imprime su factura.</div></div>
     </div>
-    <button class="bigplay" id="welcomeBtn" style="margin:0 auto">Empezar a probar<svg class="ic ic-sm"><use href="#i-arrowr"/></svg></button>
+    <button class="bigplay" id="welcomeBtn" style="margin:0 auto">Empezar con mis datos<svg class="ic ic-sm"><use href="#i-arrowr"/></svg></button>
+    <div style="margin-top:14px"><a href="https://giulichiatti-star.github.io/terrafleet-prueba/guia.html" target="_blank" style="color:#c9f464;font-size:13px;font-weight:600;text-decoration:none;border-bottom:1px dashed rgba(201,244,100,.5)">Ver la guía ilustrada paso a paso →</a></div>
   </div>
 </div>
 
@@ -831,7 +832,8 @@ function loadDb(){
   if(storageOk){
     try{const raw=localStorage.getItem(DB_KEY);if(raw){db=JSON.parse(raw);return}}catch(e){}
   }
-  db=seedDb();
+  db=emptyDb();
+  db.meta.seenWelcome=false;
   saveDb();
 }
 function saveDb(){if(!storageOk)return;try{localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){}}
