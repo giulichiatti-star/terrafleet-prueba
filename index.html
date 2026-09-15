@@ -79,8 +79,9 @@
   .section-title{font-size:17px;font-weight:700;letter-spacing:-.01em}
   .section-sub{font-size:12px;color:var(--muted);margin-top:3px}
   table{width:100%;border-collapse:collapse}
-  th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;text-align:left;padding:9px 8px}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;text-align:left;padding:9px 8px;white-space:nowrap}
   td{padding:13px 8px;border-top:1px solid var(--line);font-size:13px;vertical-align:middle}
+  .section-card{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .machine{display:flex;gap:11px;align-items:center}
   .machine-icon{width:38px;height:38px;border-radius:11px;background:#edf4ec;display:grid;place-items:center;color:#2f7a52;flex:none}
   .small{font-size:11px;color:var(--muted);margin-top:2px}
@@ -203,6 +204,7 @@
   .setgrid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
   .kv{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;border-top:1px solid var(--line)}
   .kv:first-of-type{border-top:0}
+  .mobile-nav{display:none}
   @media(max-width:1050px){
     .app{grid-template-columns:84px 1fr}
     .sidebar{padding:22px 12px}
@@ -217,15 +219,36 @@
   @media(max-width:720px){
     .app{display:block}.sidebar{display:none}
     .topbar{padding:10px 16px}
-    .content{padding:18px 14px 85px}
-    .kpis{grid-template-columns:1fr 1fr;gap:10px}
-    .machine-grid{grid-template-columns:1fr}
-    .form-row{grid-template-columns:1fr}
+    .content{padding:16px 12px 92px}
+    .crumb{display:none}
     .page-title{font-size:18px}
-    .mobile-nav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;z-index:20;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:7px 4px 10px}
+    .kpis{grid-template-columns:1fr 1fr;gap:10px}
+    .kpi .value{font-size:24px}
+    .machine-grid,#cmGrid{grid-template-columns:1fr}
+    .form-row{grid-template-columns:1fr}
+    td{padding:11px 7px;font-size:12.5px}
+    .section-title{font-size:15px}
+    .welcome h1{font-size:22px}
+    .client-intro h2{font-size:23px}
+    .client-intro{padding:20px}
+    .next-service{padding:20px}
+    .service-number{font-size:27px}
+    .section-card{padding:16px 14px}
+    .modal{padding:18px 16px}
+    .mobile-nav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;z-index:60;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:7px 4px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -6px 24px rgba(10,30,18,.08)}
     .mobile-nav button{border:0;background:transparent;color:var(--muted);font-size:9px;display:flex;flex-direction:column;gap:4px;align-items:center;font-weight:600}
+    .mobile-nav .ic{width:21px;height:21px}
   }
-  .mobile-nav{display:none}
+  #cmGrid{grid-template-columns:repeat(2,1fr)}
+
+  .mmenu{position:fixed;left:0;right:0;bottom:0;z-index:70;background:white;border-radius:22px 22px 0 0;box-shadow:0 -12px 44px rgba(10,30,18,.25);padding:8px 14px calc(18px + env(safe-area-inset-bottom));display:none;max-height:72vh;overflow:auto}
+  .mmenu.show{display:block;animation:modin .25s ease}
+  .mm-head{display:flex;justify-content:space-between;align-items:center;padding:10px 6px 6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .mm-head button{border:0;background:transparent;color:var(--muted);padding:6px}
+  .mm-list button{display:flex;gap:13px;align-items:center;width:100%;border:0;background:transparent;padding:13px 10px;border-radius:12px;font-size:15px;font-weight:550;color:var(--ink);text-align:left}
+  .mm-list button:active,.mm-list button:hover{background:#f2f6f1}
+  .mm-sep{height:1px;background:var(--line);margin:8px 6px}
+</style>
 </style>
 </head>
 <body>
@@ -511,7 +534,7 @@
 
       <section class="page" id="clientmachines">
         <div class="section-head"><div><div class="section-title" style="font-size:24px">Mis equipos</div><div class="section-sub">Actualiza las horas cuando quieras: recalculamos el próximo servicio al instante.</div></div></div>
-        <div class="machine-grid" style="grid-template-columns:repeat(2,1fr)" id="cmGrid"></div>
+        <div class="machine-grid" id="cmGrid"></div>
       </section>
 
       <section class="page" id="clientservices">
@@ -706,10 +729,33 @@
 </div>
 
 <div class="mobile-nav">
-  <button onclick="APP.gotoPage('dashboard')"><svg class="ic"><use href="#i-home"/></svg>Inicio</button>
-  <button onclick="APP.gotoPage('machines')"><svg class="ic"><use href="#i-tractor"/></svg>Equipos</button>
-  <button onclick="APP.gotoPage('workshop')"><svg class="ic"><use href="#i-wrench"/></svg>Taller</button>
+  <button onclick="APP.mmGo(currentRole==='admin'?'dashboard':'clienthome')"><svg class="ic"><use href="#i-home"/></svg>Inicio</button>
+  <button onclick="APP.mmGo(currentRole==='admin'?'machines':'clientmachines')"><svg class="ic"><use href="#i-tractor"/></svg>Equipos</button>
+  <button onclick="APP.mmGo(currentRole==='admin'?'workshop':'clientservices')"><svg class="ic"><use href="#i-wrench"/></svg>Servicio</button>
   <button onclick="APP.toggleRole()"><svg class="ic"><use href="#i-swap"/></svg>Rol</button>
+  <button onclick="APP.openMobileMenu()"><svg class="ic"><use href="#i-grid"/></svg>Menú</button>
+</div>
+
+<div class="mmenu" id="mobileMenu">
+  <div class="mm-head"><span>Menú</span><button onclick="APP.closeMobileMenu()" aria-label="Cerrar"><svg class="ic ic-sm"><use href="#i-x"/></svg></button></div>
+  <div class="mm-list" id="mmAdmin">
+    <button onclick="APP.mmGo('dashboard')"><svg class="ic"><use href="#i-grid"/></svg>Dashboard</button>
+    <button onclick="APP.mmGo('clients')"><svg class="ic"><use href="#i-users"/></svg>Clientes</button>
+    <button onclick="APP.mmGo('machines')"><svg class="ic"><use href="#i-tractor"/></svg>Maquinaria</button>
+    <button onclick="APP.mmGo('workshop')"><svg class="ic"><use href="#i-wrench"/></svg>Taller / OTs</button>
+    <button onclick="APP.mmGo('calls')"><svg class="ic"><use href="#i-phone"/></svg>Llamadas</button>
+    <button onclick="APP.mmGo('parts')"><svg class="ic"><use href="#i-package"/></svg>Recambios</button>
+    <button onclick="APP.mmGo('reports')"><svg class="ic"><use href="#i-chart"/></svg>Informes</button>
+    <button onclick="APP.mmGo('settings')"><svg class="ic"><use href="#i-cog"/></svg>Ajustes y datos</button>
+  </div>
+  <div class="mm-list" id="mmClient" style="display:none">
+    <button onclick="APP.mmGo('clienthome')"><svg class="ic"><use href="#i-home"/></svg>Inicio</button>
+    <button onclick="APP.mmGo('clientmachines')"><svg class="ic"><use href="#i-tractor"/></svg>Mis equipos</button>
+    <button onclick="APP.mmGo('clientservices')"><svg class="ic"><use href="#i-clock"/></svg>Servicios</button>
+    <button onclick="APP.mmGo('clientdocs')"><svg class="ic"><use href="#i-file"/></svg>Documentos</button>
+    <button onclick="APP.mmGo('clientsupport')"><svg class="ic"><use href="#i-headset"/></svg>Soporte</button>
+    <button onclick="APP.closeMobileMenu();APP.changeClient()"><svg class="ic"><use href="#i-swap"/></svg>Cambiar de cliente</button>
+  </div>
 </div>
 
 <script>
@@ -1133,8 +1179,17 @@ const APP={
 
   toggleRole(){this.switchRole(currentRole==='admin'?'client':'admin')},
 
+  mmGo(page){this.closeMobileMenu();gotoPage(page)},
+  openMobileMenu(){
+    document.getElementById('mmAdmin').style.display=currentRole==='admin'?'block':'none';
+    document.getElementById('mmClient').style.display=currentRole==='client'?'block':'none';
+    document.getElementById('mobileMenu').classList.add('show');
+  },
+  closeMobileMenu(){document.getElementById('mobileMenu').classList.remove('show')},
+
   switchRole(role){
     currentRole=role;
+    this.closeMobileMenu();
     document.querySelectorAll('.role-switch button').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
     document.querySelector('.admin-nav').style.display=role==='admin'?'flex':'none';
     document.querySelector('.client-nav').style.display=role==='client'?'flex':'none';
