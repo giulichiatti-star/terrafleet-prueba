@@ -163,6 +163,18 @@
   .chk input{width:15px;height:15px;accent-color:var(--green2)}
   tr.rowlink{cursor:pointer}
   tr.rowlink:hover td{background:#f4f9f2}
+  .agenda-day{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px}
+  .agenda-day:first-child{margin-top:2px}
+  .apt{display:flex;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:8px;background:#fff;transition:.15s}
+  .apt:hover{border-color:var(--green2);box-shadow:0 6px 18px rgba(28,54,41,.07)}
+  .apt-time{width:70px;flex:none;text-align:center;background:var(--lime-soft);border-radius:11px;padding:9px 4px;color:#1c4a33}
+  .apt-time div{font-size:21px;font-weight:800;line-height:1}
+  .apt-time span{font-size:10.5px;font-weight:700;letter-spacing:.04em}
+  .task{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;margin-bottom:7px}
+  .task input[type=checkbox]{width:16px;height:16px;accent-color:var(--green2);flex:none}
+  .task span{flex:1;font-size:13.5px}
+  .task.done span{text-decoration:line-through;color:var(--muted)}
+  .task .mini-btn{border-color:transparent;color:var(--muted)}
   .sigpad{border:1.5px dashed var(--line);border-radius:12px;background:#fff;overflow:hidden;margin-top:4px}
   .sigpad canvas{width:100%;height:150px;display:block;touch-action:none;cursor:crosshair}
   .report-print{font-family:Inter,system-ui,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:26px}
@@ -435,8 +447,13 @@
 
       <section class="page" id="workshop">
         <div class="section-head">
-          <div><div class="section-title" style="font-size:24px">Taller / órdenes de trabajo</div><div class="section-sub">Las solicitudes del portal del cliente aparecen aquí automáticamente.</div></div>
+          <div><div class="section-title" style="font-size:24px">Taller / órdenes de trabajo</div><div class="section-sub">Agenda de turnos y órdenes. Las solicitudes del portal aparecen aquí automáticamente.</div></div>
           <button class="btn dark" onclick="APP.openOTModal()"><svg class="ic ic-sm"><use href="#i-plus"/></svg>Nueva OT</button>
+        </div>
+        <div class="card section-card" style="margin-bottom:16px">
+          <div class="section-head" style="margin-bottom:10px"><div><div class="section-title">Agenda de turnos</div><div class="section-sub">Citas confirmadas y propuestas: cliente, equipo, hora y servicio, de un vistazo.</div></div></div>
+          <div class="filters" id="agendaTabs" style="margin-bottom:12px"></div>
+          <div id="agendaBody"></div>
         </div>
         <div class="card section-card"><div id="otTable"></div></div>
       </section>
@@ -753,6 +770,20 @@
     <div class="action-row"><button class="outline-btn" onclick="APP.sigClear()"><svg class="ic ic-xs"><use href="#i-replay"/></svg>Limpiar firma</button></div>
     <div class="notice"><svg class="ic"><use href="#i-printer"/></svg><div>Se genera el informe profesional con la firma incluida, listo para imprimir o guardar como PDF. La firma queda registrada en la orden.</div></div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mReport')">Cancelar</button><button class="solid-btn" onclick="APP.printReport()"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Generar informe</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mTasks">
+  <div class="modal">
+    <h3>Tareas de la orden</h3><p id="taskSub"></p>
+    <input type="hidden" id="taskOtId" />
+    <div id="taskList"></div>
+    <div class="action-row" style="margin-top:6px">
+      <input class="field" id="taskNew" placeholder="Nueva tarea… Ej. cambio de aceite y filtros" style="flex:1" onkeydown="if(event.key==='Enter')APP.addTask()" />
+      <button class="solid-btn" onclick="APP.addTask()">Añadir</button>
+    </div>
+    <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>Marca cada punto al realizarlo: la lista sale en el <b>informe de servicio firmado</b> como constancia de lo que se hizo.</div></div>
+    <div class="modal-actions"><button class="solid-btn" onclick="APP.closeModal('mTasks')">Listo</button></div>
   </div>
 </div>
 
@@ -1102,7 +1133,64 @@ function renderMachines(){
   else if(machFilter!=='all')list=list.filter(m=>m.clientId===machFilter);
   $('#machGrid').innerHTML=list.length?list.map(m=>machineCardHTML(m,false)).join(''):emptyHTML('#i-tractor','No hay máquinas con este filtro.');
 }
+const MES_CORTO=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const DIA_SEM=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+function dayLabel(iso){
+  const t=new Date();t.setHours(0,0,0,0);
+  const d=new Date(iso+'T00:00:00');
+  const diff=Math.round((d-t)/86400000);
+  if(diff===0)return 'Hoy';
+  if(diff===1)return 'Mañana';
+  return DIA_SEM[d.getDay()]+' '+Number(iso.slice(8,10))+'/'+Number(iso.slice(5,7));
+}
+let agendaRange='7d';
+function agendaData(){
+  const t=new Date();t.setHours(0,0,0,0);
+  const endOf=days=>{const d=new Date(t);d.setDate(d.getDate()+days);return d};
+  const valid=o=>o.status!=='terminada'&&o.proposedDate&&(o.cita==='confirmada'||o.cita==='propuesta');
+  const counts={hoy:0,'7d':0,'30d':0};
+  db.ots.forEach(o=>{
+    if(!valid(o))return;
+    const d=new Date(o.proposedDate+'T00:00:00');
+    if(o.proposedDate===todayISO())counts.hoy++;
+    if(d>=t&&d<endOf(7))counts['7d']++;
+    if(d>=t&&d<endOf(30))counts['30d']++;
+  });
+  let apts=db.ots.filter(valid);
+  if(agendaRange==='hoy')apts=apts.filter(o=>o.proposedDate===todayISO());
+  else{
+    const end=endOf(agendaRange==='7d'?7:30);
+    apts=apts.filter(o=>{const d=new Date(o.proposedDate+'T00:00:00');return d>=t&&d<end});
+  }
+  apts.sort((a,b)=>(a.proposedDate+(a.proposedTime||'')).localeCompare(b.proposedDate+(b.proposedTime||'')));
+  return {counts,apts};
+}
+function renderAgenda(){
+  const {counts,apts}=agendaData();
+  document.getElementById('agendaTabs').innerHTML=
+    '<button class="filter'+(agendaRange==='hoy'?' active':'')+'" onclick="APP.setAgenda(\'hoy\')">Hoy · '+counts.hoy+'</button>'+
+    '<button class="filter'+(agendaRange==='7d'?' active':'')+'" onclick="APP.setAgenda(\'7d\')">Semana · '+counts['7d']+'</button>'+
+    '<button class="filter'+(agendaRange==='30d'?' active':'')+'" onclick="APP.setAgenda(\'30d\')">Mes · '+counts['30d']+'</button>';
+  if(!apts.length){document.getElementById('agendaBody').innerHTML=emptyHTML('#i-cal','Sin turnos en este período. Los que aún no tienen fecha quedan en la tabla de abajo.');return}
+  let body='',last='';
+  apts.forEach(o=>{
+    const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
+    if(o.proposedDate!==last){last=o.proposedDate;body+='<div class="agenda-day">'+dayLabel(o.proposedDate)+'</div>'}
+    const conf=o.cita==='confirmada';
+    body+='<div class="apt">'+
+      '<div class="apt-time"><div>'+Number(o.proposedDate.slice(8,10))+'</div><span>'+MES_CORTO[Number(o.proposedDate.slice(5,7))-1]+(o.proposedTime?' · '+esc(o.proposedTime):'')+'</span></div>'+
+      '<div style="flex:1;min-width:0"><b>'+esc(m?mLabel(m):'—')+'</b> '+(conf?'<span class="badge ok">Confirmado</span>':'<span class="badge warn">Espera respuesta</span>')+
+      '<div class="small">'+esc(c?c.name:'—')+(c&&c.phone?' · '+esc(c.phone):'')+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div>'+
+      '<div class="small">'+esc(o.type)+(o.issue?' · '+esc(o.issue):'')+'</div></div>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+
+      (o.tasks&&o.tasks.length?'<button class="outline-btn" onclick="APP.openTasks(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>'+o.tasks.filter(t=>t.done).length+'/'+o.tasks.length+'</button>':'')+
+      (m?'<button class="mini-btn wa" title="WhatsApp al cliente" onclick="APP.notifyWA(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg></button>':'')+
+      '</div></div>';
+  });
+  document.getElementById('agendaBody').innerHTML=body;
+}
 function renderWorkshop(){
+  renderAgenda();
   const t=$('#otTable');
   if(!db.ots.length){t.innerHTML=emptyHTML('#i-wrench','Sin órdenes de trabajo. Crea una desde «Nueva OT» o desde una máquina.');return}
   const order={cita:0,pendiente:1,taller:2,terminada:3};
@@ -1119,13 +1207,16 @@ function renderWorkshop(){
     };
     const citaBadge=(o.type==='Cita preventiva'&&o.status!=='terminada')?('<div style="margin-top:5px">'+(CITA_STATE[o.cita||'solicitada']||'')+'</div>'):'';
     let action='';
+    const tasksBtn='<button class="outline-btn" onclick="APP.openTasks(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas'+(o.tasks&&o.tasks.length?' '+o.tasks.filter(t=>t.done).length+'/'+o.tasks.length:'')+'</button>';
     if(o.status!=='terminada'){
-      action='<button class="solid-btn" onclick="APP.openDone(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button>';
-      if(o.type==='Cita preventiva'&&o.cita!=='confirmada'){
-        action='<button class="solid-btn" onclick="APP.openTurno(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+(o.cita==='rechazada'?'Nuevo turno':'Proponer turno')+'</button> '+action;
-      }
+      let lbl=null;
+      if(o.type==='Cita preventiva')lbl=(o.cita==='confirmada'?'Cambiar día':(o.cita==='rechazada'?'Nuevo turno':'Proponer turno'));
+      else if(!o.proposedDate)lbl='Agendar';
+      action='<div style="display:flex;gap:6px;flex-wrap:wrap">'+tasksBtn+
+        (lbl?'<button class="solid-btn" onclick="APP.openTurno(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+lbl+'</button>':'')+
+        '<button class="solid-btn" onclick="APP.openDone(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button></div>';
     }else{
-      action='<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+      action='<div style="display:flex;gap:6px;flex-wrap:wrap">'+tasksBtn+
         '<button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button>'+
         '<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>'+(o.invoiced?'Ver factura':'Factura')+'</button></div>';
     }
@@ -1644,6 +1735,43 @@ Object.assign(APP,{
     saveDb();renderAll();
   },
 
+  /* ---- tareas de la orden ---- */
+  setAgenda(k){agendaRange=k;renderAgenda()},
+  openTasks(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
+    const m=machineOf(ot.machineId);
+    document.getElementById('taskSub').textContent=ot.id+' · '+(m?mLabel(m):'')+' · '+ot.type;
+    document.getElementById('taskOtId').value=otId;
+    document.getElementById('taskNew').value='';
+    ot.tasks=ot.tasks||[];
+    this.renderTasks();this.openModal('mTasks');
+  },
+  renderTasks(){
+    const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot)return;
+    const list=document.getElementById('taskList');
+    list.innerHTML=(ot.tasks&&ot.tasks.length)?ot.tasks.map((t,i)=>
+      '<div class="task'+(t.done?' done':'')+'"><input type="checkbox"'+(t.done?' checked':'')+' onchange="APP.toggleTask('+i+')" /><span>'+esc(t.t)+'</span>'+
+      '<button class="mini-btn" title="Quitar" onclick="APP.delTask('+i+')"><svg class="ic ic-xs"><use href="#i-x"/></svg></button></div>'
+    ).join(''):'<div class="small" style="padding:6px 0 2px">Sin tareas todavía — añade qué se tiene que hacer.</div>';
+  },
+  addTask(){
+    const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot)return;
+    const v=document.getElementById('taskNew').value.trim();if(!v)return;
+    ot.tasks=ot.tasks||[];ot.tasks.push({t:v,done:false});
+    document.getElementById('taskNew').value='';
+    saveDb();this.renderTasks();renderPage('workshop');
+  },
+  toggleTask(i){
+    const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot||!ot.tasks||!ot.tasks[i])return;
+    ot.tasks[i].done=!ot.tasks[i].done;
+    saveDb();this.renderTasks();renderPage('workshop');
+  },
+  delTask(i){
+    const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot||!ot.tasks)return;
+    ot.tasks.splice(i,1);
+    saveDb();this.renderTasks();renderPage('workshop');
+  },
+
   /* ---- turnos: proponer / aceptar / rechazar ---- */
   openTurno(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
@@ -1664,14 +1792,19 @@ Object.assign(APP,{
     const time=document.getElementById('turnoTime').value.trim();
     const note=document.getElementById('turnoNote').value.trim();
     const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
-    ot.proposedDate=date;ot.proposedTime=note||time;
-    ot.cita='propuesta';
-    ot.issue='Turno propuesto: '+fmtDate(date)+(time?' '+time:'');
-    m.history.unshift({ts:Date.now(),title:'Turno propuesto · '+ot.id,detail:fmtDate(date)+(time?' '+time:'')+(note?' · '+note:'')});
-    pushNotif('client','i-cal','Turno propuesto para tu '+mLabel(m),fmtDate(date)+(time?' · '+time:'')+(note?' — '+note:'')+'. Acéptalo o recházalo aquí.',m.clientId,{kind:'cita',otId:ot.id});
-    saveDb();this.closeModal('mTurno');
-    this.toast('Propuesta enviada al cliente: '+fmtDate(date));
-    renderAll();
+    ot.proposedDate=date;ot.proposedTime=time;ot.turnoNote=note;
+    ot.issue='Turno: '+fmtDate(date)+(time?' '+time:'')+(note?' · '+note:'');
+    if(ot.origin==='cliente'){
+      ot.cita='propuesta';
+      if(m)m.history.unshift({ts:Date.now(),title:'Turno propuesto · '+ot.id,detail:fmtDate(date)+(time?' '+time:'')+(note?' · '+note:'')});
+      pushNotif('client','i-cal','Turno propuesto para tu '+mLabel(m),fmtDate(date)+(time?' · '+time:'')+(note?' — '+note:'')+'. Acéptalo o recházalo aquí.',m.clientId,{kind:'cita',otId:ot.id});
+      this.toast('Propuesta enviada al cliente: '+fmtDate(date));
+    }else{
+      ot.cita='confirmada';
+      if(m)m.history.unshift({ts:Date.now(),title:'Agendado · '+ot.id,detail:fmtDate(date)+(time?' '+time:'')});
+      this.toast('Turno agendado: '+fmtDate(date));
+    }
+    saveDb();this.closeModal('mTurno');renderAll();
   },
   citaAccept(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot||ot.cita!=='propuesta')return;
@@ -1877,6 +2010,7 @@ Object.assign(APP,{
       '</div>'+
       '<div class="works"><b>Trabajo realizado</b><br>'+esc(ot.workDone||ot.issue||ot.type)+(ot.tech?'<br><span style="color:#555;font-size:12px">Técnico: '+esc(ot.tech)+'</span>':'')+
       (ot.reportObs?'<br><br><b>Observaciones</b><br>'+esc(ot.reportObs):'')+'</div>'+
+      (ot.tasks&&ot.tasks.length?'<div class="works"><b>Tareas</b><br>'+ot.tasks.map(t=>(t.done?'<span style="color:#1c6b3a">✓</span>':'○')+' '+esc(t.t)).join('<br>')+'</div>':'')+
       '<div class="firmas">'+
       '<div class="firma">'+(ot.signature?'<img src="'+ot.signature+'">':'')+'<span>Firma del cliente — '+esc(c?c.name:'')+'</span></div>'+
       '<div class="firma"><span>Por el taller — '+esc(ot.tech||'')+'</span></div>'+
