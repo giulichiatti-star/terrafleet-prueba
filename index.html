@@ -159,6 +159,9 @@
   .invoice-print .tot td{font-weight:700;font-size:15px}
   @media print{body{background:#fff}}
 
+  .chk{display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted);margin-top:7px;cursor:pointer;font-weight:500}
+  .chk input{width:15px;height:15px;accent-color:var(--green2)}
+
   .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(9,24,16,.5);backdrop-filter:blur(3px);z-index:150;align-items:center;justify-content:center;padding:20px}
   .modal-backdrop.show{display:flex}
   .modal{width:min(560px,100%);max-height:88vh;overflow:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 30px 70px rgba(0,0,0,.28);animation:modin .3s cubic-bezier(.2,.7,.3,1)}
@@ -573,17 +576,24 @@
 <!-- MODALS -->
 <div class="modal-backdrop" id="mClient">
   <div class="modal">
-    <h3 id="mClientTitle">Nuevo cliente</h3><p>Datos del cliente y su plan de servicio.</p>
+    <h3 id="mClientTitle">Nuevo cliente</h3><p>Datos del cliente. El CUIT se valida y queda asociado a su ficha.</p>
     <input type="hidden" id="cliId" />
     <div class="form-row">
-      <div><label>Nombre / empresa</label><input class="field" id="cliName" placeholder="Jardins del Vallès SL" /></div>
-      <div><label>Persona de contacto</label><input class="field" id="cliContact" placeholder="Jordi Rovira" /></div>
+      <div><label>Nombre / razón social</label><input class="field" id="cliName" placeholder="Agro Sur SRL" /></div>
+      <div><label>Persona de contacto</label><input class="field" id="cliContact" placeholder="Carlos Gómez" /></div>
     </div>
     <div class="form-row" style="margin-top:12px">
-      <div><label>Teléfono</label><input class="field" id="cliPhone" placeholder="+34 600 000 000" /></div>
+      <div><label>Teléfono (WhatsApp)</label><input class="field" id="cliPhone" placeholder="+54 9 11 5555 1234" /></div>
       <div><label>Email</label><input class="field" id="cliEmail" placeholder="correo@empresa.com" /></div>
     </div>
-    <div style="margin-top:12px"><label>Plan</label><select class="field" id="cliPlan"><option>Care</option><option selected>Premium</option><option>Premium+</option></select></div>
+    <div style="margin-top:12px">
+      <label>CUIT / CUIL</label>
+      <div style="display:flex;gap:8px">
+        <input class="field" id="cliCuit" placeholder="30-12345678-9" style="flex:1" />
+        <button class="outline-btn" id="btnCuit" onclick="APP.lookupCuit()" style="white-space:nowrap"><svg class="ic ic-xs"><use href="#i-check"/></svg>Validar</button>
+      </div>
+      <div class="small" style="margin-top:6px">Valida el dígito verificador y lo deja formateado. La consulta automática a AFIP llegará con la versión en la nube.</div>
+    </div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mClient')">Cancelar</button><button class="solid-btn" onclick="APP.saveClient()">Guardar</button></div>
   </div>
 </div>
@@ -608,14 +618,18 @@
       <div><label>Revisión cada (meses)</label><input class="field" id="maIntM" type="number" min="1" value="12" /></div>
     </div>
     <div class="form-row" style="margin-top:12px">
-      <div><label>Fecha último servicio</label><input class="field" id="maLastDate" type="date" /></div>
+      <div><label>Fecha de entrega</label><input class="field" id="maLastDate" type="date" /></div>
       <div><label>Garantía hasta</label><input class="field" id="maWarranty" type="date" /></div>
     </div>
     <div class="form-row" style="margin-top:12px">
-      <div><label>Precio de venta ($)</label><input class="field" id="maSalePrice" type="number" min="0" step="1000" placeholder="Ej. 95000000" /></div>
-      <div><label>Precio de la revisión ($)</label><input class="field" id="maServicePrice" type="number" min="0" step="1000" placeholder="Ej. 750000" /></div>
+      <div>
+        <label>Precio de venta ($)</label><input class="field" id="maSalePrice" type="number" min="0" step="1000" placeholder="Ej. 95000000" />
+      </div>
+      <div>
+        <label>Precio de la revisión ($)</label><input class="field" id="maServicePrice" type="number" min="0" step="1000" placeholder="Ej. 750000" />
+        <label class="chk"><input type="checkbox" id="maServiceTBD" onchange="document.getElementById('maServicePrice').disabled=this.checked" /> A confirmar — se define al hacer el servicio</label>
+      </div>
     </div>
-    <p style="font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.5">El precio de revisión prellena la factura cuando cierres una OT preventiva de esta máquina.</p>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mMachine')">Cancelar</button><button class="solid-btn" onclick="APP.saveMachine()">Guardar</button></div>
   </div>
 </div>
@@ -667,7 +681,7 @@
   <div class="modal">
     <h3>Importar planilla (CSV)</h3>
     <p>Exporta tu Excel como CSV y súbelo aquí: creamos los clientes y máquinas automáticamente. Una fila = una máquina.</p>
-    <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>Columnas reconocidas: <b>cliente, contacto, telefono, email, marca, modelo, serie, horas, revision_horas, revision_meses, ultimo_servicio, garantia, precio_venta, precio_servicio</b>. Si la máquina ya existe (mismo nº de serie), se actualiza.</div></div>
+    <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>Columnas reconocidas: <b>cliente, cuit, contacto, telefono, email, marca, modelo, serie, horas, revision_horas, revision_meses, entrega (o ultimo_servicio), garantia, precio_venta, precio_servicio</b>. Si la máquina ya existe (mismo nº de serie), se actualiza.</div></div>
     <div class="action-row" style="margin:14px 0">
       <button class="outline-btn" onclick="APP.downloadTemplate()"><svg class="ic ic-xs"><use href="#i-download"/></svg>Descargar plantilla</button>
       <button class="solid-btn" onclick="document.getElementById('impCSV').click()"><svg class="ic ic-xs"><use href="#i-upload"/></svg>Elegir archivo CSV</button>
@@ -682,13 +696,17 @@
   <div class="modal">
     <h3>Factura del servicio</h3><p id="invSub"></p>
     <input type="hidden" id="invOtId" />
-    <div class="form-row">
+    <div class="form-row" style="margin-top:14px">
+      <div><label>Serie (opcional)</label><input class="field" id="invSerie" placeholder="Ej. A" /></div>
+      <div><label>Nº de factura</label><input class="field" id="invNo" placeholder="Se sugiere uno automático" /></div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
       <div><label>Base imponible ($)</label><input class="field" id="invBase" type="number" min="0" step="0.01" value="0" oninput="APP.invCalc()" /></div>
       <div><label>IVA (%)</label><input class="field" id="invIva" type="number" min="0" step="1" value="21" oninput="APP.invCalc()" /></div>
     </div>
     <div style="margin-top:12px"><label>Concepto</label><input class="field" id="invConcept" /></div>
     <div class="mini-row"><span>Total factura</span><b id="invTotal" style="font-size:19px">$ 0,00</b></div>
-    <div class="notice"><svg class="ic"><use href="#i-printer"/></svg><div>Se abre la vista de impresión: ahí puedes guardarla como PDF o imprimirla directamente.</div></div>
+    <div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>La base se prellena con el precio de revisión de la máquina; si estaba «a confirmar», la defines aquí. Se abre la vista de impresión para guardar como PDF.</div></div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mInvoice')">Cancelar</button><button class="solid-btn" onclick="APP.printInvoice()"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Imprimir / PDF</button></div>
   </div>
 </div>
@@ -966,8 +984,8 @@ function machineCardHTML(m,clientView){
     '<div class="meter"><div><div class="small">Horómetro</div><div class="big">'+nf(m.hours)+' h</div></div><button class="outline-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar</button></div>'+
     '<div class="progress"><div style="width:'+info.pct+'%'+(info.state==='overdue'?';background:var(--red)':'')+'"></div></div>'+
     '<div class="small">Revisión cada '+nf(m.intervalH)+' h / '+m.intervalM+' meses · '+esc(info.label)+'</div>'+
-    '<div class="machine-meta"><div class="meta">Garantía<span>'+(info.warrantyLeft==null?'—':(info.warrantyLeft>0?fmtDate(m.warrantyEnd):'Finalizada'))+'</span></div><div class="meta">Último servicio<span>'+fmtDate(m.lastServiceDate)+'</span></div>'+
-    '<div class="meta">Precio venta<span>'+(m.salePrice?money(m.salePrice):'—')+'</span></div><div class="meta">Precio revisión<span>'+(m.servicePrice?money(m.servicePrice):'—')+'</span></div></div>'+
+    '<div class="machine-meta"><div class="meta">Garantía<span>'+(info.warrantyLeft==null?'—':(info.warrantyLeft>0?fmtDate(m.warrantyEnd):'Finalizada'))+'</span></div><div class="meta">Entrega<span>'+fmtDate(m.lastServiceDate)+'</span></div>'+
+    '<div class="meta">Precio venta<span>'+(m.salePrice?money(m.salePrice):'—')+'</span></div><div class="meta">Precio revisión<span>'+(m.servicePriceTBD?'A confirmar':(m.servicePrice?money(m.servicePrice):'—'))+'</span></div></div>'+
     '<div class="action-row">'+actions+'</div></div>';
 }
 function emptyHTML(icon,text){return '<div class="empty"><svg class="ic"><use href="'+icon+'"/></svg><div>'+text+'</div></div>'}
@@ -1004,7 +1022,7 @@ function kpi(tile,icon,value,label,trend,red){
 function renderClients(){
   const t=$('#cliTable');
   if(!db.clients.length){t.innerHTML=emptyHTML('#i-users','Aún no hay clientes. Crea el primero con «Nuevo cliente».');return}
-  t.innerHTML='<table><thead><tr><th>Cliente</th><th>Contacto</th><th>Equipos</th><th>Plan</th><th>Venta equipos</th><th>Próx. servicio</th><th></th></tr></thead><tbody>'+
+  t.innerHTML='<table><thead><tr><th>Cliente</th><th>Contacto</th><th>CUIT</th><th>Equipos</th><th>Venta equipos</th><th>Próx. servicio</th><th></th></tr></thead><tbody>'+
     db.clients.map(c=>{
       const ms=machinesOf(c.id);
       const worst=ms.length?urgencySort(ms)[0]:null;
@@ -1012,7 +1030,8 @@ function renderClients(){
       const ventas=ms.reduce((s,m)=>s+Number(m.salePrice||0),0);
       return '<tr><td><b>'+esc(c.name)+'</b><div class="small">'+esc(c.phone||'')+'</div></td>'+
         '<td>'+esc(c.contact||'—')+'<div class="small">'+esc(c.email||'')+'</div></td>'+
-        '<td>'+ms.length+'</td><td><span class="badge '+(c.plan==='Care'?'ok':'info')+'">'+esc(c.plan)+'</span></td>'+
+        '<td>'+esc(c.cuit||'—')+'</td>'+
+        '<td>'+ms.length+'</td>'+
         '<td>'+(ventas?money(ventas):'—')+'</td>'+
         '<td>'+(wi?esc(wi.label):'—')+'</td>'+
         '<td><button class="outline-btn" onclick="APP.openClientModal(\''+c.id+'\')"><svg class="ic ic-xs"><use href="#i-cog"/></svg>Editar</button></td></tr>';
@@ -1225,14 +1244,25 @@ const APP={
     $('#cliId').value=c?c.id:'';
     $('#cliName').value=c?c.name:'';$('#cliContact').value=c?c.contact:'';
     $('#cliPhone').value=c?c.phone:'';$('#cliEmail').value=c?c.email:'';
-    $('#cliPlan').value=c?c.plan:'Premium';
+    $('#cliCuit').value=c?(c.cuit||''):'';
     this.openModal('mClient');
+  },
+  async lookupCuit(){
+    const input=document.getElementById('cliCuit');
+    const raw=String(input.value||'').replace(/\D/g,'');
+    if(raw.length!==11){toast('El CUIT debe tener 11 dígitos');return}
+    const mult=[5,4,3,2,7,6,5,4,3,2];
+    let s=0;for(let i=0;i<10;i++)s+=Number(raw[i])*mult[i];
+    let ver=11-(s%11);if(ver===11)ver=0;if(ver===10)ver=9;
+    if(ver!==Number(raw[10])){toast('CUIT inválido: el dígito verificador no coincide');return}
+    input.value=raw.slice(0,2)+'-'+raw.slice(2,10)+'-'+raw.slice(10);
+    toast('CUIT válido ✓ ('+input.value+')');
   },
   saveClient(){
     const name=$('#cliName').value.trim();
     if(!name){this.toast('El nombre del cliente es obligatorio');return}
     const id=$('#cliId').value;
-    const data={name,contact:$('#cliContact').value.trim(),phone:$('#cliPhone').value.trim(),email:$('#cliEmail').value.trim(),plan:$('#cliPlan').value};
+    const data={name,contact:$('#cliContact').value.trim(),phone:$('#cliPhone').value.trim(),email:$('#cliEmail').value.trim(),cuit:$('#cliCuit').value.trim()};
     if(id){Object.assign(clientOf(id),data)}
     else{db.clients.push({id:uid('c'),...data});pushNotif('admin','i-users','Cliente registrado',name)}
     saveDb();this.closeModal('mClient');this.toast(id?'Cliente actualizado':'Cliente registrado');renderAll();
@@ -1243,21 +1273,25 @@ const APP={
     if(!db.clients.length){this.toast('Primero crea un cliente');return}
     $('#maClient').innerHTML=db.clients.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
     $('#maLastDate').value=todayISO();
+    $('#maServiceTBD').checked=false;
+    $('#maServicePrice').disabled=false;
     this.openModal('mMachine');
   },
   saveMachine(){
     const brand=$('#maBrand').value.trim(),model=$('#maModel').value.trim();
     if(!brand||!model){this.toast('Marca y modelo son obligatorios');return}
     const hours=Math.max(0,Number($('#maHours').value||0));
+    const tbd=$('#maServiceTBD').checked;
     const m={id:uid('m'),clientId:$('#maClient').value,brand,model,serial:$('#maSerial').value.trim(),
       iconKey:$('#maIcon').value,hours,lastServiceHours:hours,
       lastServiceDate:$('#maLastDate').value||todayISO(),
       intervalH:Math.max(50,Number($('#maIntH').value||500)),intervalM:Math.max(1,Number($('#maIntM').value||12)),
       warrantyEnd:$('#maWarranty').value||null,
       salePrice:Math.max(0,Number($('#maSalePrice').value||0))||null,
-      servicePrice:Math.max(0,Number($('#maServicePrice').value||0))||null,
+      servicePrice:tbd?null:(Math.max(0,Number($('#maServicePrice').value||0))||null),
+      servicePriceTBD:tbd,
       stage:'ok',
-      history:[{ts:Date.now(),title:'Equipo registrado',detail:'Pasaporte digital creado · contador de mantenimiento iniciado en '+nf(hours)+' h'}]};
+      history:[{ts:Date.now(),title:'Equipo registrado',detail:'Pasaporte digital creado · entrega '+fmtDate($('#maLastDate').value||todayISO())+' · contador iniciado en '+nf(hours)+' h'}]};
     db.machines.push(m);
     pushNotif('admin','i-tractor','Máquina registrada',mLabel(m)+' · SN '+(m.serial||'—'));
     saveDb();this.closeModal('mMachine');this.toast('Máquina registrada');machFilter='all';renderAll();
@@ -1428,7 +1462,7 @@ function parseCSVText(text){
   const head=lines[0];
   const delim=(head.split(';').length>head.split(',').length)?';':',';
   const cols=head.split(delim).map(normHeader);
-  const ALIAS={cliente:['cliente','clientes','customer','nombrecliente','empresa'],contacto:['contacto','contact','personadecontacto'],telefono:['telefono','tel','phone','movil','celular'],email:['email','correo','mail','emailcliente'],marca:['marca','brand','fabricante'],modelo:['modelo','model'],serie:['serie','serial','sn','numserie','numerodeserie','nserie','numeroserie'],horas:['horas','horometro','hours','horasactuales','horasuso'],revision_horas:['revisionhoras','intervalohoras','cadahoras','serviciocadahoras'],revision_meses:['revisionmeses','intervalomeses','cadameses'],ultimo_servicio:['ultimoservicio','fechaultimoservicio','fechaultimo','ultimarevision'],garantia:['garantia','garantiahasta','fechagarantia','garantiahastafecha'],precio_venta:['precioventa','precio','valorventa','preciodeventa'],precio_servicio:['precioservicio','preciorevision','preciodeservicio','tarifa']};
+  const ALIAS={cliente:['cliente','clientes','customer','nombrecliente','empresa'],cuit:['cuit','cuil','cuitcliente','cuitcuil'],contacto:['contacto','contact','personadecontacto'],telefono:['telefono','tel','phone','movil','celular'],email:['email','correo','mail','emailcliente'],marca:['marca','brand','fabricante'],modelo:['modelo','model'],serie:['serie','serial','sn','numserie','numerodeserie','nserie','numeroserie'],horas:['horas','horometro','hours','horasactuales','horasuso'],revision_horas:['revisionhoras','intervalohoras','cadahoras','serviciocadahoras'],revision_meses:['revisionmeses','intervalomeses','cadameses'],ultimo_servicio:['ultimoservicio','fechaultimoservicio','fechaultimo','ultimarevision','entrega','fechaentrega'],garantia:['garantia','garantiahasta','fechagarantia','garantiahastafecha'],precio_venta:['precioventa','precio','valorventa','preciodeventa'],precio_servicio:['precioservicio','preciorevision','preciodeservicio','tarifa']};
   const map={};Object.keys(ALIAS).forEach(k=>ALIAS[k].forEach(a=>{map[a]=k}));
   const idx={};cols.forEach((c,i)=>{if(map[c])idx[map[c]]=i});
   const rows=[],errors=[];
@@ -1438,7 +1472,7 @@ function parseCSVText(text){
     const get=k=>idx[k]!=null?(cells[idx[k]]||''):'';
     if(!get('marca')&&!get('modelo'))continue;
     if(!get('cliente')){errors.push('Fila '+(i+1)+': falta el nombre del cliente');continue}
-    rows.push({cliente:get('cliente'),contacto:get('contacto'),telefono:get('telefono'),email:get('email'),marca:get('marca'),modelo:get('modelo'),serie:get('serie'),horas:get('horas'),revision_horas:get('revision_horas'),revision_meses:get('revision_meses'),ultimo_servicio:get('ultimo_servicio'),garantia:get('garantia'),precio_venta:get('precio_venta'),precio_servicio:get('precio_servicio')});
+    rows.push({cliente:get('cliente'),cuit:get('cuit'),contacto:get('contacto'),telefono:get('telefono'),email:get('email'),marca:get('marca'),modelo:get('modelo'),serie:get('serie'),horas:get('horas'),revision_horas:get('revision_horas'),revision_meses:get('revision_meses'),ultimo_servicio:get('ultimo_servicio'),garantia:get('garantia'),precio_venta:get('precio_venta'),precio_servicio:get('precio_servicio')});
   }
   return {rows,errors};
 }
@@ -1514,10 +1548,10 @@ Object.assign(APP,{
 
   openImport(){importPending=null;document.getElementById('impPreview').innerHTML='';this.openModal('mImport')},
   downloadTemplate(){
-    const csv='cliente;contacto;telefono;email;marca;modelo;serie;horas;revision_horas;revision_meses;ultimo_servicio;garantia;precio_venta;precio_servicio\n'+
-      'Jardins Example SL;Jordi;+34 600 111 222;jordi@example.com;Kubota;M5-112;KBT-12345;1230;500;12;15/03/2026;30/06/2028;95000000;750000\n'+
-      'Jardins Example SL;Jordi;+34 600 111 222;jordi@example.com;Husqvarna;P 525DX;HQ-99887;410;400;12;10/05/2026;;12000000;180000\n'+
-      'Finca La Sierra;Ana;+34 600 333 444;ana@sierra.es;John Deere;5075E;JD-556677;680;2000;12;01/09/2025;01/09/2027;88000000;700000';
+    const csv='cliente;cuit;contacto;telefono;email;marca;modelo;serie;horas;revision_horas;revision_meses;entrega;garantia;precio_venta;precio_servicio\n'+
+      'Agro Sur SRL;30-70123456-9;Carlos Gómez;+54 9 11 5555 1234;carlos@agrosur.com.ar;Kubota;M5-112;KBT-12345;1230;500;12;15/03/2026;30/06/2028;95000000;750000\n'+
+      'Agro Sur SRL;30-70123456-9;Carlos Gómez;+54 9 11 5555 1234;carlos@agrosur.com.ar;Husqvarna;P 525DX;HQ-99887;410;400;12;10/05/2026;;12000000;\n'+
+      'Finca La Sierra;30-70999888-4;Ana Vila;+54 9 11 4444 3333;ana@sierra.com.ar;John Deere;5075E;JD-556677;680;2000;12;01/09/2025;01/09/2027;88000000;700000';
     const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='plantilla-terrafleet.csv';
     document.body.appendChild(a);a.click();a.remove();
@@ -1538,8 +1572,8 @@ Object.assign(APP,{
     let created=0,updated=0,newClients=0;
     importPending.forEach(r=>{
       let c=db.clients.find(x=>x.name.toLowerCase()===r.cliente.toLowerCase());
-      if(!c){c={id:uid('c'),name:r.cliente,contact:r.contacto||'',phone:r.telefono||'',email:r.email||'',plan:'Care'};db.clients.push(c);newClients++}
-      else{if(r.telefono&&!c.phone)c.phone=r.telefono;if(r.email&&!c.email)c.email=r.email;if(r.contacto&&!c.contact)c.contact=r.contacto}
+      if(!c){c={id:uid('c'),name:r.cliente,cuit:r.cuit||'',contact:r.contacto||'',phone:r.telefono||'',email:r.email||''};db.clients.push(c);newClients++}
+      else{if(r.telefono&&!c.phone)c.phone=r.telefono;if(r.email&&!c.email)c.email=r.email;if(r.contacto&&!c.contact)c.contact=r.contacto;if(r.cuit&&!c.cuit)c.cuit=r.cuit}
       const hours=normHours(r.horas);
       const existing=r.serie?db.machines.find(m=>m.serial&&m.serial.toLowerCase()===r.serie.toLowerCase()):null;
       if(existing){
@@ -1575,8 +1609,10 @@ Object.assign(APP,{
     const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
     document.getElementById('invOtId').value=otId;
     document.getElementById('invSub').textContent=ot.id+' · '+(m?mLabel(m):'')+(m&&m.serial?' · SN '+m.serial:'')+' · '+(c?c.name:'');
-    const prefill=(ot.invoiceBase!=null)?ot.invoiceBase:((m&&m.servicePrice&&ot.type==='Revisión preventiva')?m.servicePrice:0);
+    const prefill=(ot.invoiceBase!=null)?ot.invoiceBase:((m&&m.servicePrice&&!m.servicePriceTBD&&ot.type==='Revisión preventiva')?m.servicePrice:0);
     document.getElementById('invBase').value=prefill;
+    document.getElementById('invSerie').value=ot.invoiceSerie||'';
+    document.getElementById('invNo').value=ot.invoiceNo||('F-'+new Date().getFullYear()+'-'+String((db.meta.invSeq||0)+1).padStart(3,'0'));
     document.getElementById('invIva').value=ot.invoiceIva!=null?ot.invoiceIva:21;
     document.getElementById('invConcept').value=ot.invoiceConcept||(ot.type+(ot.issue?' · '+ot.issue:''));
     this.invCalc();this.openModal('mInvoice');
@@ -1593,7 +1629,12 @@ Object.assign(APP,{
     const base=Number(document.getElementById('invBase').value||0);
     const iva=Number(document.getElementById('invIva').value||0);
     const concept=document.getElementById('invConcept').value||ot.type;
-    if(!ot.invoiceNo){db.meta.invSeq=(db.meta.invSeq||0)+1;ot.invoiceNo='F-'+new Date().getFullYear()+'-'+String(db.meta.invSeq).padStart(3,'0')}
+    const serie=document.getElementById('invSerie').value.trim();
+    let num=document.getElementById('invNo').value.trim();
+    if(!num){db.meta.invSeq=(db.meta.invSeq||0)+1;num='F-'+new Date().getFullYear()+'-'+String(db.meta.invSeq).padStart(3,'0')}
+    else if(!ot.invoiceNo){db.meta.invSeq=(db.meta.invSeq||0)+1}
+    ot.invoiceSerie=serie;
+    ot.invoiceNo=(serie?serie+'-':'')+num;
     ot.invoiced=true;ot.invoiceBase=base;ot.invoiceIva=iva;ot.invoiceConcept=concept;ot.invoiceDate=todayISO();
     const biz=db.meta.biz||{};
     const html='<!doctype html><html><head><meta charset="utf-8"><title>'+ot.invoiceNo+'</title>'+
