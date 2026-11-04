@@ -163,6 +163,24 @@
   .chk input{width:15px;height:15px;accent-color:var(--green2)}
   tr.rowlink{cursor:pointer}
   tr.rowlink:hover td{background:#f4f9f2}
+  .wsstat{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px}
+  .schip{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px 11px;background:#fff;cursor:pointer;transition:.15s;position:relative}
+  .schip:hover{border-color:var(--green2);transform:translateY(-1px)}
+  .schip.sel{background:var(--green);border-color:var(--green);color:#fff}
+  .schip .v{font-size:24px;font-weight:800;line-height:1}
+  .schip .l{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.3}
+  .schip.sel .l{color:#cde4d4}
+  .wscal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .wscal .d{border:1.5px solid var(--line);border-radius:13px;padding:9px 4px 8px;text-align:center;background:#fff;cursor:pointer;transition:.15s;position:relative;min-height:64px}
+  .wscal .d:hover{border-color:var(--green2)}
+  .wscal .d.sel{background:var(--green);border-color:var(--green);color:#fff}
+  .wscal .d .dw{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .wscal .d.sel .dw{color:#cde4d4}
+  .wscal .d .dn{font-size:19px;font-weight:800;margin-top:3px}
+  .wscal .d .cnt{position:absolute;top:6px;right:6px;min-width:17px;height:17px;border-radius:99px;background:var(--lime);color:#17321f;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px}
+  .wscal .d.today:not(.sel){border-color:var(--lime);box-shadow:0 0 0 2px rgba(201,244,100,.4)}
+  .req{border-left:4px solid var(--line);background:#fbfdf9;border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:9px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;cursor:pointer}
+  .req:hover{background:#f4f8f1}
   .agenda-day{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px}
   .agenda-day:first-child{margin-top:2px}
   .apt{display:flex;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:8px;background:#fff;transition:.15s}
@@ -258,6 +276,10 @@
     .kpis{grid-template-columns:1fr 1fr;gap:10px}
     .kpi .value{font-size:24px}
     .machine-grid,#cmGrid{grid-template-columns:1fr}
+    .wsstat{grid-template-columns:repeat(3,1fr)}
+    .wscal{grid-template-columns:repeat(7,1fr);gap:5px}
+    .wscal .d{min-height:54px;padding:6px 2px}
+    .wscal .d .dn{font-size:15px}
     .form-row{grid-template-columns:1fr}
     td{padding:11px 7px;font-size:12.5px}
     .section-title{font-size:15px}
@@ -349,7 +371,6 @@
       <button data-page="clients"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span><span>Clientes</span></button>
       <button data-page="machines"><span class="ico"><svg class="ic"><use href="#i-tractor"/></svg></span><span>Maquinaria</span></button>
       <button data-page="workshop"><span class="ico"><svg class="ic"><use href="#i-wrench"/></svg></span><span>Taller / OTs</span></button>
-      <button data-page="calls"><span class="ico"><svg class="ic"><use href="#i-phone"/></svg></span><span>Llamadas</span></button>
       <button data-page="parts"><span class="ico"><svg class="ic"><use href="#i-package"/></svg></span><span>Recambios</span></button>
       <button data-page="reports"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span><span>Informes</span></button>
       <button data-page="settings"><span class="ico"><svg class="ic"><use href="#i-cog"/></svg></span><span>Ajustes y datos</span></button>
@@ -447,35 +468,31 @@
 
       <section class="page" id="workshop">
         <div class="section-head">
-          <div><div class="section-title" style="font-size:24px">Taller / órdenes de trabajo</div><div class="section-sub">Agenda de turnos y órdenes. Las solicitudes del portal aparecen aquí automáticamente.</div></div>
+          <div><div class="section-title" style="font-size:24px">Taller</div><div class="section-sub">Turnos, citas y órdenes — todo el día del taller en una sola pantalla.</div></div>
           <button class="btn dark" onclick="APP.openOTModal()"><svg class="ic ic-sm"><use href="#i-plus"/></svg>Nueva OT</button>
         </div>
-        <div class="card section-card" style="margin-bottom:16px">
-          <div class="section-head" style="margin-bottom:10px"><div><div class="section-title">Agenda de turnos</div><div class="section-sub">Citas confirmadas y propuestas: cliente, equipo, hora y servicio, de un vistazo.</div></div></div>
-          <div class="filters" id="agendaTabs" style="margin-bottom:12px"></div>
-          <div id="agendaBody"></div>
-        </div>
-        <div class="card section-card"><div id="otTable"></div></div>
-      </section>
 
-      <section class="page" id="calls">
-        <div class="section-head">
-          <div><div class="section-title" style="font-size:24px">Llamadas de hoy</div><div class="section-sub">A quién contactar: servicios en alerta, horas sin actualizar, garantías y citas por confirmar. WhatsApp y email ya redactados.</div></div>
-        </div>
+        <div class="wsstat" id="wsStatus"></div>
+
         <div class="card section-card" style="margin-bottom:16px">
-          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Servicios en alerta</div><div class="section-sub">Vencidos o próximos: avisa con un clic.</div></div></div>
-          <div id="callsAlert"></div>
-        </div>
-        <div class="grid2">
-          <div class="card section-card">
-            <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Garantías a vencer</div><div class="section-sub">Próximos 90 días.</div></div></div>
-            <div id="callsWarranty"></div>
+          <div class="section-head" style="margin-bottom:12px">
+            <div><div class="section-title">Calendario de turnos</div><div class="section-sub" id="wsCalSub">Pulsa un día para ver sus turnos y actuar.</div></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="mini-btn" title="Semana anterior" onclick="APP.wsWeek(-1)">‹</button>
+              <button class="outline-btn" onclick="APP.wsWeek(0)">Hoy</button>
+              <button class="mini-btn" title="Semana siguiente" onclick="APP.wsWeek(1)">›</button>
+            </div>
           </div>
-          <div class="card section-card">
-            <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Citas por confirmar</div><div class="section-sub">Solicitudes del portal del cliente.</div></div></div>
-            <div id="callsCitas"></div>
-          </div>
+          <div class="wscal" id="wsCal"></div>
+          <div id="wsDay" style="margin-top:14px"></div>
         </div>
+
+        <div class="card section-card" style="margin-bottom:16px">
+          <div class="section-head" style="margin-bottom:10px"><div><div class="section-title" id="wsReqTitle">Citas y solicitudes</div><div class="section-sub">Lo que piden los clientes y lo que les enviamos a confirmar o cambiar.</div></div></div>
+          <div id="wsReqs"></div>
+        </div>
+
+        <div class="card section-card"><div id="otTable"></div></div>
       </section>
 
       <section class="page" id="parts">
@@ -692,7 +709,7 @@
 
 <div class="modal-backdrop" id="mDone">
   <div class="modal">
-    <h3>Cerrar orden de trabajo</h3><p id="mDoneSub"></p>
+    <h3>Cerrar orden · ficha del servicio</h3><p id="mDoneSub"></p>
     <input type="hidden" id="doneId" />
     <div class="form-row">
       <div><label>Técnico</label><input class="field" id="doneTech" placeholder="Marc" /></div>
@@ -773,6 +790,17 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="mOtInfo">
+  <div class="modal">
+    <h3 id="oiTitle">Detalle</h3><p id="oiSub"></p>
+    <input type="hidden" id="oiOtId" />
+    <div class="machine-meta" style="grid-template-columns:1fr 1fr;margin-top:4px" id="oiInfo"></div>
+    <div style="margin-top:14px"><label>Nota del turno</label><textarea id="oiNote" class="field" style="height:80px;resize:vertical" placeholder="Interno: qué preparar, repuestos pedidos, indicaciones para el cliente…"></textarea></div>
+    <div class="action-row" id="oiActions" style="margin-top:12px"></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mOtInfo')">Cerrar</button><button class="solid-btn" onclick="APP.saveOtNote()">Guardar nota</button></div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="mTasks">
   <div class="modal">
     <h3>Tareas de la orden</h3><p id="taskSub"></p>
@@ -843,7 +871,6 @@
     <button onclick="APP.mmGo('clients')"><svg class="ic"><use href="#i-users"/></svg>Clientes</button>
     <button onclick="APP.mmGo('machines')"><svg class="ic"><use href="#i-tractor"/></svg>Maquinaria</button>
     <button onclick="APP.mmGo('workshop')"><svg class="ic"><use href="#i-wrench"/></svg>Taller / OTs</button>
-    <button onclick="APP.mmGo('calls')"><svg class="ic"><use href="#i-phone"/></svg>Llamadas</button>
     <button onclick="APP.mmGo('parts')"><svg class="ic"><use href="#i-package"/></svg>Recambios</button>
     <button onclick="APP.mmGo('reports')"><svg class="ic"><use href="#i-chart"/></svg>Informes</button>
     <button onclick="APP.mmGo('settings')"><svg class="ic"><use href="#i-cog"/></svg>Ajustes y datos</button>
@@ -1002,7 +1029,6 @@ const titles={
   clients:['Clientes','Panel interno / CRM'],
   machines:['Maquinaria','Panel interno / Activos'],
   workshop:['Taller / OTs','Panel interno / Servicio técnico'],
-  calls:['Llamadas','Panel interno / Seguimiento'],
   parts:['Recambios','Panel interno / Inventario'],
   reports:['Informes','Panel interno / Analytics'],
   settings:['Ajustes y datos','Panel interno / Configuración'],
@@ -1023,7 +1049,7 @@ function gotoPage(id){
   function renderPage(id){
     ({
       dashboard:renderDashboard,clients:renderClients,machines:renderMachines,workshop:renderWorkshop,
-      calls:renderCalls,parts:renderParts,reports:renderReports,settings:renderSettings,
+      parts:renderParts,reports:renderReports,settings:renderSettings,
       clienthome:renderClientHome,clientmachines:renderClientMachines,clientservices:renderClientServices,
       clientdocs:renderClientDocs,clientsupport:renderClientSupport
     }[id]||(()=>{}))();
@@ -1081,7 +1107,7 @@ function renderDashboard(){
   const soon=db.machines.filter(m=>dueInfo(m).state==='soon');
   $('#dashKpis').innerHTML=
     kpi('t-lime','i-tractor',nf(db.machines.length),'Máquinas gestionadas',db.machines.length+' en '+db.clients.length+' clientes',null,'machines')+
-    kpi('t-blue','i-clock',nf(soon.length),'Servicios próximos','próximas 50 h / 30 días',null,'calls')+
+    kpi('t-blue','i-clock',nf(soon.length),'Servicios próximos','próximas 50 h / 30 días',null,'workshop')+
     kpi('t-amber','i-wrench',nf(open.length),'Órdenes abiertas',open.filter(o=>o.status==='taller').length+' en taller',null,'workshop')+
     kpi('t-red','i-alert',nf(overdue.length),'Mantenimientos vencidos',overdue.length?'requieren acción':'todo al día',!!overdue.length,'machines-alert');
   const prior=urgencySort(db.machines).filter(m=>dueInfo(m).state!=='ok');
@@ -1134,63 +1160,129 @@ function renderMachines(){
   $('#machGrid').innerHTML=list.length?list.map(m=>machineCardHTML(m,false)).join(''):emptyHTML('#i-tractor','No hay máquinas con este filtro.');
 }
 const MES_CORTO=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const DIA_SEM=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const DIA_SEM=['dom','lun','mar','mié','jue','vie','sáb'];
+const DIA_SEM_L=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 function dayLabel(iso){
   const t=new Date();t.setHours(0,0,0,0);
   const d=new Date(iso+'T00:00:00');
   const diff=Math.round((d-t)/86400000);
   if(diff===0)return 'Hoy';
   if(diff===1)return 'Mañana';
-  return DIA_SEM[d.getDay()]+' '+Number(iso.slice(8,10))+'/'+Number(iso.slice(5,7));
+  return DIA_SEM_L[d.getDay()]+' '+Number(iso.slice(8,10))+'/'+Number(iso.slice(5,7));
 }
-let agendaRange='7d';
-function agendaData(){
-  const t=new Date();t.setHours(0,0,0,0);
-  const endOf=days=>{const d=new Date(t);d.setDate(d.getDate()+days);return d};
-  const valid=o=>o.status!=='terminada'&&o.proposedDate&&(o.cita==='confirmada'||o.cita==='propuesta');
-  const counts={hoy:0,'7d':0,'30d':0};
-  db.ots.forEach(o=>{
-    if(!valid(o))return;
-    const d=new Date(o.proposedDate+'T00:00:00');
-    if(o.proposedDate===todayISO())counts.hoy++;
-    if(d>=t&&d<endOf(7))counts['7d']++;
-    if(d>=t&&d<endOf(30))counts['30d']++;
-  });
-  let apts=db.ots.filter(valid);
-  if(agendaRange==='hoy')apts=apts.filter(o=>o.proposedDate===todayISO());
-  else{
-    const end=endOf(agendaRange==='7d'?7:30);
-    apts=apts.filter(o=>{const d=new Date(o.proposedDate+'T00:00:00');return d>=t&&d<end});
+let wsDaySel=null,wsWeekOff=0,wsFilter=null;
+function wsOpenCitas(){return db.ots.filter(o=>o.status!=='terminada'&&o.proposedDate&&(o.cita==='confirmada'||o.cita==='propuesta'))}
+function wsCounts(){
+  const today=todayISO();const open=db.ots.filter(o=>o.status!=='terminada');
+  return{
+    solicitada:open.filter(o=>o.origin==='cliente'&&o.cita==='solicitada').length,
+    propuesta:open.filter(o=>o.cita==='propuesta').length,
+    rechazada:open.filter(o=>o.cita==='rechazada').length,
+    hoy:open.filter(o=>o.proposedDate===today&&(o.cita==='confirmada'||o.cita==='propuesta')).length,
+    taller:open.filter(o=>o.status==='taller').length,
+    sinfecha:open.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva').length
+  };
+}
+const WS_FILTERS=[
+  {k:'solicitada',icon:'i-cal',l:'Turnos pedidos<br>por confirmar'},
+  {k:'propuesta',icon:'i-clock',l:'Esperando<br>respuesta'},
+  {k:'rechazada',icon:'i-alert',l:'Rechazados<br>reprogramar'},
+  {k:'hoy',icon:'i-checkc',l:'Citas<br>de hoy'},
+  {k:'taller',icon:'i-wrench',l:'En taller<br>ahora'},
+  {k:'sinfecha',icon:'i-plus',l:'OTs sin<br>fecha'}
+];
+function renderWsStatus(){
+  const c=wsCounts();
+  document.getElementById('wsStatus').innerHTML=WS_FILTERS.map(f=>
+    '<div class="schip'+(wsFilter===f.k?' sel':'')+'" onclick="APP.setWsFilter(\''+f.k+'\')" title="Ver esta lista">'+
+    '<svg class="ic ic-sm" style="position:absolute;top:10px;right:10px;opacity:.5"><use href="#'+f.icon+'"/></svg>'+
+    '<div class="v">'+c[f.k]+'</div><div class="l">'+f.l+'</div></div>').join('');
+}
+function renderWsCal(){
+  const base=new Date();base.setHours(0,0,0,0);
+  const dow=(base.getDay()+6)%7;
+  const monday=new Date(base);monday.setDate(monday.getDate()-dow+wsWeekOff*7);
+  const counts={};
+  wsOpenCitas().forEach(o=>{counts[o.proposedDate]=(counts[o.proposedDate]||0)+1});
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(monday);d.setDate(d.getDate()+i);
+    const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    html+='<div class="d'+(iso===todayISO()?' today':'')+(iso===wsDaySel?' sel':'')+'" onclick="APP.setWsDay(\''+iso+'\')">'+
+      '<div class="dw">'+DIA_SEM[d.getDay()]+'</div><div class="dn">'+d.getDate()+'</div>'+
+      (counts[iso]?'<div class="cnt">'+counts[iso]+'</div>':'')+'</div>';
   }
-  apts.sort((a,b)=>(a.proposedDate+(a.proposedTime||'')).localeCompare(b.proposedDate+(b.proposedTime||'')));
-  return {counts,apts};
+  document.getElementById('wsCal').innerHTML=html;
 }
-function renderAgenda(){
-  const {counts,apts}=agendaData();
-  document.getElementById('agendaTabs').innerHTML=
-    '<button class="filter'+(agendaRange==='hoy'?' active':'')+'" onclick="APP.setAgenda(\'hoy\')">Hoy · '+counts.hoy+'</button>'+
-    '<button class="filter'+(agendaRange==='7d'?' active':'')+'" onclick="APP.setAgenda(\'7d\')">Semana · '+counts['7d']+'</button>'+
-    '<button class="filter'+(agendaRange==='30d'?' active':'')+'" onclick="APP.setAgenda(\'30d\')">Mes · '+counts['30d']+'</button>';
-  if(!apts.length){document.getElementById('agendaBody').innerHTML=emptyHTML('#i-cal','Sin turnos en este período. Los que aún no tienen fecha quedan en la tabla de abajo.');return}
-  let body='',last='';
-  apts.forEach(o=>{
-    const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
-    if(o.proposedDate!==last){last=o.proposedDate;body+='<div class="agenda-day">'+dayLabel(o.proposedDate)+'</div>'}
-    const conf=o.cita==='confirmada';
-    body+='<div class="apt">'+
-      '<div class="apt-time"><div>'+Number(o.proposedDate.slice(8,10))+'</div><span>'+MES_CORTO[Number(o.proposedDate.slice(5,7))-1]+(o.proposedTime?' · '+esc(o.proposedTime):'')+'</span></div>'+
-      '<div style="flex:1;min-width:0"><b>'+esc(m?mLabel(m):'—')+'</b> '+(conf?'<span class="badge ok">Confirmado</span>':'<span class="badge warn">Espera respuesta</span>')+
-      '<div class="small">'+esc(c?c.name:'—')+(c&&c.phone?' · '+esc(c.phone):'')+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div>'+
-      '<div class="small">'+esc(o.type)+(o.issue?' · '+esc(o.issue):'')+'</div></div>'+
-      '<div style="display:flex;gap:6px;align-items:center">'+
-      (o.tasks&&o.tasks.length?'<button class="outline-btn" onclick="APP.openTasks(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>'+o.tasks.filter(t=>t.done).length+'/'+o.tasks.length+'</button>':'')+
+function aptCardHTML(o,withActions){
+  const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
+  const conf=o.cita==='confirmada';
+  let actions='';
+  if(withActions){
+    actions='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px" onclick="event.stopPropagation()">'+
+      '<button class="outline-btn" onclick="APP.openOtInfo(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-bulb"/></svg>Nota</button>'+
+      '<button class="outline-btn" onclick="APP.openTasks(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas'+(o.tasks&&o.tasks.length?' '+o.tasks.filter(t=>t.done).length+'/'+o.tasks.length:'')+'</button>'+
+      '<button class="outline-btn" onclick="APP.openTurno(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+(o.proposedDate?'Cambiar día':'Agendar')+'</button>'+
+      '<button class="solid-btn" onclick="APP.openDone(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button>'+
       (m?'<button class="mini-btn wa" title="WhatsApp al cliente" onclick="APP.notifyWA(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg></button>':'')+
-      '</div></div>';
-  });
-  document.getElementById('agendaBody').innerHTML=body;
+      '</div>';
+  }
+  return '<div class="apt" style="cursor:pointer" onclick="APP.openOtInfo(\''+o.id+'\')">'+
+    '<div class="apt-time"><div>'+Number(o.proposedDate.slice(8,10))+'</div><span>'+MES_CORTO[Number(o.proposedDate.slice(5,7))-1]+(o.proposedTime?' · '+esc(o.proposedTime):'')+'</span></div>'+
+    '<div style="flex:1;min-width:0"><b>'+esc(m?mLabel(m):'—')+'</b> '+(conf?'<span class="badge ok">Confirmado</span>':'<span class="badge warn">Espera respuesta</span>')+
+    '<div class="small">'+esc(c?c.name:'—')+(c&&c.phone?' · '+esc(c.phone):'')+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div>'+
+    '<div class="small">'+esc(o.type)+(o.issue?' · '+esc(o.issue):'')+'</div>'+
+    (o.note?'<div class="small" style="color:var(--green2)">Nota: '+esc(o.note)+'</div>':'')+
+    '</div>'+actions+'</div>';
+}
+function renderWsDay(){
+  const el=document.getElementById('wsDay');
+  if(!wsDaySel){el.innerHTML='<div class="small" style="padding:4px 2px">Pulsa un día del calendario para ver sus turnos y actuar sobre ellos.</div>';document.getElementById('wsCalSub').textContent='Pulsa un día para ver y actuar sobre sus turnos.';return}
+  const list=wsOpenCitas().filter(o=>o.proposedDate===wsDaySel)
+    .sort((a,b)=>(a.proposedTime||'').localeCompare(b.proposedTime||''));
+  document.getElementById('wsCalSub').textContent=dayLabel(wsDaySel)+' · '+list.length+' turno'+(list.length===1?'':'s');
+  el.innerHTML=list.length?list.map(o=>aptCardHTML(o,true)).join(''):emptyHTML('#i-cal','Sin turnos este día. Puedes agendar una OT de abajo con «Agendar».');
+}
+const WS_TITLES={solicitada:'Turnos pedidos — por confirmar',propuesta:'Esperando respuesta del cliente',rechazada:'Rechazados — proponer otro día',hoy:'Citas de hoy',taller:'En taller ahora',sinfecha:'OTs sin fecha asignada'};
+function reqCardHTML(o){
+  const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
+  let color='var(--line)',state='Sin fecha',btn='Agendar';
+  if(o.cita==='solicitada'){color='var(--blue)';state='Pedido — proponer día';btn='Proponer turno'}
+  else if(o.cita==='propuesta'){color='var(--amber)';state='Propuesto '+fmtDate(o.proposedDate)+' — espera respuesta';btn='Cambiar propuesta'}
+  else if(o.cita==='rechazada'){color='var(--red)';state='Rechazó el '+fmtDate(o.proposedDate);btn='Nuevo turno'}
+  else if(o.proposedDate){color='var(--green2)';state='Confirmado '+fmtDate(o.proposedDate);btn='Cambiar día'}
+  return '<div class="req" style="border-left-color:'+color+'" onclick="APP.openOtInfo(\''+o.id+'\')">'+
+    '<div style="flex:1;min-width:210px"><b>'+esc(o.id)+'</b> · '+esc(c?c.name:'—')+
+    '<div class="small">'+esc(m?mLabel(m):'')+(m&&m.serial?' · SN '+esc(m.serial):'')+' · '+esc(o.type)+'</div></div>'+
+    '<span class="small" style="white-space:nowrap">'+state+'</span>'+
+    '<button class="solid-btn" onclick="event.stopPropagation();APP.openTurno(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+btn+'</button>'+
+    '</div>';
+}
+function renderWsReqs(){
+  const el=document.getElementById('wsReqs');
+  const title=document.getElementById('wsReqTitle');
+  let items=[];
+  if(wsFilter==='taller')items=db.ots.filter(o=>o.status==='taller');
+  else if(wsFilter==='sinfecha')items=db.ots.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&o.status!=='terminada');
+  else if(wsFilter==='hoy')items=wsOpenCitas().filter(o=>o.proposedDate===todayISO());
+  else if(wsFilter==='solicitada')items=db.ots.filter(o=>o.origin==='cliente'&&o.cita==='solicitada');
+  else if(wsFilter==='propuesta')items=db.ots.filter(o=>o.cita==='propuesta');
+  else if(wsFilter==='rechazada')items=db.ots.filter(o=>o.cita==='rechazada');
+  if(wsFilter){
+    title.textContent=WS_TITLES[wsFilter]+' · '+items.length;
+    el.innerHTML=items.length?items.map(reqCardHTML).join(''):emptyHTML('#i-checkc','Nada pendiente aquí ✓');
+    return;
+  }
+  title.textContent='Citas y solicitudes';
+  const reqs=db.ots.filter(o=>o.origin==='cliente'&&o.status!=='terminada'&&o.cita!=='confirmada');
+  const mine=db.ots.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&o.status!=='terminada');
+  let html='';
+  if(reqs.length)html+='<div class="agenda-day" style="margin-top:0">Del cliente</div>'+reqs.map(reqCardHTML).join('');
+  if(mine.length)html+='<div class="agenda-day">Nuestras OTs sin fecha</div>'+mine.map(reqCardHTML).join('');
+  el.innerHTML=html||emptyHTML('#i-checkc','Sin solicitudes pendientes ✓');
 }
 function renderWorkshop(){
-  renderAgenda();
+  renderWsStatus();renderWsCal();renderWsDay();renderWsReqs();
   const t=$('#otTable');
   if(!db.ots.length){t.innerHTML=emptyHTML('#i-wrench','Sin órdenes de trabajo. Crea una desde «Nueva OT» o desde una máquina.');return}
   const order={cita:0,pendiente:1,taller:2,terminada:3};
@@ -1695,27 +1787,6 @@ function b64enc(s){try{return btoa(unescape(encodeURIComponent(s)))}catch(e){ret
 function b64dec(s){try{return decodeURIComponent(escape(atob(s)))}catch(e){return null}}
 let importPending=null;
 
-function renderCalls(){
-  const alertList=urgencySort(db.machines).filter(m=>dueInfo(m).state!=='ok');
-  $('#callsAlert').innerHTML=alertList.length?'<table><thead><tr><th>Equipo</th><th>Cliente</th><th>Situación</th><th>Avisar</th></tr></thead><tbody>'+
-    alertList.map(m=>{const c=clientOf(m.clientId);const info=dueInfo(m);
-      return '<tr><td><div class="machine"><div class="machine-icon"><svg class="ic"><use href="'+iconOf(m)+'"/></svg></div><div><b>'+esc(mLabel(m))+'</b><div class="small">SN '+esc(m.serial||'—')+'</div></div></div></td>'+
-      '<td>'+esc(c?c.name:'—')+'<div class="small">'+esc(c&&c.phone?c.phone:'sin teléfono')+'</div></td>'+
-      '<td>'+esc(info.label)+'<div class="small">'+esc(info.reason)+'</div></td><td>'+STATE_BADGE[info.state]+'</td>'+
-      '<td><button class="mini-btn wa" title="WhatsApp" onclick="APP.notifyWA(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg></button> <button class="mini-btn" title="Email" onclick="APP.notifyMail(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-mail"/></svg></button></td></tr>'}).join('')+'</tbody></table>'
-    :emptyHTML('#i-checkc','Ninguna máquina en alerta.');
-
-  const warr=db.machines.filter(m=>{const w=dueInfo(m).warrantyLeft;return w!=null&&w>0&&w<=90});
-  $('#callsWarranty').innerHTML=warr.length?'<div class="timeline">'+warr.map(m=>{const c=clientOf(m.clientId);
-    return '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-shield"/></svg></div><div><div class="tname">'+esc(mLabel(m))+'</div><div class="tdetail">'+esc(c?c.name:'—')+' · '+fmtDate(m.warrantyEnd)+' ('+dueInfo(m).warrantyLeft+' días)</div></div></div>'}).join('')+'</div>'
-    :emptyHTML('#i-shield','Ninguna garantía vence en los próximos 90 días.');
-
-  const citas=db.ots.filter(o=>o.status==='cita');
-  $('#callsCitas').innerHTML=citas.length?'<div class="timeline">'+citas.map(o=>{const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
-    return '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-cal"/></svg></div><div><div class="tname">'+esc(o.id)+' · '+esc(m?mLabel(m):'—')+'</div><div class="tdetail">'+esc(c?c.name:'—')+(c&&c.phone?' · <a href="tel:'+esc(c.phone.replace(/\s/g,''))+'">'+esc(c.phone)+'</a>':'')+'</div></div><div class="date">'+fmtTs(o.createdAt)+'</div></div>'}).join('')+'</div>'
-    :emptyHTML('#i-cal','Sin citas pendientes de confirmar.');
-}
-
 Object.assign(APP,{
   notifyWA(machineId,kind){
     const m=machineOf(machineId);if(!m)return;
@@ -1736,7 +1807,46 @@ Object.assign(APP,{
   },
 
   /* ---- tareas de la orden ---- */
-  setAgenda(k){agendaRange=k;renderAgenda()},
+  setWsFilter(k){wsFilter=(wsFilter===k?null:k);if(wsFilter==='hoy'){wsDaySel=todayISO();wsWeekOff=0}renderPage('workshop')},
+  setWsDay(iso){wsDaySel=iso;wsFilter=null;renderPage('workshop')},
+  wsWeek(d){if(d===0){wsWeekOff=0;wsDaySel=todayISO()}else wsWeekOff+=d;renderPage('workshop')},
+  openOtInfo(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    document.getElementById('oiOtId').value=otId;
+    document.getElementById('oiTitle').textContent=(ot.type==='Cita preventiva'?'Turno ':'Orden ')+ot.id;
+    document.getElementById('oiSub').textContent=(m?mLabel(m):'')+(m&&m.serial?' · SN '+m.serial:'')+' · '+(c?c.name:'');
+    const estado=({solicitada:'Pedido — proponer día',propuesta:'Esperando respuesta',rechazada:'Rechazado',confirmada:'Confirmado'}[ot.cita]||ot.status)+(ot.status==='terminada'?' · terminada':'');
+    document.getElementById('oiInfo').innerHTML=
+      '<div class="meta">Cliente<span>'+esc(c?c.name:'—')+'</span></div>'+
+      '<div class="meta">Equipo<span>'+esc(m?mLabel(m):'—')+'</span></div>'+
+      '<div class="meta">Servicio<span>'+esc(ot.type)+'</span></div>'+
+      '<div class="meta">Fecha<span>'+(ot.proposedDate?fmtDate(ot.proposedDate)+(ot.proposedTime?' · '+ot.proposedTime:''):'sin fecha')+'</span></div>'+
+      '<div class="meta">Estado<span>'+estado+'</span></div>'+
+      '<div class="meta">Técnico<span>'+esc(ot.tech||'—')+'</span></div>';
+    document.getElementById('oiNote').value=ot.note||'';
+    let acts='';
+    if(ot.status!=='terminada'){
+      acts='<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openTurno(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+(ot.proposedDate?'Cambiar día':'Agendar')+'</button>'+
+        '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openTasks(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas</button>'+
+        '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openDone(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button>';
+    }else{
+      acts='<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openReport(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe firmado</button>'+
+        '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openInvoice(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Factura</button>';
+    }
+    document.getElementById('oiActions').innerHTML=acts;
+    this.openModal('mOtInfo');
+  },
+  saveOtNote(){
+    const ot=db.ots.find(o=>o.id===document.getElementById('oiOtId').value);if(!ot)return;
+    const v=document.getElementById('oiNote').value.trim();
+    if(v!==(ot.note||'')){
+      ot.note=v;
+      const m=machineOf(ot.machineId);
+      if(m)m.history.unshift({ts:Date.now(),title:'Nota en '+ot.id,detail:v||'(nota borrada)'});
+      saveDb();toast('Nota guardada');renderPage('workshop');
+    }else toast('Sin cambios');
+  },
   openTasks(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
     const m=machineOf(ot.machineId);
