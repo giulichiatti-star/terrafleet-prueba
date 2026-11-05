@@ -171,14 +171,14 @@
   .schip .l{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.3}
   .schip.sel .l{color:#cde4d4}
   .wscal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-  .wscal .d{border:1.5px solid var(--line);border-radius:13px;padding:9px 4px 8px;text-align:center;background:#fff;cursor:pointer;transition:.15s;position:relative;min-height:64px}
-  .wscal .d:hover{border-color:var(--green2)}
-  .wscal .d.sel{background:var(--green);border-color:var(--green);color:#fff}
-  .wscal .d .dw{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-  .wscal .d.sel .dw{color:#cde4d4}
-  .wscal .d .dn{font-size:19px;font-weight:800;margin-top:3px}
-  .wscal .d .cnt{position:absolute;top:6px;right:6px;min-width:17px;height:17px;border-radius:99px;background:var(--lime);color:#17321f;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px}
-  .wscal .d.today:not(.sel){border-color:var(--lime);box-shadow:0 0 0 2px rgba(201,244,100,.4)}
+  .wscal-d{border:1.5px solid var(--line);border-radius:13px;padding:9px 4px 8px;text-align:center;background:#fff;cursor:pointer;transition:.15s;position:relative;min-height:64px}
+  .wscal-d:hover{border-color:var(--green2)}
+  .wscal-d.sel{background:var(--green);border-color:var(--green);color:#fff}
+  .wscal-d .dw{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .wscal-d.sel .dw{color:#cde4d4}
+  .wscal-d .dn{font-size:19px;font-weight:800;margin-top:3px}
+  .wscal-d .cnt{position:absolute;top:6px;right:6px;min-width:17px;height:17px;border-radius:99px;background:var(--lime);color:#17321f;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px}
+  .wscal-d.today:not(.sel){border-color:var(--lime);box-shadow:0 0 0 2px rgba(201,244,100,.4)}
   .req{border-left:4px solid var(--line);background:#fbfdf9;border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:9px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;cursor:pointer}
   .req:hover{background:#f4f8f1}
   .agenda-day{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px}
@@ -202,6 +202,20 @@
   .svcdet ul{margin:10px 0 4px;padding-left:20px;font-size:13px}
   .svcdet li{margin-bottom:5px;line-height:1.5}
   .apt.done{background:#f6faf4;border-style:dashed}
+  .mcal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .mcal-h{text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:2px 0}
+  .mcal-d{border:1.5px solid var(--line);border-radius:11px;min-height:56px;background:#fff;cursor:pointer;position:relative;transition:.14s;padding:6px 4px}
+  .mcal-d:hover{border-color:var(--green2)}
+  .mcal-d.off{opacity:.32;pointer-events:none;background:transparent}
+  .mcal-d .dn{font-size:14px;font-weight:700}
+  .mcal-d .cnt{position:absolute;bottom:6px;left:0;right:0;margin:auto;width:22px;height:22px;border-radius:50%;background:var(--lime);color:#17321f;font-size:11px;font-weight:800;display:grid;place-items:center}
+  .mcal-d.today{border-color:var(--lime);box-shadow:0 0 0 2px rgba(201,244,100,.4)}
+  .mcal-d.sel{background:var(--green);border-color:var(--green);color:#fff}
+  .mcal-d.sel .cnt{background:var(--lime)}
+  .task{flex-wrap:wrap}
+  .taskwhy{flex-basis:100%;border:0;border-bottom:1px dashed var(--line);background:transparent;outline:none;font-size:11.5px;color:var(--muted);padding:2px 0;margin-top:4px}
+  .modal.wide{width:min(880px,100%);height:86vh;display:flex;flex-direction:column}
+  @media(max-width:720px){.mcal-d{min-height:44px;padding:4px 2px}.mcal-d .dn{font-size:12px}.mcal-d .cnt{width:18px;height:18px;font-size:10px;bottom:3px}}
   .sigpad{border:1.5px dashed var(--line);border-radius:12px;background:#fff;overflow:hidden;margin-top:4px}
   .sigpad canvas{width:100%;height:150px;display:block;touch-action:none;cursor:crosshair}
   .report-print{font-family:Inter,system-ui,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:26px}
@@ -486,14 +500,20 @@
         <div class="card section-card" style="margin-bottom:16px">
           <div class="section-head" style="margin-bottom:12px">
             <div><div class="section-title">Calendario de turnos</div><div class="section-sub" id="wsCalSub">Pulsa un día para ver sus turnos y actuar.</div></div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <button class="mini-btn" title="Semana anterior" onclick="APP.wsWeek(-1)">‹</button>
-              <button class="outline-btn" onclick="APP.wsWeek(0)">Hoy</button>
-              <button class="mini-btn" title="Semana siguiente" onclick="APP.wsWeek(1)">›</button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="filters" style="margin:0">
+                <button class="filter" id="wcmA" onclick="APP.setCalMode('agenda')">Agenda</button>
+                <button class="filter" id="wcmH" onclick="APP.setCalMode('historico')">Histórico</button>
+              </div>
+              <div style="display:flex;gap:5px;align-items:center">
+                <button class="mini-btn" title="Anterior" onclick="APP.wsPrev()">‹</button>
+                <button class="outline-btn" onclick="APP.wsToday()">Hoy</button>
+                <button class="mini-btn" title="Siguiente" onclick="APP.wsNext()">›</button>
+              </div>
             </div>
           </div>
           <div id="wsStats" style="font-size:12.5px;color:var(--muted);margin:-4px 0 12px"></div>
-          <div class="wscal" id="wsCal"></div>
+          <div id="wsCalWrap"></div>
           <div id="wsDay" style="margin-top:14px"></div>
         </div>
 
@@ -810,9 +830,34 @@
     <h3 id="oiTitle">Detalle</h3><p id="oiSub"></p>
     <input type="hidden" id="oiOtId" />
     <div class="machine-meta" style="grid-template-columns:1fr 1fr;margin-top:4px" id="oiInfo"></div>
+    <div id="oiTasks" class="small" style="display:none;margin-top:14px;line-height:1.8;background:#f7f9f6;border-radius:10px;padding:10px 12px"></div>
     <div style="margin-top:14px"><label>Nota del turno</label><textarea id="oiNote" class="field" style="height:80px;resize:vertical" placeholder="Interno: qué preparar, repuestos pedidos, indicaciones para el cliente…"></textarea></div>
     <div class="action-row" id="oiActions" style="margin-top:12px"></div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mOtInfo')">Cerrar</button><button class="solid-btn" onclick="APP.saveOtNote()">Guardar nota</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mReady">
+  <div class="modal">
+    <h3>Avisar que está lista para retirar</h3><p id="readySub"></p>
+    <input type="hidden" id="readyOtId" />
+    <div class="form-row" style="margin-top:14px">
+      <div><label>Puede retirar desde (día)</label><input type="date" class="field" id="readyDate" /></div>
+      <div><label>Hora</label><input type="time" class="field" id="readyTime" /></div>
+    </div>
+    <div class="notice"><svg class="ic"><use href="#i-cal"/></svg><div>Le llega al cliente con el día y la hora, el informe completo del service y el botón para <b>firmarlo desde la app</b>.</div></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mReady')">Cancelar</button><button class="solid-btn" onclick="APP.sendReady()"><svg class="ic ic-xs"><use href="#i-send"/></svg>Enviar aviso</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mView">
+  <div class="modal wide">
+    <h3 id="viewTitle">Informe</h3>
+    <iframe id="viewFrame" style="flex:1;border:1px solid var(--line);border-radius:12px;background:#fff"></iframe>
+    <div class="modal-actions">
+      <button class="outline-btn" onclick="APP.closeModal('mView')">Cerrar</button>
+      <button class="solid-btn" onclick="APP.printView()"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Descargar / PDF</button>
+    </div>
   </div>
 </div>
 
@@ -1200,7 +1245,7 @@ function dayLabel(iso){
   if(diff===1)return 'Mañana';
   return DIA_SEM_L[d.getDay()]+' '+Number(iso.slice(8,10))+'/'+Number(iso.slice(5,7));
 }
-let wsDaySel=null,wsWeekOff=0,wsFilter=null;
+let wsDaySel=null,wsWeekOff=0,wsFilter=null,wsMode='agenda',wsView='semana',wsMonthOff=0;
 function wsOpenCitas(){return db.ots.filter(o=>o.status!=='terminada'&&o.proposedDate&&(o.cita==='confirmada'||o.cita==='propuesta'))}
 function wsCounts(){
   const today=todayISO();const open=db.ots.filter(o=>o.status!=='terminada');
@@ -1230,31 +1275,80 @@ function renderWsStatus(){
 }
 function isoOf(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function wsDoneOf(iso){return db.ots.filter(o=>o.status==='terminada'&&isoOf(o.closedAt||o.createdAt)===iso)}
-function renderWsStats(){
-  const now=new Date();
-  let turnos=0,conf=0,hechos=0;
+function renderWsStatsLine(){
+  const el=document.getElementById('wsStats');
+  const base=new Date();base.setDate(1);base.setMonth(base.getMonth()+wsMonthOff);
+  const y=base.getFullYear(),mo=base.getMonth();
+  let turnos=0,conf=0,hechos=0,fact=0,demoraSum=0,demoraN=0;
   db.ots.forEach(o=>{
-    if(o.proposedDate){const d=new Date(o.proposedDate+'T00:00:00');if(d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()){turnos++;if(o.cita==='confirmada'||o.status==='terminada')conf++}}
-    if(o.status==='terminada'){const c=new Date(o.closedAt||0);if(c.getFullYear()===now.getFullYear()&&c.getMonth()===now.getMonth())hechos++}
+    if(o.proposedDate){const d=new Date(o.proposedDate+'T00:00:00');if(d.getFullYear()===y&&d.getMonth()===mo){turnos++;if(o.cita==='confirmada'||o.status==='terminada')conf++}}
+    if(o.status==='terminada'){
+      const c=new Date(o.closedAt||0);
+      if(c.getFullYear()===y&&c.getMonth()===mo){
+        hechos++;fact+=(o.invoiced?(Number(o.invoiceBase||0)*(1+Number(o.invoiceIva||0)/100)):0);
+        const dd=(o.closedAt-o.createdAt)/86400000;if(dd>=0){demoraSum+=dd;demoraN++}
+      }
+    }
   });
-  document.getElementById('wsStats').innerHTML='<b style="color:var(--ink)">'+now.toLocaleDateString('es-AR',{month:'long'})+':</b> '+turnos+' turnos · '+conf+' confirmados · '+hechos+' completados con éxito';
+  if(wsMode==='agenda'){
+    el.innerHTML='<b style="color:var(--ink)">'+base.toLocaleDateString('es-AR',{month:'long'})+':</b> '+turnos+' turnos · '+conf+' confirmados · '+hechos+' completados con éxito';
+  }else{
+    const dm=demoraN?(demoraSum/demoraN).toFixed(1):'0';
+    el.innerHTML='<b style="color:var(--ink)">'+base.toLocaleDateString('es-AR',{month:'long',year:'numeric'})+':</b> '+hechos+' trabajos completados · facturado '+money(fact)+' · demora media '+dm+' días';
+  }
 }
-function renderWsCal(){
+function weekStrip(){
   const base=new Date();base.setHours(0,0,0,0);
   const dow=(base.getDay()+6)%7;
   const monday=new Date(base);monday.setDate(monday.getDate()-dow+wsWeekOff*7);
   const counts={};
   wsOpenCitas().forEach(o=>{counts[o.proposedDate]=(counts[o.proposedDate]||0)+1});
-  db.ots.forEach(o=>{if(o.status==='terminada'){const iso=isoOf(o.closedAt||o.createdAt);counts[iso]=(counts[iso]||0)+1}});
   let html='';
   for(let i=0;i<7;i++){
     const d=new Date(monday);d.setDate(d.getDate()+i);
     const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    html+='<div class="d'+(iso===todayISO()?' today':'')+(iso===wsDaySel?' sel':'')+'" onclick="APP.setWsDay(\''+iso+'\')">'+
+    html+='<div class="wscal-d'+(iso===todayISO()?' today':'')+(iso===wsDaySel?' sel':'')+'" onclick="APP.setWsDay(\''+iso+'\')">'+
       '<div class="dw">'+DIA_SEM[d.getDay()]+'</div><div class="dn">'+d.getDate()+'</div>'+
       (counts[iso]?'<div class="cnt">'+counts[iso]+'</div>':'')+'</div>';
   }
-  document.getElementById('wsCal').innerHTML=html;
+  return '<div class="wscal">'+html+'</div>';
+}
+function monthGrid(hist){
+  const base=new Date();base.setDate(1);base.setMonth(base.getMonth()+wsMonthOff);
+  const y=base.getFullYear(),mo=base.getMonth();
+  const first=new Date(y,mo,1);
+  const startDow=(first.getDay()+6)%7;
+  const dim=new Date(y,mo+1,0).getDate();
+  const today=todayISO();
+  const counts={};
+  if(hist){db.ots.forEach(o=>{if(o.status==='terminada'){const iso=isoOf(o.closedAt||o.createdAt);counts[iso]=(counts[iso]||0)+1}})}
+  else{wsOpenCitas().forEach(o=>{if(o.proposedDate>=today)counts[o.proposedDate]=(counts[o.proposedDate]||0)+1})}
+  let cells='';
+  ['lun','mar','mié','jue','vie','sáb','dom'].forEach(d=>cells+='<div class="mcal-h">'+d+'</div>');
+  for(let b=0;b<startDow;b++)cells+='<div class="mcal-d off"></div>';
+  for(let d=1;d<=dim;d++){
+    const iso=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const dis=hist&&iso>today;
+    cells+='<div class="mcal-d'+(iso===today?' today':'')+(iso===wsDaySel?' sel':'')+(dis?' off':'')+'"'+(dis?'':' onclick="APP.setWsDay(\''+iso+'\')"')+'><div class="dn">'+d+'</div>'+(counts[iso]?'<div class="cnt">'+counts[iso]+'</div>':'')+'</div>';
+  }
+  return '<div class="mcal">'+cells+'</div>';
+}
+function renderCalendar(){
+  const wrap=document.getElementById('wsCalWrap');
+  let html='<div class="filters" style="margin:0 0 12px">';
+  html+='<button class="filter'+(wsMode==='agenda'?' active':'')+'" onclick="APP.setCalMode(\'agenda\')">Agenda</button>';
+  html+='<button class="filter'+(wsMode==='historico'?' active':'')+'" onclick="APP.setCalMode(\'historico\')">Histórico</button>';
+  if(wsMode==='agenda'){
+    html+='<button class="filter'+(wsView==='semana'?' active':'')+'" onclick="APP.setCalView(\'semana\')" style="margin-left:10px">Semana</button>';
+    html+='<button class="filter'+(wsView==='mes'?' active':'')+'" onclick="APP.setCalView(\'mes\')">Mes</button>';
+  }else{
+    const base=new Date();base.setDate(1);base.setMonth(base.getMonth()+wsMonthOff);
+    html+='<span class="filter" style="background:transparent;color:var(--muted);cursor:default">'+base.toLocaleDateString('es-AR',{month:'long',year:'numeric'})+'</span>';
+  }
+  html+='</div>';
+  html+=wsMode==='agenda'?(wsView==='semana'?weekStrip():monthGrid(false)):monthGrid(true);
+  wrap.innerHTML=html;
+  renderWsDay();renderWsStatsLine();
 }
 function aptCardHTML(o,withActions){
   const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
@@ -1280,7 +1374,7 @@ function aptCardHTML(o,withActions){
 function renderWsDay(){
   const el=document.getElementById('wsDay');
   if(!wsDaySel){el.innerHTML='<div class="small" style="padding:4px 2px">Pulsa un día del calendario para ver sus turnos y actuar sobre ellos.</div>';document.getElementById('wsCalSub').textContent='Pulsa un día para ver y actuar sobre sus turnos.';return}
-  const list=wsOpenCitas().filter(o=>o.proposedDate===wsDaySel)
+  const list=(wsMode==='historico'?[]:wsOpenCitas().filter(o=>o.proposedDate===wsDaySel))
     .sort((a,b)=>(a.proposedTime||'').localeCompare(b.proposedTime||''));
   const done=wsDoneOf(wsDaySel);
   document.getElementById('wsCalSub').textContent=dayLabel(wsDaySel)+' · '+list.length+' turno'+(list.length===1?'':'s')+(done.length?' · '+done.length+' completado'+(done.length===1?'':'s'):'');
@@ -1288,10 +1382,11 @@ function renderWsDay(){
   if(done.length){
     html+='<div class="agenda-day">Completados este día</div>'+done.map(function(o){
       const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
-      const firma=o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Esperando firma del cliente</span>':'');
+      const firma=o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+'</span>':'');
+      const demora=Math.max(0,Math.round((o.closedAt-o.createdAt)/86400000));
       return '<div class="apt done"><div class="apt-time" style="background:#e4efe7;color:#335"><div>✓</div><span>'+esc(o.workDone?o.workDone.slice(0,10):o.type)+'</span></div>'+
         '<div style="flex:1;min-width:0"><b>'+esc(m?mLabel(m):'—')+'</b> <span class="badge ok">Completado</span> '+firma+
-        '<div class="small">'+esc(c?c.name:'—')+(m&&m.serial?' · SN '+esc(m.serial):'')+' · '+esc(o.tech||'—')+'</div>'+
+        '<div class="small">'+esc(c?c.name:'—')+(m&&m.serial?' · SN '+esc(m.serial):'')+' · '+esc(o.tech||'—')+' · tardó '+demora+' día'+(demora===1?'':'s')+'</div>'+
         '<div class="small">'+esc(o.workDone||o.issue||o.type)+'</div></div>'+
         '<div style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">'+
         '<button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button>'+
@@ -1341,7 +1436,7 @@ function renderWsReqs(){
   el.innerHTML=html||emptyHTML('#i-checkc','Sin solicitudes pendientes ✓');
 }
 function renderWorkshop(){
-  renderWsStatus();renderWsStats();renderWsCal();renderWsDay();renderWsReqs();
+  renderWsStatus();renderCalendar();renderWsReqs();
   const t=$('#otTable');
   if(!db.ots.length){t.innerHTML=emptyHTML('#i-wrench','Sin órdenes de trabajo. Crea una desde «Nueva OT» o desde una máquina.');return}
   const order={cita:0,pendiente:1,taller:2,terminada:3};
@@ -1357,7 +1452,7 @@ function renderWorkshop(){
       rechazada:'<span class="badge bad">Rechazado — proponer otro día</span>'
     };
     const citaBadge=(o.type==='Cita preventiva'&&o.status!=='terminada')?('<div style="margin-top:5px">'+(CITA_STATE[o.cita||'solicitada']||'')+'</div>'):'';
-    const retiroBadge=(o.status==='terminada')?('<div style="margin-top:5px">'+(o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Listo para retirar — espera firma</span>':''))+'</div>'):'';
+    const retiroBadge=(o.status==='terminada')?('<div style="margin-top:5px">'+(o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+' — espera firma</span>':''))+'</div>'):'';
     let action='';
     const tasksBtn='<button class="outline-btn" onclick="APP.openTasks(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas'+(o.tasks&&o.tasks.length?' '+o.tasks.filter(t=>t.done).length+'/'+o.tasks.length:'')+'</button>';
     if(o.status!=='terminada'){
@@ -1519,7 +1614,7 @@ function renderClientServices(){
         '<td><b>'+esc(m?mLabel(m):'—')+'</b><div class="small">'+esc(o.id)+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div></td>'+
         '<td>'+esc(o.workDone||o.issue||o.type)+'</td><td>'+esc(o.tech||'—')+'</td>'+
         '<td>'+(o.signature?'<span class="badge ok">Firmado ✓</span>':(o.ready?'<button class="solid-btn" onclick="APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver y firmar</button>':''))+
-        ' <button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button></td></tr>';
+        ' <button class="outline-btn" onclick="APP.viewReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button></td></tr>';
     }).join('')+'</tbody></table>'
     :emptyHTML('#i-clock','Todavía no hay servicios completados.');
 }
@@ -1551,6 +1646,7 @@ function myNotifs(){
   const cid=db.session.clientId;
   return db.notifs.filter(n=>n.audience==='client'&&(!n.clientId||n.clientId===cid));
 }
+function closeNotif(){var p=document.getElementById('notifPop');if(p)p.classList.remove('show')}
 function renderBell(){
   const list=myNotifs();
   const unread=list.filter(n=>!n.read).length;
@@ -1561,17 +1657,17 @@ function renderBell(){
     if(n.kind==='retiro'&&n.otId){
       const ot2=db.ots.find(o=>o.id===n.otId);
       if(ot2&&ot2.ready&&!ot2.signature){
-        actions='<div class="action-row" style="margin-top:9px"><button class="solid-btn" onclick="APP.openClientSign(\''+n.otId+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
+        actions='<div class="action-row" style="margin-top:9px" onclick="event.stopPropagation()"><button class="solid-btn" onclick="APP.openClientSign(\''+n.otId+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
       }
     }
     if(n.kind==='cita'&&n.otId){
       const ot=db.ots.find(o=>o.id===n.otId);
       if(ot&&ot.cita==='propuesta'){
-        actions='<div class="action-row" style="margin-top:9px"><button class="solid-btn" onclick="APP.citaAccept(\''+n.otId+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Aceptar turno</button>'+
+        actions='<div class="action-row" style="margin-top:9px" onclick="event.stopPropagation()"><button class="solid-btn" onclick="APP.citaAccept(\''+n.otId+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Aceptar turno</button>'+
           '<button class="outline-btn" onclick="APP.citaReject(\''+n.otId+'\')">Rechazar</button></div>';
       }
     }
-    return '<div class="np-item'+(n.read?'':' unread')+'"><span class="np-ic"><svg class="ic"><use href="#'+n.icon+'"/></svg></span>'+
+    return '<div class="np-item'+(n.read?'':' unread')+'" style="cursor:pointer" onclick="APP.notifGo(\''+n.id+'\')" title="Ir a la información"><span class="np-ic"><svg class="ic"><use href="#'+n.icon+'"/></svg></span>'+
     '<div><div class="np-t">'+esc(n.title)+'</div><div class="np-d">'+esc(n.detail)+'</div>'+actions+'</div><span class="np-m">'+fmtTs(n.ts)+'</span></div>';
   }).join(''):'<div class="np-item"><div><div class="np-d">Sin notificaciones.</div></div></div>';
 }
@@ -1907,6 +2003,45 @@ function b64enc(s){try{return btoa(unescape(encodeURIComponent(s)))}catch(e){ret
 function b64dec(s){try{return decodeURIComponent(escape(atob(s)))}catch(e){return null}}
 let importPending=null;
 
+function buildReportHTML(ot){
+  const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+  const biz=db.meta.biz||{};
+  const fecha=ot.closedAt?new Date(ot.closedAt):new Date();
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Informe '+ot.id+'</title>'+
+      '<style>body{font-family:Inter,system-ui,sans-serif;color:#111;margin:0;padding:26px;font-size:13px}'+
+      '.wrap{max-width:700px;margin:0 auto}'+
+      '.rhead{display:flex;justify-content:space-between;align-items:flex-start;background:#14402c;color:#fff;border-radius:12px;padding:16px 20px}'+
+      '.rhead h1{margin:0;font-size:17px}.rhead .rno{text-align:right;font-size:12px;opacity:.9;line-height:1.6}'+
+      '.biz{margin-top:10px;font-size:11px;color:#555}'+
+      '.gridinfo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}'+
+      '.box{border:1px solid #dde5dd;border-radius:10px;padding:12px 14px}'+
+      '.box h3{margin:0 0 6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:#2f7a52}'+
+      '.box div{font-size:13px;line-height:1.6}'+
+      '.works{margin-top:14px;border:1px solid #dde5dd;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.7}'+
+      '.firmas{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}'+
+      '.firma{border:1.5px solid #bbb;border-radius:10px;height:120px;position:relative;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}'+
+      '.firma img{max-width:92%;max-height:110px;object-fit:contain}'+
+      '.firma span{position:absolute;bottom:-20px;font-size:11px;color:#555}'+
+      '.foot{margin-top:44px;color:#888;font-size:10.5px;text-align:center}'+
+      '@media print{body{padding:10mm}}</style></head><body><div class="wrap">'+
+      '<div class="rhead"><div><h1>INFORME DE SERVICIO REALIZADO</h1></div>'+
+      '<div class="rno"><b>'+esc(ot.id)+'</b><br>'+fmtTs(fecha.getTime())+'</div></div>'+
+      '<div class="biz"><b>'+esc(biz.name||'Mi Empresa')+'</b>'+(biz.cif?' · CUIT '+esc(biz.cif):'')+(biz.phone?' · '+esc(biz.phone):'')+(biz.city?' · '+esc(biz.city):'')+'</div>'+
+      '<div class="gridinfo">'+
+      '<div class="box"><h3>Cliente</h3><div><b>'+esc(c?c.name:'—')+'</b>'+(c&&c.cuit?'<br>CUIT: '+esc(c.cuit):'')+(c&&c.contact?'<br>At.: '+esc(c.contact):'')+(c&&c.phone?'<br>'+esc(c.phone):'')+'</div></div>'+
+      '<div class="box"><h3>Equipo</h3><div><b>'+esc(m?mLabel(m):'—')+'</b>'+(m&&m.serial?'<br>SN: '+esc(m.serial):'')+(m?'<br>Horómetro al cierre: '+nf(m.hours)+' h':'')+(m&&m.warrantyEnd?'<br>Garantía: '+fmtDate(m.warrantyEnd):'')+'</div></div>'+
+      '</div>'+
+      '<div class="works"><b>Trabajo realizado</b><br>'+esc(ot.workDone||ot.issue||ot.type)+(ot.tech?'<br><span style="color:#555;font-size:12px">Técnico: '+esc(ot.tech)+'</span>':'')+
+      (ot.reportObs?'<br><br><b>Observaciones</b><br>'+esc(ot.reportObs):'')+'</div>'+
+      (ot.tasks&&ot.tasks.length?'<div class="works"><b>Tareas</b><br>'+ot.tasks.map(t=>(t.done?'<span style="color:#1c6b3a">✓</span>':'○')+' '+esc(t.t)+(t.done?'':'<span style="color:#a33"> — no se realizó'+(t.why?': '+esc(t.why):'')+'</span>')).join('<br>')+'</div>':'')+
+      '<div class="firmas">'+
+      '<div class="firma">'+(ot.signature?'<img src="'+ot.signature+'">':'')+'<span>Firma del cliente — '+esc(c?c.name:'')+'</span></div>'+
+      '<div class="firma"><span>Por el taller — '+esc(ot.tech||'')+'</span></div>'+
+      '</div>'+
+      '<div class="foot">Este informe deja constancia del trabajo realizado sobre el equipo indicado.<br>Generado con TerraFleet · '+fmtTs(Date.now())+'</div>'+
+      '</div></body></html>';;
+}
+
 Object.assign(APP,{
   notifyWA(machineId,kind){
     const m=machineOf(machineId);if(!m)return;
@@ -1927,7 +2062,12 @@ Object.assign(APP,{
   },
 
   /* ---- tareas de la orden ---- */
-  setWsFilter(k){wsFilter=(wsFilter===k?null:k);if(wsFilter==='hoy'){wsDaySel=todayISO();wsWeekOff=0}renderPage('workshop')},
+  setWsFilter(k){wsFilter=(wsFilter===k?null:k);if(wsFilter==='hoy'){wsDaySel=todayISO();wsWeekOff=0;wsMonthOff=0;wsMode='agenda';wsView='semana'}renderPage('workshop')},
+  setCalMode(m){wsMode=m;wsDaySel=null;if(m==='historico')wsWeekOff=0;renderPage('workshop')},
+  setCalView(v){wsView=v;renderPage('workshop')},
+  wsPrev(){if(wsMode==='agenda'&&wsView==='semana')wsWeekOff--;else if(wsMonthOff>-24)wsMonthOff--;renderPage('workshop')},
+  wsNext(){if(wsMode==='agenda'&&wsView==='semana')wsWeekOff++;else if(wsMonthOff<0)wsMonthOff++;renderPage('workshop')},
+  wsToday(){wsWeekOff=0;wsMonthOff=0;wsDaySel=todayISO();renderPage('workshop')},
   setWsDay(iso){wsDaySel=iso;wsFilter=null;renderPage('workshop')},
   wsWeek(d){if(d===0){wsWeekOff=0;wsDaySel=todayISO()}else wsWeekOff+=d;renderPage('workshop')},
   openOtInfo(otId){
@@ -1945,6 +2085,11 @@ Object.assign(APP,{
       '<div class="meta">Estado<span>'+estado+'</span></div>'+
       '<div class="meta">Técnico<span>'+esc(ot.tech||'—')+'</span></div>';
     document.getElementById('oiNote').value=ot.note||'';
+    const oiT=document.getElementById('oiTasks');
+    if(ot.tasks&&ot.tasks.length){
+      oiT.style.display='block';
+      oiT.innerHTML='<b style="color:var(--ink)">Tareas</b><br>'+ot.tasks.map(tk=>(tk.done?'<span style="color:#1c6b3a">✓</span>':'○')+' '+esc(tk.t)+(tk.why&&!tk.done?' <i style="color:#a33">('+esc(tk.why)+')</i>':'')).join('<br>');
+    }else oiT.style.display='none';
     let acts='';
     if(ot.status!=='terminada'){
       acts='<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openTurno(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+(ot.proposedDate?'Cambiar día':'Agendar')+'</button>'+
@@ -1952,6 +2097,7 @@ Object.assign(APP,{
         '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openDone(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button>';
     }else{
       acts='<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openReport(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe firmado</button>'+
+      '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.viewReport(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-search"/></svg>Ver</button>'+
         '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openInvoice(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Factura</button>';
     }
     document.getElementById('oiActions').innerHTML=acts;
@@ -1994,7 +2140,9 @@ Object.assign(APP,{
     const list=document.getElementById('taskList');
     list.innerHTML=(ot.tasks&&ot.tasks.length)?ot.tasks.map((t,i)=>
       '<div class="task'+(t.done?' done':'')+'"><input type="checkbox"'+(t.done?' checked':'')+' onchange="APP.toggleTask('+i+')" /><span>'+esc(t.t)+'</span>'+
-      '<button class="mini-btn" title="Quitar" onclick="APP.delTask('+i+')"><svg class="ic ic-xs"><use href="#i-x"/></svg></button></div>'
+      '<button class="mini-btn" title="Quitar" onclick="APP.delTask('+i+')"><svg class="ic ic-xs"><use href="#i-x"/></svg></button>'+
+      (t.done?'':'<input class="taskwhy" placeholder="¿Por qué no se realizó? (queda en el informe)" value="'+esc(t.why||'')+'" onchange="APP.setTaskWhy('+i+',this.value)" />')+
+      '</div>'
     ).join(''):'<div class="small" style="padding:6px 0 2px">Sin tareas todavía — añade qué se tiene que hacer.</div>';
   },
   loadTemplateTasks(which){
@@ -2021,6 +2169,11 @@ Object.assign(APP,{
     document.getElementById('taskNew').value='';
     saveDb();this.renderTasks();renderPage('workshop');
   },
+  setTaskWhy(i,v){
+    const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot||!ot.tasks||!ot.tasks[i])return;
+    ot.tasks[i].why=v.trim();
+    saveDb();
+  },
   toggleTask(i){
     const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot||!ot.tasks||!ot.tasks[i])return;
     ot.tasks[i].done=!ot.tasks[i].done;
@@ -2035,15 +2188,30 @@ Object.assign(APP,{
   markReady(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot||ot.status!=='terminada')return;
     const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
-    ot.ready=true;
-    pushNotif('client','i-checkc','Tu máquina está lista para retirar ✓',mLabel(m)+' · '+ot.id+' — revisa el informe del service y fírmalo desde aquí.',m.clientId,{kind:'retiro',otId:ot.id});
-    saveDb();toast('Aviso de retiro enviado al cliente');renderAll();
+    document.getElementById('readyOtId').value=otId;
+    document.getElementById('readySub').textContent=ot.id+' · '+mLabel(m)+' · '+(c?c.name:'');
+    const d=new Date();
+    document.getElementById('readyDate').value=todayISO();
+    d.setHours(d.getHours()+1,0,0,0);
+    document.getElementById('readyTime').value=String(d.getHours()).padStart(2,'0')+':00';
+    this.openModal('mReady');
+  },
+  sendReady(){
+    const otId=document.getElementById('readyOtId').value;
+    const ot=db.ots.find(o=>o.id===otId);if(!ot||ot.status!=='terminada')return;
+    const date=document.getElementById('readyDate').value||todayISO();
+    const time=document.getElementById('readyTime').value;
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    ot.ready=true;ot.pickupDate=date;ot.pickupTime=time;
+    pushNotif('client','i-checkc','Tu máquina está lista para retirar ✓','Puede retirarse a partir del '+fmtDate(date)+(time?' a las '+time:'')+' — '+mLabel(m)+' · '+ot.id+'. Revisa el informe del service y fírmalo desde aquí.',m.clientId,{kind:'retiro',otId:ot.id});
+    saveDb();this.closeModal('mReady');
+    toast('Aviso enviado: retiro desde '+fmtDate(date)+(time?' '+time:''));renderAll();
   },
   openClientSign(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot||ot.status!=='terminada')return;
     const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
     document.getElementById('csOtId').value=otId;
-    document.getElementById('csSub').textContent=ot.id+' · '+mLabel(m)+' · '+(c?c.name:'')+' · '+fmtTs(ot.closedAt||Date.now());
+    document.getElementById('csSub').textContent=ot.id+' · '+mLabel(m)+' · '+(c?c.name:'')+' · '+fmtTs(ot.closedAt||Date.now())+(ot.pickupDate?' — retiro desde '+fmtDate(ot.pickupDate)+(ot.pickupTime?' '+ot.pickupTime:''):'');
     let html='<div style="font-size:13.5px;line-height:1.6"><b>Trabajo realizado:</b> '+esc(ot.workDone||ot.issue||ot.type)+'</div>';
     if(ot.tasks&&ot.tasks.length){
       html+='<div style="font-size:12.5px;margin-top:8px;line-height:1.8">'+ot.tasks.map(t2=>(t2.done?'<span style="color:#1c6b3a">✓</span>':'○')+' '+esc(t2.t)).join('<br>')+'</div>';
@@ -2080,6 +2248,23 @@ Object.assign(APP,{
     pushNotif('admin','i-checkc','Informe firmado por el cliente',(c?c.name:'Cliente')+' firmó el informe '+ot.id+' · '+mLabel(m));
     saveDb();this.closeModal('mClientSig');this._sig2Dirty=false;
     toast('¡Listo! Informe firmado ✓');renderAll();
+  },
+
+  notifGo(id){
+    const n=db.notifs.find(x=>x.id===id);if(!n)return;
+    closeNotif();
+    const ot=n.otId?db.ots.find(o=>o.id===n.otId):null;
+    if(currentRole==='client'){
+      if(n.kind==='retiro'&&ot){this.openClientSign(ot.id);return}
+      if(n.kind==='cita'&&ot){gotoPage('clientservices');return}
+      if(n.title.indexOf('completado')>=0){gotoPage('clientservices');return}
+      gotoPage('clientmachines');return;
+    }
+    if((n.kind==='cita'||n.kind==='retiro')&&ot){gotoPage('workshop');this.openOtInfo(ot.id);return}
+    if(n.title.indexOf('Stock')>=0){gotoPage('parts');return}
+    if(n.title.indexOf('Garant')>=0||n.title.indexOf('Aviso')>=0||n.title.indexOf('aviso')>=0||n.title.indexOf('Planilla')>=0){gotoPage('machines');return}
+    if(ot){gotoPage('workshop');this.openOtInfo(ot.id);return}
+    gotoPage('dashboard');
   },
 
   /* ---- turnos: proponer / aceptar / rechazar ---- */
@@ -2256,6 +2441,7 @@ Object.assign(APP,{
   },
 
   /* ---- informe de servicio con firma ---- */
+
   openReport(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
     const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
@@ -2285,6 +2471,16 @@ Object.assign(APP,{
     c.getContext('2d').clearRect(0,0,c.width,c.height);
     this._sigDirty=false;
   },
+  viewReport(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
+    document.getElementById('viewTitle').textContent='Informe de servicio · '+ot.id;
+    document.getElementById('viewFrame').srcdoc=buildReportHTML(ot);
+    this.openModal('mView');
+  },
+  printView(){
+    const f=document.getElementById('viewFrame');
+    try{f.contentWindow.print()}catch(e){toast('Usa el botón derecho → Imprimir')};
+  },
   printReport(){
     const otId=document.getElementById('repOtId').value;
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
@@ -2295,39 +2491,7 @@ Object.assign(APP,{
     ot.reportPrinted=true;
     const biz=db.meta.biz||{};
     const fecha=ot.closedAt?new Date(ot.closedAt):new Date();
-    const html='<!doctype html><html><head><meta charset="utf-8"><title>Informe '+ot.id+'</title>'+
-      '<style>body{font-family:Inter,system-ui,sans-serif;color:#111;margin:0;padding:26px;font-size:13px}'+
-      '.wrap{max-width:700px;margin:0 auto}'+
-      '.rhead{display:flex;justify-content:space-between;align-items:flex-start;background:#14402c;color:#fff;border-radius:12px;padding:16px 20px}'+
-      '.rhead h1{margin:0;font-size:17px}.rhead .rno{text-align:right;font-size:12px;opacity:.9;line-height:1.6}'+
-      '.biz{margin-top:10px;font-size:11px;color:#555}'+
-      '.gridinfo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}'+
-      '.box{border:1px solid #dde5dd;border-radius:10px;padding:12px 14px}'+
-      '.box h3{margin:0 0 6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:#2f7a52}'+
-      '.box div{font-size:13px;line-height:1.6}'+
-      '.works{margin-top:14px;border:1px solid #dde5dd;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.7}'+
-      '.firmas{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}'+
-      '.firma{border:1.5px solid #bbb;border-radius:10px;height:120px;position:relative;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}'+
-      '.firma img{max-width:92%;max-height:110px;object-fit:contain}'+
-      '.firma span{position:absolute;bottom:-20px;font-size:11px;color:#555}'+
-      '.foot{margin-top:44px;color:#888;font-size:10.5px;text-align:center}'+
-      '@media print{body{padding:10mm}}</style></head><body><div class="wrap">'+
-      '<div class="rhead"><div><h1>INFORME DE SERVICIO REALIZADO</h1></div>'+
-      '<div class="rno"><b>'+esc(ot.id)+'</b><br>'+fmtTs(fecha.getTime())+'</div></div>'+
-      '<div class="biz"><b>'+esc(biz.name||'Mi Empresa')+'</b>'+(biz.cif?' · CUIT '+esc(biz.cif):'')+(biz.phone?' · '+esc(biz.phone):'')+(biz.city?' · '+esc(biz.city):'')+'</div>'+
-      '<div class="gridinfo">'+
-      '<div class="box"><h3>Cliente</h3><div><b>'+esc(c?c.name:'—')+'</b>'+(c&&c.cuit?'<br>CUIT: '+esc(c.cuit):'')+(c&&c.contact?'<br>At.: '+esc(c.contact):'')+(c&&c.phone?'<br>'+esc(c.phone):'')+'</div></div>'+
-      '<div class="box"><h3>Equipo</h3><div><b>'+esc(m?mLabel(m):'—')+'</b>'+(m&&m.serial?'<br>SN: '+esc(m.serial):'')+(m?'<br>Horómetro al cierre: '+nf(m.hours)+' h':'')+(m&&m.warrantyEnd?'<br>Garantía: '+fmtDate(m.warrantyEnd):'')+'</div></div>'+
-      '</div>'+
-      '<div class="works"><b>Trabajo realizado</b><br>'+esc(ot.workDone||ot.issue||ot.type)+(ot.tech?'<br><span style="color:#555;font-size:12px">Técnico: '+esc(ot.tech)+'</span>':'')+
-      (ot.reportObs?'<br><br><b>Observaciones</b><br>'+esc(ot.reportObs):'')+'</div>'+
-      (ot.tasks&&ot.tasks.length?'<div class="works"><b>Tareas</b><br>'+ot.tasks.map(t=>(t.done?'<span style="color:#1c6b3a">✓</span>':'○')+' '+esc(t.t)).join('<br>')+'</div>':'')+
-      '<div class="firmas">'+
-      '<div class="firma">'+(ot.signature?'<img src="'+ot.signature+'">':'')+'<span>Firma del cliente — '+esc(c?c.name:'')+'</span></div>'+
-      '<div class="firma"><span>Por el taller — '+esc(ot.tech||'')+'</span></div>'+
-      '</div>'+
-      '<div class="foot">Este informe deja constancia del trabajo realizado sobre el equipo indicado.<br>Generado con TerraFleet · '+fmtTs(Date.now())+'</div>'+
-      '</div></body></html>';
+    const html=buildReportHTML(ot);
     saveDb();this.closeModal('mReport');this._sigDirty=false;renderAll();
     toast('Informe '+ot.id+' generado'+(ot.signature?' con firma ✓':''));
     const f=document.createElement('iframe');
