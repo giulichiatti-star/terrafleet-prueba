@@ -193,6 +193,15 @@
   .task span{flex:1;font-size:13.5px}
   .task.done span{text-decoration:line-through;color:var(--muted)}
   .task .mini-btn{border-color:transparent;color:var(--muted)}
+  .svcdet{border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:8px;background:#fff}
+  .svcdet summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:14px;list-style:none}
+  .svcdet summary::-webkit-details-marker{display:none}
+  .svcdet summary:before{content:'▸';color:var(--green2);font-size:13px;margin-right:8px}
+  .svcdet[open] summary:before{content:'▾'}
+  .svcdet summary span{color:var(--muted);font-size:11.5px;font-weight:600}
+  .svcdet ul{margin:10px 0 4px;padding-left:20px;font-size:13px}
+  .svcdet li{margin-bottom:5px;line-height:1.5}
+  .apt.done{background:#f6faf4;border-style:dashed}
   .sigpad{border:1.5px dashed var(--line);border-radius:12px;background:#fff;overflow:hidden;margin-top:4px}
   .sigpad canvas{width:100%;height:150px;display:block;touch-action:none;cursor:crosshair}
   .report-print{font-family:Inter,system-ui,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:26px}
@@ -483,6 +492,7 @@
               <button class="mini-btn" title="Semana siguiente" onclick="APP.wsWeek(1)">›</button>
             </div>
           </div>
+          <div id="wsStats" style="font-size:12.5px;color:var(--muted);margin:-4px 0 12px"></div>
           <div class="wscal" id="wsCal"></div>
           <div id="wsDay" style="margin-top:14px"></div>
         </div>
@@ -586,6 +596,10 @@
       <section class="page" id="clientmachines">
         <div class="section-head"><div><div class="section-title" style="font-size:24px">Mis equipos</div><div class="section-sub">Actualiza las horas cuando quieras: recalculamos el próximo servicio al instante.</div></div></div>
         <div class="machine-grid" id="cmGrid"></div>
+        <div class="card section-card" id="cmCatCard" style="margin-top:16px;display:none">
+          <div class="section-head" style="margin-bottom:10px"><div><div class="section-title">Tipos de servicio de tu equipo</div><div class="section-sub">Qué le toca a tu máquina según el uso — abre cada uno para ver los puntos.</div></div></div>
+          <div id="cmCat"></div>
+        </div>
       </section>
 
       <section class="page" id="clientservices">
@@ -673,6 +687,7 @@
       <div><label>Fecha de entrega</label><input class="field" id="maLastDate" type="date" /></div>
       <div><label>Garantía hasta</label><input class="field" id="maWarranty" type="date" /></div>
     </div>
+    <div style="margin-top:12px"><label>Grupo de servicio (define su planilla y checklist)</label><select class="field" id="maGroup"><option value="">— sin plantilla por ahora —</option><option value="mini">Minitractor cortacésped / radio cero</option></select></div>
     <div class="form-row" style="margin-top:12px">
       <div>
         <label>Precio de venta ($)</label><input class="field" id="maSalePrice" type="number" min="0" step="1000" placeholder="Ej. 95000000" />
@@ -801,10 +816,23 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="mClientSig">
+  <div class="modal">
+    <h3>Tu máquina está lista — firma del service</h3><p id="csSub"></p>
+    <input type="hidden" id="csOtId" />
+    <div id="csTasks" style="max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#fbfdf9"></div>
+    <label>Firma del cliente (con el dedo o el mouse)</label>
+    <div class="sigpad"><canvas id="sigCanvas2"></canvas></div>
+    <div class="action-row"><button class="outline-btn" onclick="APP.sig2Clear()"><svg class="ic ic-xs"><use href="#i-replay"/></svg>Limpiar firma</button></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mClientSig')">Cancelar</button><button class="solid-btn" onclick="APP.saveClientSign()"><svg class="ic ic-xs"><use href="#i-check"/></svg>Firmar y confirmar</button></div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="mTasks">
   <div class="modal">
     <h3>Tareas de la orden</h3><p id="taskSub"></p>
     <input type="hidden" id="taskOtId" />
+    <div class="action-row" id="tplRow" style="display:none;margin:0 0 10px"><button class="outline-btn" id="tplBtn" onclick="APP.loadTemplateTasks()"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Cargar checklist del service</button></div>
     <div id="taskList"></div>
     <div class="action-row" style="margin-top:6px">
       <input class="field" id="taskNew" placeholder="Nueva tarea… Ej. cambio de aceite y filtros" style="flex:1" onkeydown="if(event.key==='Enter')APP.addTask()" />
@@ -919,13 +947,13 @@ function seedDb(){
     machines:[
       {id:'m1',clientId:'c1',brand:'Kubota',model:'M5-112',serial:'KBT-M5-88421',iconKey:'tractor',hours:491,lastServiceHours:0,lastServiceDate:'2026-03-20',intervalH:500,intervalM:12,warrantyEnd:'2028-06-30',salePrice:95000000,servicePrice:750000,stage:'soon',
        history:[{ts:now-90*86400000,title:'Servicio 250 h',detail:'Aceite motor + filtros · OT-2026-0291'},{ts:now-160*86400000,title:'Servicio inicial 50 h',detail:'Revisión de entrega · OT-2025-0110'},{ts:now-200*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 30/06/2028'}]},
-      {id:'m2',clientId:'c2',brand:'Toro',model:'Groundsmaster 4500-D',serial:'TR-4500-10231',iconKey:'leaf',hours:1014,lastServiceHours:0,lastServiceDate:'2025-11-01',intervalH:1000,intervalM:24,warrantyEnd:'2024-11-01',salePrice:62000000,servicePrice:480000,stage:'overdue',
+      {id:'m2',clientId:'c2',brand:'Toro',model:'Groundsmaster 4500-D',serial:'TR-4500-10231',iconKey:'leaf',serviceGroup:'mini',hours:1014,lastServiceHours:0,lastServiceDate:'2025-11-01',intervalH:1000,intervalM:24,warrantyEnd:'2024-11-01',salePrice:62000000,servicePrice:480000,stage:'overdue',
        history:[{ts:now-140*86400000,title:'Servicio 750 h',detail:'Filtros y comprobación hidráulica · OT-2025-0355'},{ts:now-400*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]},
       {id:'m3',clientId:'c3',brand:'John Deere',model:'5075E',serial:'JD5075-72190',iconKey:'tractor',hours:726,lastServiceHours:0,lastServiceDate:'2025-10-01',intervalH:2000,intervalM:12,warrantyEnd:'2027-02-28',salePrice:88000000,servicePrice:700000,stage:'soon',
        history:[{ts:now-180*86400000,title:'Revisión anual',detail:'Aceite, filtros y engrase · OT-2025-0301'},{ts:now-500*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 28/02/2027'}]},
-      {id:'m4',clientId:'c4',brand:'Husqvarna',model:'P 525DX',serial:'HQ525-40117',iconKey:'scissors',hours:358,lastServiceHours:0,lastServiceDate:'2026-06-15',intervalH:400,intervalM:12,warrantyEnd:'2027-11-30',salePrice:12000000,servicePrice:180000,stage:'soon',
+      {id:'m4',clientId:'c4',brand:'Husqvarna',model:'P 525DX',serial:'HQ525-40117',iconKey:'scissors',serviceGroup:'mini',hours:358,lastServiceHours:0,lastServiceDate:'2026-06-15',intervalH:400,intervalM:12,warrantyEnd:'2027-11-30',salePrice:12000000,servicePrice:180000,stage:'soon',
        history:[{ts:now-70*86400000,title:'Cambio de cuchillas',detail:'Kit BL-4500 · OT-2026-0415'},{ts:now-300*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]},
-      {id:'m5',clientId:'c1',brand:'Stihl',model:'RT 6112 ZL',serial:'ST6112-88912',iconKey:'sprout',hours:81,lastServiceHours:0,lastServiceDate:'2026-06-01',intervalH:200,intervalM:12,warrantyEnd:'2028-09-04',salePrice:9500000,servicePrice:95000,stage:'ok',
+      {id:'m5',clientId:'c1',brand:'Stihl',model:'RT 6112 ZL',serial:'ST6112-88912',iconKey:'sprout',serviceGroup:'mini',hours:81,lastServiceHours:0,lastServiceDate:'2026-06-01',intervalH:200,intervalM:12,warrantyEnd:'2028-09-04',salePrice:9500000,servicePrice:95000,stage:'ok',
        history:[{ts:now-100*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 04/09/2028'}]},
       {id:'m6',clientId:'c2',brand:'Avant',model:'635',serial:'AV635-22013',iconKey:'layers',hours:1244,lastServiceHours:0,lastServiceDate:'2025-09-10',intervalH:1500,intervalM:24,warrantyEnd:'2023-09-10',salePrice:78000000,servicePrice:520000,stage:'ok',
        history:[{ts:now-250*86400000,title:'Servicio 1.000 h',detail:'Transmisión e hidráulico · OT-2025-0280'},{ts:now-800*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]}
@@ -934,7 +962,7 @@ function seedDb(){
       {id:'OT-0418',machineId:'m2',type:'Revisión preventiva',issue:'Revisión 1.000 h (vencida)',status:'taller',tech:'Marc',origin:'taller',createdAt:now-2*86400000},
       {id:'OT-0417',machineId:'m1',type:'Revisión preventiva',issue:'Preventivo 500 h',status:'pendiente',tech:'',origin:'taller',createdAt:now-86400000},
       {id:'OT-0416',machineId:'m6',type:'Avería',issue:'Fuga hidráulica en brazo',status:'taller',tech:'Pau',origin:'taller',createdAt:now-3*86400000},
-      {id:'OT-0415',machineId:'m4',type:'Revisión preventiva',issue:'Cambio de cuchillas',status:'terminada',tech:'Marc',origin:'taller',createdAt:now-70*86400000,closedAt:now-69*86400000}
+      {id:'OT-0415',machineId:'m4',type:'Revisión preventiva',issue:'Cambio de cuchillas',status:'terminada',tech:'Marc',origin:'taller',createdAt:now-4*86400000,closedAt:now-3*86400000,workDone:'Cambio de cuchillas y limpieza de plataforma'}
     ],
     notifs:[
       {id:uid('n'),audience:'admin',icon:'i-clock',title:'Servicio próximo',detail:'Kubota M5-112 · revisión 500 h en ~9 h',ts:now-40*min,read:false},
@@ -1094,7 +1122,7 @@ function machineCardHTML(m,clientView){
     '<h3>'+esc(mLabel(m))+'</h3><div class="serial">SN '+esc(m.serial||'—')+(clientView?'':' · '+esc(c?c.name:'—'))+'</div>'+
     '<div class="meter"><div><div class="small">Horómetro</div><div class="big">'+nf(m.hours)+' h</div></div><button class="outline-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar</button></div>'+
     '<div class="progress"><div style="width:'+info.pct+'%'+(info.state==='overdue'?';background:var(--red)':'')+'"></div></div>'+
-    '<div class="small">Revisión cada '+nf(m.intervalH)+' h / '+m.intervalM+' meses · '+esc(info.label)+'</div>'+
+    '<div class="small">Revisión cada '+nf(m.intervalH)+' h / '+m.intervalM+' meses · '+esc(info.label)+(m.serviceGroup&&SERVICE_GROUPS[m.serviceGroup]?' · '+esc(SERVICE_GROUPS[m.serviceGroup].name):'')+'</div>'+
     '<div class="machine-meta"><div class="meta">Garantía<span>'+(info.warrantyLeft==null?'—':(info.warrantyLeft>0?fmtDate(m.warrantyEnd):'Finalizada'))+'</span></div><div class="meta">Entrega<span>'+fmtDate(m.lastServiceDate)+'</span></div>'+
     '<div class="meta">Precio venta<span>'+(m.salePrice?money(m.salePrice):'—')+'</span></div><div class="meta">Precio revisión<span>'+(m.servicePriceTBD?'A confirmar':(m.servicePrice?money(m.servicePrice):'—'))+'</span></div></div>'+
     '<div class="action-row">'+actions+'</div></div>';
@@ -1198,12 +1226,24 @@ function renderWsStatus(){
     '<svg class="ic ic-sm" style="position:absolute;top:10px;right:10px;opacity:.5"><use href="#'+f.icon+'"/></svg>'+
     '<div class="v">'+c[f.k]+'</div><div class="l">'+f.l+'</div></div>').join('');
 }
+function isoOf(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function wsDoneOf(iso){return db.ots.filter(o=>o.status==='terminada'&&isoOf(o.closedAt||o.createdAt)===iso)}
+function renderWsStats(){
+  const now=new Date();
+  let turnos=0,conf=0,hechos=0;
+  db.ots.forEach(o=>{
+    if(o.proposedDate){const d=new Date(o.proposedDate+'T00:00:00');if(d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()){turnos++;if(o.cita==='confirmada'||o.status==='terminada')conf++}}
+    if(o.status==='terminada'){const c=new Date(o.closedAt||0);if(c.getFullYear()===now.getFullYear()&&c.getMonth()===now.getMonth())hechos++}
+  });
+  document.getElementById('wsStats').innerHTML='<b style="color:var(--ink)">'+now.toLocaleDateString('es-AR',{month:'long'})+':</b> '+turnos+' turnos · '+conf+' confirmados · '+hechos+' completados con éxito';
+}
 function renderWsCal(){
   const base=new Date();base.setHours(0,0,0,0);
   const dow=(base.getDay()+6)%7;
   const monday=new Date(base);monday.setDate(monday.getDate()-dow+wsWeekOff*7);
   const counts={};
   wsOpenCitas().forEach(o=>{counts[o.proposedDate]=(counts[o.proposedDate]||0)+1});
+  db.ots.forEach(o=>{if(o.status==='terminada'){const iso=isoOf(o.closedAt||o.createdAt);counts[iso]=(counts[iso]||0)+1}});
   let html='';
   for(let i=0;i<7;i++){
     const d=new Date(monday);d.setDate(d.getDate()+i);
@@ -1240,8 +1280,25 @@ function renderWsDay(){
   if(!wsDaySel){el.innerHTML='<div class="small" style="padding:4px 2px">Pulsa un día del calendario para ver sus turnos y actuar sobre ellos.</div>';document.getElementById('wsCalSub').textContent='Pulsa un día para ver y actuar sobre sus turnos.';return}
   const list=wsOpenCitas().filter(o=>o.proposedDate===wsDaySel)
     .sort((a,b)=>(a.proposedTime||'').localeCompare(b.proposedTime||''));
-  document.getElementById('wsCalSub').textContent=dayLabel(wsDaySel)+' · '+list.length+' turno'+(list.length===1?'':'s');
-  el.innerHTML=list.length?list.map(o=>aptCardHTML(o,true)).join(''):emptyHTML('#i-cal','Sin turnos este día. Puedes agendar una OT de abajo con «Agendar».');
+  const done=wsDoneOf(wsDaySel);
+  document.getElementById('wsCalSub').textContent=dayLabel(wsDaySel)+' · '+list.length+' turno'+(list.length===1?'':'s')+(done.length?' · '+done.length+' completado'+(done.length===1?'':'s'):'');
+  let html=list.map(o=>aptCardHTML(o,true)).join('');
+  if(done.length){
+    html+='<div class="agenda-day">Completados este día</div>'+done.map(function(o){
+      const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
+      const firma=o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Esperando firma del cliente</span>':'');
+      return '<div class="apt done"><div class="apt-time" style="background:#e4efe7;color:#335"><div>✓</div><span>'+esc(o.workDone?o.workDone.slice(0,10):o.type)+'</span></div>'+
+        '<div style="flex:1;min-width:0"><b>'+esc(m?mLabel(m):'—')+'</b> <span class="badge ok">Completado</span> '+firma+
+        '<div class="small">'+esc(c?c.name:'—')+(m&&m.serial?' · SN '+esc(m.serial):'')+' · '+esc(o.tech||'—')+'</div>'+
+        '<div class="small">'+esc(o.workDone||o.issue||o.type)+'</div></div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">'+
+        '<button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button>'+
+        '<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Factura</button>'+
+        (!o.ready?'<button class="solid-btn" onclick="APP.markReady(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg>Avisar retiro</button>':'')+
+        '</div></div>';
+    }).join('');
+  }
+  el.innerHTML=html||emptyHTML('#i-cal','Sin turnos este día.');
 }
 const WS_TITLES={solicitada:'Turnos pedidos — por confirmar',propuesta:'Esperando respuesta del cliente',rechazada:'Rechazados — proponer otro día',hoy:'Citas de hoy',taller:'En taller ahora',sinfecha:'OTs sin fecha asignada'};
 function reqCardHTML(o){
@@ -1282,7 +1339,7 @@ function renderWsReqs(){
   el.innerHTML=html||emptyHTML('#i-checkc','Sin solicitudes pendientes ✓');
 }
 function renderWorkshop(){
-  renderWsStatus();renderWsCal();renderWsDay();renderWsReqs();
+  renderWsStatus();renderWsStats();renderWsCal();renderWsDay();renderWsReqs();
   const t=$('#otTable');
   if(!db.ots.length){t.innerHTML=emptyHTML('#i-wrench','Sin órdenes de trabajo. Crea una desde «Nueva OT» o desde una máquina.');return}
   const order={cita:0,pendiente:1,taller:2,terminada:3};
@@ -1298,6 +1355,7 @@ function renderWorkshop(){
       rechazada:'<span class="badge bad">Rechazado — proponer otro día</span>'
     };
     const citaBadge=(o.type==='Cita preventiva'&&o.status!=='terminada')?('<div style="margin-top:5px">'+(CITA_STATE[o.cita||'solicitada']||'')+'</div>'):'';
+    const retiroBadge=(o.status==='terminada')?('<div style="margin-top:5px">'+(o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Listo para retirar — espera firma</span>':''))+'</div>'):'';
     let action='';
     const tasksBtn='<button class="outline-btn" onclick="APP.openTasks(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas'+(o.tasks&&o.tasks.length?' '+o.tasks.filter(t=>t.done).length+'/'+o.tasks.length:'')+'</button>';
     if(o.status!=='terminada'){
@@ -1310,11 +1368,13 @@ function renderWorkshop(){
     }else{
       action='<div style="display:flex;gap:6px;flex-wrap:wrap">'+tasksBtn+
         '<button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button>'+
-        '<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>'+(o.invoiced?'Ver factura':'Factura')+'</button></div>';
+        '<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>'+(o.invoiced?'Ver factura':'Factura')+'</button>'+
+        (!o.ready?'<button class="solid-btn" onclick="APP.markReady(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg>Avisar retiro</button>':'')+
+        '</div>';
     }
     const sel='<select class="statussel" onchange="APP.setOTStatus(\''+o.id+'\',this.value)">'+
       ['cita','pendiente','taller','terminada'].map(s=>'<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+({cita:'Cita',pendiente:'Pendiente',taller:'En taller',terminada:'Terminada'})[s]+'</option>').join('')+'</select>';
-    return '<tr><td><b>'+esc(o.id)+'</b>'+citaBadge+'</td><td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div></td>'+
+    return '<tr><td><b>'+esc(o.id)+'</b>'+citaBadge+retiroBadge+'</td><td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div></td>'+
       '<td>'+esc(o.type)+'<div class="small">'+esc(o.issue||'')+'</div></td><td>'+esc(o.tech||'—')+origin+'</td><td>'+sel+'</td><td>'+action+'</td></tr>';
   }).join('');
   t.innerHTML='<table><thead><tr><th>OT</th><th>Máquina</th><th>Trabajo</th><th>Técnico</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
@@ -1403,6 +1463,15 @@ function renderClientMachines(){
   const c=requireClient();if(!c)return;
   const ms=machinesOf(c.id);
   $('#cmGrid').innerHTML=ms.length?ms.map(m=>machineCardHTML(m,true)).join(''):emptyHTML('#i-tractor','Aún no tienes equipos registrados.');
+  const groups={};
+  ms.forEach(m=>{if(m.serviceGroup&&SERVICE_GROUPS[m.serviceGroup])groups[m.serviceGroup]=1});
+  const keys=Object.keys(groups);
+  $('#cmCatCard').style.display=keys.length?'block':'none';
+  $('#cmCat').innerHTML=keys.map(gk=>{
+    const g=SERVICE_GROUPS[gk];
+    return '<div class="agenda-day" style="margin-top:0">'+esc(g.name)+'</div>'+
+      g.services.map(s=>'<details class="svcdet"><summary><b>'+s.n+' · '+esc(s.t)+'</b><span>'+s.tasks.length+' puntos</span></summary><ul>'+s.tasks.map(tk=>'<li>'+esc(tk)+'</li>').join('')+'</ul></details>').join('');
+  }).join('');
 }
 function renderClientServices(){
   const c=requireClient();if(!c)return;
@@ -1442,7 +1511,8 @@ function renderClientServices(){
       return '<tr><td>'+fmtDate((o.closedAt?new Date(o.closedAt):new Date()).toISOString().slice(0,10))+'</td>'+
         '<td><b>'+esc(m?mLabel(m):'—')+'</b><div class="small">'+esc(o.id)+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div></td>'+
         '<td>'+esc(o.workDone||o.issue||o.type)+'</td><td>'+esc(o.tech||'—')+'</td>'+
-        '<td><button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button></td></tr>';
+        '<td>'+(o.signature?'<span class="badge ok">Firmado ✓</span>':(o.ready?'<button class="solid-btn" onclick="APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver y firmar</button>':''))+
+        ' <button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button></td></tr>';
     }).join('')+'</tbody></table>'
     :emptyHTML('#i-clock','Todavía no hay servicios completados.');
 }
@@ -1481,6 +1551,12 @@ function renderBell(){
   bc.textContent=unread;bc.classList.toggle('zero',unread===0);
   $('#npList').innerHTML=list.length?list.slice(0,10).map(n=>{
     let actions='';
+    if(n.kind==='retiro'&&n.otId){
+      const ot2=db.ots.find(o=>o.id===n.otId);
+      if(ot2&&ot2.ready&&!ot2.signature){
+        actions='<div class="action-row" style="margin-top:9px"><button class="solid-btn" onclick="APP.openClientSign(\''+n.otId+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
+      }
+    }
     if(n.kind==='cita'&&n.otId){
       const ot=db.ots.find(o=>o.id===n.otId);
       if(ot&&ot.cita==='propuesta'){
@@ -1564,6 +1640,7 @@ const APP={
     $('#maLastDate').value=todayISO();
     $('#maServiceTBD').checked=false;
     $('#maServicePrice').disabled=false;
+    $('#maGroup').value='';
     this.openModal('mMachine');
   },
   saveMachine(){
@@ -1572,7 +1649,7 @@ const APP={
     const hours=Math.max(0,Number($('#maHours').value||0));
     const tbd=$('#maServiceTBD').checked;
     const m={id:uid('m'),clientId:$('#maClient').value,brand,model,serial:$('#maSerial').value.trim(),
-      iconKey:$('#maIcon').value,hours,lastServiceHours:hours,
+      iconKey:$('#maIcon').value,serviceGroup:$('#maGroup').value||null,hours,lastServiceHours:hours,
       lastServiceDate:$('#maLastDate').value||todayISO(),
       intervalH:Math.max(50,Number($('#maIntH').value||500)),intervalM:Math.max(1,Number($('#maIntM').value||12)),
       warrantyEnd:$('#maWarranty').value||null,
@@ -1745,6 +1822,26 @@ window.APP=APP;
 window.gotoPage=gotoPage;
 
 /* ================= AVISOS WA/EMAIL · CSV · FACTURA · COMPARTIR · LLAMADAS ================= */
+const SERVICE_GROUPS={
+  mini:{
+    name:'Minitractor cortacésped / radio cero',
+    services:[
+      {n:1,t:'Cada uso (antes de comenzar)',tasks:['Revisar la operación del freno','Revisar la presión de las llantas','Verificar sistema de presencia del operador y ROS','Revisar sujetadores sueltos','Revisar el nivel de aceite del motor']},
+      {n:2,t:'Cada 8 horas',tasks:['Revisar la operación del freno','Revisar la presión de las llantas','Revisar el nivel de aceite del motor']},
+      {n:3,t:'Cada 25 horas',tasks:['Afilar o cambiar las cuchillas de la segadora','Tabla de lubricación','Revisar el nivel de la batería','Limpiar la batería y los terminales','Limpiar los residuos de la placa de dirección','Revisar el enfriamiento del transeje','Cambiar el aceite del motor (modelos sin filtro)','Limpiar el filtro de aire','Limpiar la rejilla de aire']},
+      {n:4,t:'Cada 50 horas',tasks:['Comprobar la nivelación del cortacésped','Inspeccionar el silenciador y amortiguador de chispas','Cambiar el aceite del motor (modelos con filtro)']},
+      {n:5,t:'Cada 100 horas',tasks:['Revisar sujetadores sueltos','Inspeccionar las correas trapezoidales','Cambiar el filtro de aceite','Limpiar las aletas de enfriamiento','Cambiar la bujía','Cambiar el cartucho de papel del filtro de aire']},
+      {n:6,t:'Cada temporada',tasks:['Cambiar la bujía','Cambiar el filtro de combustible']},
+      {n:7,t:'Almacenamiento',tasks:['Revisar sujetadores sueltos','Tabla de lubricación','Limpiar la batería y los terminales','Cambiar el aceite del motor']}
+    ],
+    checklist:[
+      {sec:'I · Motor',items:['Cambio de aceite del motor','Cambio del filtro de aceite','Filtro de aire (limpiar o reemplazar)','Bujías (revisar, limpiar o reemplazar)']},
+      {sec:'II · Cuchillas y plataforma',items:['Afilado y balanceo de cuchillas','Limpieza de la plataforma de corte','Inspección de la caja de la cuchilla','Ajuste del mecanismo de altura de corte']},
+      {sec:'III · Transmisión y chasis',items:['Sistema hidrostático (nivel y fugas)','Correas de transmisión','Neumáticos (presión y daños)','Sistema de dirección']},
+      {sec:'IV · Seguridad y limpieza',items:['Limpieza general del equipo','Revisión de frenos','Inspección de tuercas y tornillos','Batería y terminales']}
+    ]
+  }
+};
 function normHeader(h){return String(h||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
 function parseCSVText(text){
   const lines=String(text||'').split(/\r?\n/).filter(l=>l.trim());
@@ -1752,7 +1849,7 @@ function parseCSVText(text){
   const head=lines[0];
   const delim=(head.split(';').length>head.split(',').length)?';':',';
   const cols=head.split(delim).map(normHeader);
-  const ALIAS={cliente:['cliente','clientes','customer','nombrecliente','empresa'],cuit:['cuit','cuil','cuitcliente','cuitcuil'],contacto:['contacto','contact','personadecontacto'],telefono:['telefono','tel','phone','movil','celular'],email:['email','correo','mail','emailcliente'],marca:['marca','brand','fabricante'],modelo:['modelo','model'],serie:['serie','serial','sn','numserie','numerodeserie','nserie','numeroserie'],horas:['horas','horometro','hours','horasactuales','horasuso'],revision_horas:['revisionhoras','intervalohoras','cadahoras','serviciocadahoras'],revision_meses:['revisionmeses','intervalomeses','cadameses'],ultimo_servicio:['ultimoservicio','fechaultimoservicio','fechaultimo','ultimarevision','entrega','fechaentrega'],garantia:['garantia','garantiahasta','fechagarantia','garantiahastafecha'],precio_venta:['precioventa','precio','valorventa','preciodeventa'],precio_servicio:['precioservicio','preciorevision','preciodeservicio','tarifa']};
+  const ALIAS={cliente:['cliente','clientes','customer','nombrecliente','empresa'],cuit:['cuit','cuil','cuitcliente','cuitcuil'],grupo:['grupo','gruposervicio','grupomaquina'],contacto:['contacto','contact','personadecontacto'],telefono:['telefono','tel','phone','movil','celular'],email:['email','correo','mail','emailcliente'],marca:['marca','brand','fabricante'],modelo:['modelo','model'],serie:['serie','serial','sn','numserie','numerodeserie','nserie','numeroserie'],horas:['horas','horometro','hours','horasactuales','horasuso'],revision_horas:['revisionhoras','intervalohoras','cadahoras','serviciocadahoras'],revision_meses:['revisionmeses','intervalomeses','cadameses'],ultimo_servicio:['ultimoservicio','fechaultimoservicio','fechaultimo','ultimarevision','entrega','fechaentrega'],garantia:['garantia','garantiahasta','fechagarantia','garantiahastafecha'],precio_venta:['precioventa','precio','valorventa','preciodeventa'],precio_servicio:['precioservicio','preciorevision','preciodeservicio','tarifa']};
   const map={};Object.keys(ALIAS).forEach(k=>ALIAS[k].forEach(a=>{map[a]=k}));
   const idx={};cols.forEach((c,i)=>{if(map[c])idx[map[c]]=i});
   const rows=[],errors=[];
@@ -1762,7 +1859,7 @@ function parseCSVText(text){
     const get=k=>idx[k]!=null?(cells[idx[k]]||''):'';
     if(!get('marca')&&!get('modelo'))continue;
     if(!get('cliente')){errors.push('Fila '+(i+1)+': falta el nombre del cliente');continue}
-    rows.push({cliente:get('cliente'),cuit:get('cuit'),contacto:get('contacto'),telefono:get('telefono'),email:get('email'),marca:get('marca'),modelo:get('modelo'),serie:get('serie'),horas:get('horas'),revision_horas:get('revision_horas'),revision_meses:get('revision_meses'),ultimo_servicio:get('ultimo_servicio'),garantia:get('garantia'),precio_venta:get('precio_venta'),precio_servicio:get('precio_servicio')});
+    rows.push({cliente:get('cliente'),cuit:get('cuit'),grupo:get('grupo'),contacto:get('contacto'),telefono:get('telefono'),email:get('email'),marca:get('marca'),modelo:get('modelo'),serie:get('serie'),horas:get('horas'),revision_horas:get('revision_horas'),revision_meses:get('revision_meses'),ultimo_servicio:get('ultimo_servicio'),garantia:get('garantia'),precio_venta:get('precio_venta'),precio_servicio:get('precio_servicio')});
   }
   return {rows,errors};
 }
@@ -1850,6 +1947,9 @@ Object.assign(APP,{
   openTasks(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
     const m=machineOf(ot.machineId);
+    const g=m&&m.serviceGroup&&SERVICE_GROUPS[m.serviceGroup];
+    document.getElementById('tplRow').style.display=g?'flex':'none';
+    if(g)document.getElementById('tplBtn').innerHTML='<svg class="ic ic-xs"><use href="#i-clip"/></svg>Cargar checklist · '+g.name;
     document.getElementById('taskSub').textContent=ot.id+' · '+(m?mLabel(m):'')+' · '+ot.type;
     document.getElementById('taskOtId').value=otId;
     document.getElementById('taskNew').value='';
@@ -1863,6 +1963,17 @@ Object.assign(APP,{
       '<div class="task'+(t.done?' done':'')+'"><input type="checkbox"'+(t.done?' checked':'')+' onchange="APP.toggleTask('+i+')" /><span>'+esc(t.t)+'</span>'+
       '<button class="mini-btn" title="Quitar" onclick="APP.delTask('+i+')"><svg class="ic ic-xs"><use href="#i-x"/></svg></button></div>'
     ).join(''):'<div class="small" style="padding:6px 0 2px">Sin tareas todavía — añade qué se tiene que hacer.</div>';
+  },
+  loadTemplateTasks(){
+    const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot)return;
+    const m=machineOf(ot.machineId);
+    const g=m&&m.serviceGroup&&SERVICE_GROUPS[m.serviceGroup];
+    if(!g){toast('Esta máquina no tiene grupo de servicio');return}
+    const tasks=[];
+    g.checklist.forEach(sec=>sec.items.forEach(it=>tasks.push({t:sec.sec+' — '+it,done:false})));
+    ot.tasks=tasks;
+    saveDb();this.renderTasks();renderPage('workshop');
+    toast('Checklist cargado: '+tasks.length+' puntos de '+g.name);
   },
   addTask(){
     const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot)return;
@@ -1880,6 +1991,56 @@ Object.assign(APP,{
     const ot=db.ots.find(o=>o.id===document.getElementById('taskOtId').value);if(!ot||!ot.tasks)return;
     ot.tasks.splice(i,1);
     saveDb();this.renderTasks();renderPage('workshop');
+  },
+
+  markReady(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot||ot.status!=='terminada')return;
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    ot.ready=true;
+    pushNotif('client','i-checkc','Tu máquina está lista para retirar ✓',mLabel(m)+' · '+ot.id+' — revisa el informe del service y fírmalo desde aquí.',m.clientId,{kind:'retiro',otId:ot.id});
+    saveDb();toast('Aviso de retiro enviado al cliente');renderAll();
+  },
+  openClientSign(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot||ot.status!=='terminada')return;
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    document.getElementById('csOtId').value=otId;
+    document.getElementById('csSub').textContent=ot.id+' · '+mLabel(m)+' · '+(c?c.name:'')+' · '+fmtTs(ot.closedAt||Date.now());
+    let html='<div style="font-size:13.5px;line-height:1.6"><b>Trabajo realizado:</b> '+esc(ot.workDone||ot.issue||ot.type)+'</div>';
+    if(ot.tasks&&ot.tasks.length){
+      html+='<div style="font-size:12.5px;margin-top:8px;line-height:1.8">'+ot.tasks.map(t2=>(t2.done?'<span style="color:#1c6b3a">✓</span>':'○')+' '+esc(t2.t)).join('<br>')+'</div>';
+    }
+    document.getElementById('csTasks').innerHTML=html;
+    this.openModal('mClientSig');
+    this.initSig2();
+  },
+  initSig2(){
+    const c=document.getElementById('sigCanvas2');
+    const ctx=c.getContext('2d');
+    const rect=c.getBoundingClientRect();
+    if(c.width!==Math.round(rect.width*2)){c.width=Math.round(rect.width*2);c.height=300}
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0f271c';
+    let drawing=false;
+    const pos=e=>{const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*(c.width/r.width),y:(e.clientY-r.top)*(c.height/r.height)}};
+    c.onpointerdown=e=>{drawing=true;APP._sig2Dirty=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault()};
+    c.onpointermove=e=>{if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault()};
+    c.onpointerup=()=>{drawing=false};c.onpointerleave=()=>{drawing=false};c.onpointercancel=()=>{drawing=false};
+  },
+  sig2Clear(){
+    const c=document.getElementById('sigCanvas2');
+    c.getContext('2d').clearRect(0,0,c.width,c.height);
+    this._sig2Dirty=false;
+  },
+  saveClientSign(){
+    const ot=db.ots.find(o=>o.id===document.getElementById('csOtId').value);if(!ot)return;
+    const canvas=document.getElementById('sigCanvas2');
+    if(!(this._sig2Dirty&&!this.isBlankSig(canvas))){toast('Dibuja tu firma para confirmar');return}
+    ot.signature=canvas.toDataURL('image/png');
+    ot.clientSignedAt=Date.now();
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    pushNotif('admin','i-checkc','Informe firmado por el cliente',(c?c.name:'Cliente')+' firmó el informe '+ot.id+' · '+mLabel(m));
+    saveDb();this.closeModal('mClientSig');this._sig2Dirty=false;
+    toast('¡Listo! Informe firmado ✓');renderAll();
   },
 
   /* ---- turnos: proponer / aceptar / rechazar ---- */
@@ -1935,9 +2096,9 @@ Object.assign(APP,{
 
   openImport(){importPending=null;document.getElementById('impPreview').innerHTML='';this.openModal('mImport')},
   downloadTemplate(){
-    const csv='cliente;cuit;contacto;telefono;email;marca;modelo;serie;horas;revision_horas;revision_meses;entrega;garantia;precio_venta;precio_servicio\n'+
-      'Agro Sur SRL;30-70123456-9;Carlos Gómez;+54 9 11 5555 1234;carlos@agrosur.com.ar;Kubota;M5-112;KBT-12345;1230;500;12;15/03/2026;30/06/2028;95000000;750000\n'+
-      'Agro Sur SRL;30-70123456-9;Carlos Gómez;+54 9 11 5555 1234;carlos@agrosur.com.ar;Husqvarna;P 525DX;HQ-99887;410;400;12;10/05/2026;;12000000;\n'+
+    const csv='cliente;cuit;contacto;telefono;email;marca;modelo;serie;horas;revision_horas;revision_meses;entrega;garantia;precio_venta;precio_servicio;grupo\n'+
+      'Agro Sur SRL;30-70123456-9;Carlos Gómez;+54 9 11 5555 1234;carlos@agrosur.com.ar;Kubota;M5-112;KBT-12345;1230;500;12;15/03/2026;30/06/2028;95000000;750000;mini\n'+
+      'Agro Sur SRL;30-70123456-9;Carlos Gómez;+54 9 11 5555 1234;carlos@agrosur.com.ar;Husqvarna;P 525DX;HQ-99887;410;400;12;10/05/2026;;12000000;;mini\n'+
       'Finca La Sierra;30-70999888-4;Ana Vila;+54 9 11 4444 3333;ana@sierra.com.ar;John Deere;5075E;JD-556677;680;2000;12;01/09/2025;01/09/2027;88000000;700000';
     const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='plantilla-terrafleet.csv';
@@ -1980,6 +2141,7 @@ Object.assign(APP,{
           warrantyEnd:normDate(r.garantia)||null,
           salePrice:normHours(r.precio_venta)||null,
           servicePrice:normHours(r.precio_servicio)||null,
+          serviceGroup:(/mini|corta|radio/i.test(r.grupo||''))?'mini':null,
           stage:'ok',
           history:[{ts:Date.now(),title:'Importada de planilla',detail:'Alta CSV · '+nf(hours)+' h registradas'}]});
         created++;
