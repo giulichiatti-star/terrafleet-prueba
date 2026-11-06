@@ -393,6 +393,7 @@
       <button class="active" data-page="dashboard"><span class="ico"><svg class="ic"><use href="#i-grid"/></svg></span><span>Dashboard</span></button>
       <button data-page="clients"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span><span>Clientes</span></button>
       <button data-page="machines"><span class="ico"><svg class="ic"><use href="#i-tractor"/></svg></span><span>Maquinaria</span></button>
+      <button data-page="templates"><span class="ico"><svg class="ic"><use href="#i-book"/></svg></span><span>Plantillas de service</span></button>
       <button data-page="workshop"><span class="ico"><svg class="ic"><use href="#i-wrench"/></svg></span><span>Taller / OTs</span></button>
       <button data-page="parts"><span class="ico"><svg class="ic"><use href="#i-package"/></svg></span><span>Recambios</span></button>
       <button data-page="reports"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span><span>Informes</span></button>
@@ -487,6 +488,13 @@
         </div>
         <div class="filters" id="machFilters"></div>
         <div class="machine-grid" id="machGrid"></div>
+      </section>
+
+      <section class="page" id="templates">
+        <div class="section-head">
+          <div><div class="section-title" style="font-size:24px">Plantillas de service</div><div class="section-sub">Los checklists completos por grupo de máquina, tal cual los del taller. Se cargan en cada orden desde «Tareas».</div></div>
+        </div>
+        <div id="tplPage"></div>
       </section>
 
       <section class="page" id="workshop">
@@ -686,7 +694,8 @@
 
 <div class="modal-backdrop" id="mMachine">
   <div class="modal">
-    <h3>Registrar máquina</h3><p>Crea el pasaporte digital del equipo. El contador de mantenimiento empieza ahora.</p>
+    <h3 id="maTitle">Registrar máquina</h3><p id="maSub">Crea el pasaporte digital del equipo. El contador de mantenimiento empieza ahora.</p>
+    <input type="hidden" id="maId" />
     <div class="form-row">
       <div><label>Cliente</label><select class="field" id="maClient"></select></div>
       <div><label>Tipo</label><select class="field" id="maIcon"><option value="tractor">Tractor</option><option value="leaf">Cortacéspedes</option><option value="scissors">Podadora</option><option value="sprout">Desbrozadora</option><option value="layers">Cargadora / otros</option></select></div>
@@ -932,6 +941,7 @@
 <div class="mobile-nav">
   <button onclick="APP.mmGo(currentRole==='admin'?'dashboard':'clienthome')"><svg class="ic"><use href="#i-home"/></svg>Inicio</button>
   <button onclick="APP.mmGo(currentRole==='admin'?'machines':'clientmachines')"><svg class="ic"><use href="#i-tractor"/></svg>Equipos</button>
+  <button onclick="APP.mmGo('templates')"><svg class="ic"><use href="#i-book"/></svg>Plantillas</button>
   <button onclick="APP.mmGo(currentRole==='admin'?'workshop':'clientservices')"><svg class="ic"><use href="#i-wrench"/></svg>Servicio</button>
   <button onclick="APP.toggleRole()"><svg class="ic"><use href="#i-swap"/></svg>Rol</button>
   <button onclick="APP.openMobileMenu()"><svg class="ic"><use href="#i-grid"/></svg>Menú</button>
@@ -1103,6 +1113,7 @@ const titles={
   dashboard:['Dashboard','Panel interno / Resumen'],
   clients:['Clientes','Panel interno / CRM'],
   machines:['Maquinaria','Panel interno / Activos'],
+  templates:['Plantillas de service','Panel interno / Biblioteca'],
   workshop:['Taller / OTs','Panel interno / Servicio técnico'],
   parts:['Recambios','Panel interno / Inventario'],
   reports:['Informes','Panel interno / Analytics'],
@@ -1124,6 +1135,7 @@ function gotoPage(id){
   function renderPage(id){
     ({
       dashboard:renderDashboard,clients:renderClients,machines:renderMachines,workshop:renderWorkshop,
+      templates:renderTemplates,
       parts:renderParts,reports:renderReports,settings:renderSettings,
       clienthome:renderClientHome,clientmachines:renderClientMachines,clientservices:renderClientServices,
       clientdocs:renderClientDocs,clientsupport:renderClientSupport
@@ -1161,7 +1173,8 @@ function machineCardHTML(m,clientView){
     actions='<button class="solid-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar horas</button>'+
             '<button class="outline-btn" onclick="APP.openHistory(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clock"/></svg>Historial</button>';
   }else{
-    actions='<button class="outline-btn" onclick="APP.openOTModal(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Nueva OT</button>'+
+    actions='<button class="outline-btn" onclick="APP.openMachineModal(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-cog"/></svg>Editar</button>'+
+            '<button class="outline-btn" onclick="APP.openOTModal(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Nueva OT</button>'+
             '<button class="outline-btn" onclick="APP.openHistory(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clock"/></svg>Historial</button>';
   }
   return '<div class="card machine-card hov">'+
@@ -1434,6 +1447,24 @@ function renderWsReqs(){
   if(reqs.length)html+='<div class="agenda-day" style="margin-top:0">Del cliente</div>'+reqs.map(reqCardHTML).join('');
   if(mine.length)html+='<div class="agenda-day">Nuestras OTs sin fecha</div>'+mine.map(reqCardHTML).join('');
   el.innerHTML=html||emptyHTML('#i-checkc','Sin solicitudes pendientes ✓');
+}
+function renderTemplates(){
+  const el=document.getElementById('tplPage');
+  el.innerHTML=Object.keys(SERVICE_GROUPS).map(gk=>{
+    const g=SERVICE_GROUPS[gk];
+    const puntosGrupo=g.byService?g.services.reduce((s,x)=>s+x.tasks.length,0):g.checklist.reduce((s,c)=>s+c.items.length,0);
+    let html='<div class="card section-card" style="margin-bottom:16px">'+
+      '<div class="section-head" style="margin-bottom:8px"><div><div class="section-title">'+esc(g.name)+'</div><div class="section-sub">'+g.services.length+' tipos de service · '+puntosGrupo+' puntos en total'+(g.oils?' · ficha de aceites':'')+'</div></div></div>'+
+      g.services.map(s=>'<details class="svcdet"><summary><b>'+s.n+' · '+esc(s.t)+'</b><span>'+s.tasks.length+' puntos</span></summary><ul>'+s.tasks.map(tk=>'<li>'+esc(tk)+'</li>').join('')+'</ul></details>').join('');
+    if(!g.byService){
+      g.checklist.forEach(sec=>{html+='<details class="svcdet"><summary><b>'+esc(sec.sec)+'</b><span>'+sec.items.length+' puntos</span></summary><ul>'+sec.items.map(it=>'<li>'+esc(it)+'</li>').join('')+'</ul></details>'});
+    }
+    if(g.oils){
+      html+='<details class="svcdet"><summary><b>Aceites y capacidades</b><span>ficha técnica</span></summary><table><thead><tr><th>Modelo</th><th>Capacidades y tipos</th></tr></thead><tbody>'+
+        g.oils.map(o=>'<tr><td><b>'+esc(o[0])+'</b></td><td>'+esc(o[1])+'</td></tr>').join('')+'</tbody></table></details>';
+    }
+    return html+'</div>';
+  }).join('');
 }
 function renderWorkshop(){
   renderWsStatus();renderCalendar();renderWsReqs();
@@ -1737,30 +1768,50 @@ const APP={
   },
 
   /* ---- máquinas ---- */
-  openMachineModal(){
+  openMachineModal(id){
     if(!db.clients.length){this.toast('Primero crea un cliente');return}
-    $('#maClient').innerHTML=db.clients.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
-    $('#maLastDate').value=todayISO();
-    $('#maServiceTBD').checked=false;
-    $('#maServicePrice').disabled=false;
-    $('#maGroup').value='';
+    const m=id?machineOf(id):null;
+    $('#maTitle').textContent=m?'Editar máquina':'Registrar máquina';
+    $('#maSub').textContent=m?'Ajusta los datos del equipo (las horas se actualizan desde su tarjeta).':'Crea el pasaporte digital del equipo. El contador de mantenimiento empieza ahora.';
+    $('#maId').value=m?m.id:'';
+    $('#maClient').innerHTML=db.clients.map(c=>'<option value="'+c.id+'"'+(m&&m.clientId===c.id?' selected':'')+'>'+esc(c.name)+'</option>').join('');
+    $('#maBrand').value=m?m.brand:'';$('#maModel').value=m?m.model:'';$('#maSerial').value=m?m.serial||'':'';
+    $('#maIcon').value=m?m.iconKey:'tractor';
+    $('#maHours').value=m?m.hours:0;$('#maHours').disabled=!!m;
+    $('#maIntH').value=m?m.intervalH:500;$('#maIntM').value=m?m.intervalM:12;
+    $('#maLastDate').value=m?m.lastServiceDate:todayISO();$('#maLastDate').disabled=!!m;
+    $('#maWarranty').value=m?m.warrantyEnd||'':'';
+    $('#maSalePrice').value=m&&m.salePrice?m.salePrice:'';
+    const tbd=m&&m.servicePriceTBD;
+    $('#maServiceTBD').checked=!!tbd;
+    $('#maServicePrice').disabled=!!tbd;
+    $('#maServicePrice').value=m&&m.servicePrice&&!tbd?m.servicePrice:'';
+    $('#maGroup').value=m?m.serviceGroup||'':'';
     this.openModal('mMachine');
   },
   saveMachine(){
     const brand=$('#maBrand').value.trim(),model=$('#maModel').value.trim();
     if(!brand||!model){this.toast('Marca y modelo son obligatorios');return}
-    const hours=Math.max(0,Number($('#maHours').value||0));
+    const editId=$('#maId').value;
+    const existing=editId?machineOf(editId):null;
+    const hours=existing?existing.hours:Math.max(0,Number($('#maHours').value||0));
     const tbd=$('#maServiceTBD').checked;
-    const m={id:uid('m'),clientId:$('#maClient').value,brand,model,serial:$('#maSerial').value.trim(),
-      iconKey:$('#maIcon').value,serviceGroup:$('#maGroup').value||null,hours,lastServiceHours:hours,
-      lastServiceDate:$('#maLastDate').value||todayISO(),
-      intervalH:Math.max(50,Number($('#maIntH').value||500)),intervalM:Math.max(1,Number($('#maIntM').value||12)),
-      warrantyEnd:$('#maWarranty').value||null,
-      salePrice:Math.max(0,Number($('#maSalePrice').value||0))||null,
-      servicePrice:tbd?null:(Math.max(0,Number($('#maServicePrice').value||0))||null),
-      servicePriceTBD:tbd,
-      stage:'ok',
-      history:[{ts:Date.now(),title:'Equipo registrado',detail:'Pasaporte digital creado · entrega '+fmtDate($('#maLastDate').value||todayISO())+' · contador iniciado en '+nf(hours)+' h'}]};
+    const m=existing||{id:uid('m'),hours,lastServiceHours:hours,history:[]};
+    m.clientId=$('#maClient').value;m.brand=brand;m.model=model;m.serial=$('#maSerial').value.trim();
+    m.iconKey=$('#maIcon').value;m.serviceGroup=$('#maGroup').value||null;
+    if(!existing)m.lastServiceDate=$('#maLastDate').value||todayISO();
+    m.intervalH=Math.max(50,Number($('#maIntH').value||500));m.intervalM=Math.max(1,Number($('#maIntM').value||12));
+    m.warrantyEnd=$('#maWarranty').value||null;
+    m.salePrice=Math.max(0,Number($('#maSalePrice').value||0))||null;
+    m.servicePrice=tbd?null:(Math.max(0,Number($('#maServicePrice').value||0))||null);
+    m.servicePriceTBD=tbd;
+    m.stage=dueInfo(m).state;
+    if(existing){
+      m.history.unshift({ts:Date.now(),title:'Ficha actualizada',detail:'Datos del equipo modificados'+(m.serviceGroup?' · grupo: '+SERVICE_GROUPS[m.serviceGroup].name:'')});
+      saveDb();this.closeModal('mMachine');this.toast('Máquina actualizada');renderAll();
+      return;
+    }
+    m.history.unshift({ts:Date.now(),title:'Equipo registrado',detail:'Pasaporte digital creado · entrega '+fmtDate($('#maLastDate').value||todayISO())+' · contador iniciado en '+nf(hours)+' h'});
     db.machines.push(m);
     pushNotif('admin','i-tractor','Máquina registrada',mLabel(m)+' · SN '+(m.serial||'—'));
     saveDb();this.closeModal('mMachine');this.toast('Máquina registrada');machFilter='all';renderAll();
