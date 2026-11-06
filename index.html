@@ -722,6 +722,17 @@
       <div><label>Fecha de entrega</label><input class="field" id="maLastDate" type="date" /></div>
       <div><label>Garantía hasta</label><input class="field" id="maWarranty" type="date" /></div>
     </div>
+    <div style="margin-top:12px">
+      <label>Foto del equipo (se ve en el portal del cliente y en el informe)</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div id="maFotoPrev" style="width:74px;height:74px;border-radius:14px;background:#edf4ec;display:grid;place-items:center;overflow:hidden;flex:none"><svg class="ic" style="width:26px;height:26px;color:#2f7a52"><use href="#i-tractor"/></svg></div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="outline-btn" type="button" onclick="document.getElementById('maFotoFile').click()"><svg class="ic ic-xs"><use href="#i-image"/></svg>Subir foto…</button>
+          <button class="outline-btn" type="button" id="maFotoDel" style="display:none" onclick="APP.clearMachinePhoto()">Quitar foto</button>
+        </div>
+      </div>
+      <input type="file" id="maFotoFile" accept="image/*" style="display:none" />
+    </div>
     <div style="margin-top:12px"><label>Grupo de servicio (define su planilla y checklist)</label><select class="field" id="maGroup"><option value="">— sin plantilla por ahora —</option><option value="mini">Minitractor cortacésped / radio cero</option><option value="lovol">Tractor Lovol</option></select></div>
     <div class="form-row" style="margin-top:12px">
       <div>
@@ -1225,8 +1236,10 @@ function machineCardHTML(m,clientView){
             '<button class="outline-btn" onclick="APP.openOTModal(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Nueva OT</button>'+
             '<button class="outline-btn" onclick="APP.openHistory(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clock"/></svg>Historial</button>';
   }
+  const fotoHTML=m.foto?'<img src="'+m.foto+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block"/>':'';
   return '<div class="card machine-card hov" style="cursor:pointer" onclick="APP.openMachineInfo(\''+m.id+'\')">'+
-    '<div class="machine-card-top" onclick="event.stopPropagation()"><div class="machine-hero-icon"><svg class="ic ic-lg"><use href="'+iconOf(m)+'"/></svg></div>'+badge+'</div>'+
+    (clientView&&m.foto?'<div style="height:150px;border-radius:14px;overflow:hidden;background:#edf4ec">'+fotoHTML+'</div>':'')+
+    '<div class="machine-card-top" onclick="event.stopPropagation()"><div class="machine-hero-icon" style="overflow:hidden">'+(m.foto?fotoHTML:'<svg class="ic ic-lg"><use href="'+iconOf(m)+'"/></svg>')+'</div>'+badge+'</div>'+
     '<h3>'+esc(mLabel(m))+'</h3><div class="serial">SN '+esc(m.serial||'—')+(clientView?'':' · '+esc(c?c.name:'—'))+'</div>'+
     '<div class="meter"><div><div class="small">Horómetro</div><div class="big">'+nf(m.hours)+' h</div></div><button class="outline-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar</button></div>'+
     '<div class="progress"><div style="width:'+info.pct+'%'+(info.state==='overdue'?';background:var(--red)':'')+'"></div></div>'+
@@ -1888,6 +1901,22 @@ const APP={
   },
 
   /* ---- máquinas ---- */
+  setMachinePhoto(file){
+    if(!file)return;
+    fotoFromFile(file,d=>{
+      APP._fotoTmp=d;
+      const p=document.getElementById('maFotoPrev');
+      p.innerHTML='<img src="'+d+'" style="width:100%;height:100%;object-fit:cover"/>';
+      document.getElementById('maFotoDel').style.display='inline-flex';
+      toast('Foto lista — se guarda con la máquina');
+    });
+  },
+  clearMachinePhoto(){
+    this._fotoTmp=null;
+    const p=document.getElementById('maFotoPrev');
+    p.innerHTML='<svg class="ic" style="width:26px;height:26px;color:#2f7a52"><use href="#i-tractor"/></svg>';
+    document.getElementById('maFotoDel').style.display='none';
+  },
   openMachineModal(id){
     if(!db.clients.length){this.toast('Primero crea un cliente');return}
     const m=id?machineOf(id):null;
@@ -1908,6 +1937,10 @@ const APP={
     $('#maServicePrice').disabled=!!tbd;
     $('#maServicePrice').value=m&&m.servicePrice&&!tbd?m.servicePrice:'';
     $('#maGroup').value=m?m.serviceGroup||'':'';
+    this._fotoTmp=undefined;
+    const fp=document.getElementById('maFotoPrev');
+    if(m&&m.foto){fp.innerHTML='<img src="'+m.foto+'" style="width:100%;height:100%;object-fit:cover"/>';document.getElementById('maFotoDel').style.display='inline-flex'}
+    else{fp.innerHTML='<svg class="ic" style="width:26px;height:26px;color:#2f7a52"><use href="#i-tractor"/></svg>';document.getElementById('maFotoDel').style.display='none'}
     this.openModal('mMachine');
   },
   saveMachine(){
@@ -1920,6 +1953,8 @@ const APP={
     const m=existing||{id:uid('m'),hours,lastServiceHours:hours,history:[]};
     m.clientId=$('#maClient').value;m.brand=brand;m.model=model;m.serial=$('#maSerial').value.trim();
     m.iconKey=$('#maIcon').value;m.serviceGroup=$('#maGroup').value||null;
+    if(this._fotoTmp)m.foto=this._fotoTmp;
+    else if(this._fotoTmp===null&&existing)m.foto=null;
     if(!existing)m.lastServiceDate=$('#maLastDate').value||todayISO();
     m.intervalH=Math.max(50,Number($('#maIntH').value||500));m.intervalM=Math.max(1,Number($('#maIntM').value||12));
     m.warrantyEnd=$('#maWarranty').value||null;
@@ -2212,6 +2247,22 @@ function repeatedIssueAlert(ot,machineId){
   });
   return hits>=2?('Fallo repetido: '+hits+' incidencias similares en esta máquina'):(hits===1?'Atención: 2ª incidencia similar en esta máquina':null);
 }
+function fotoFromFile(file,cb){
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=560;
+      const scale=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      cb(c.toDataURL('image/jpeg',0.72));
+    };
+    img.src=r.result;
+  };
+  r.readAsDataURL(file);
+}
 function iconGuess(brand,model){
   const s=((brand||'')+' '+(model||'')).toLowerCase();
   if(/zero|radiomaster|4500|z ?track|zt|radio cero/.test(s))return 'zturn';
@@ -2288,7 +2339,7 @@ function buildReportHTML(ot){
       '<div class="biz"><b>'+esc(biz.name||'Mi Empresa')+'</b>'+(biz.cif?' · CUIT '+esc(biz.cif):'')+(biz.phone?' · '+esc(biz.phone):'')+(biz.city?' · '+esc(biz.city):'')+'</div>'+
       '<div class="gridinfo">'+
       '<div class="box"><h3>Cliente</h3><div><b>'+esc(c?c.name:'—')+'</b>'+(c&&c.cuit?'<br>CUIT: '+esc(c.cuit):'')+(c&&c.contact?'<br>At.: '+esc(c.contact):'')+(c&&c.phone?'<br>'+esc(c.phone):'')+'</div></div>'+
-      '<div class="box"><h3>Equipo</h3><div><b>'+esc(m?mLabel(m):'—')+'</b>'+(m&&m.serial?'<br>SN: '+esc(m.serial):'')+(m?'<br>Horómetro al cierre: '+nf(m.hours)+' h':'')+(m&&m.warrantyEnd?'<br>Garantía: '+fmtDate(m.warrantyEnd):'')+'</div></div>'+
+      '<div class="box"><h3>Equipo</h3><div><b>'+esc(m?mLabel(m):'—')+'</b>'+(m&&m.serial?'<br>SN: '+esc(m.serial):'')+(m&&m.foto?'<br><img src="'+m.foto+'" style="max-width:130px;max-height:95px;object-fit:cover;border-radius:8px;margin-top:6px"/>':'')+(m?'<br>Horómetro al cierre: '+nf(m.hours)+' h':'')+(m&&m.warrantyEnd?'<br>Garantía: '+fmtDate(m.warrantyEnd):'')+'</div></div>'+
       '</div>'+
       '<div class="works"><b>Trabajo realizado</b><br>'+esc(ot.workDone||ot.issue||ot.type)+(ot.tech?'<br><span style="color:#555;font-size:12px">Técnico: '+esc(ot.tech)+'</span>':'')+
       (ot.reportObs?'<br><br><b>Observaciones</b><br>'+esc(ot.reportObs):'')+
@@ -2357,6 +2408,7 @@ Object.assign(APP,{
     const hist=(m.history||[]).slice(0,5);
     html+='<div class="agenda-day" style="margin-top:14px">Historial reciente</div><div class="timeline">'+hist.map(h=>
       '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-clock"/></svg></div><div><div class="tname">'+esc(h.title)+'</div><div class="tdetail">'+esc(h.detail||'')+'</div></div><div class="date">'+fmtTs(h.ts)+'</div></div>').join('')+'</div>';
+    if(m.foto)html='<img src="'+m.foto+'" alt="" style="width:100%;max-height:190px;object-fit:cover;border-radius:12px;margin-bottom:12px"/>'+html;
     document.getElementById('miBody').innerHTML=html;
     const admin=currentRole==='admin';
     document.getElementById('miActions').innerHTML=(admin?'<button class="solid-btn" onclick="APP.closeModal(\'mMachineInfo\');APP.openOTModal(\''+mid+'\')">Nueva OT</button>'+
@@ -2888,6 +2940,7 @@ document.addEventListener('click',e=>{
   if(pop.classList.contains('show')&&!pop.contains(e.target)&&e.target.id!=='btnBell')pop.classList.remove('show');
 });
 document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+document.getElementById('maFotoFile').addEventListener('change',e=>{if(e.target.files[0])APP.setMachinePhoto(e.target.files[0]);e.target.value=''});
 document.getElementById('impFile').addEventListener('change',e=>{if(e.target.files[0])APP.importData(e.target.files[0]);e.target.value=''});
 document.getElementById('impCSV').addEventListener('change',e=>{
   const f=e.target.files[0];e.target.value='';
