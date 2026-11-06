@@ -765,7 +765,12 @@
       <div><label>Técnico</label><input class="field" id="doneTech" placeholder="Marc" /></div>
       <div><label>Horas de la máquina ahora</label><input class="field" id="doneHours" type="number" min="0" /></div>
     </div>
-    <div style="margin-top:12px"><label>Trabajo realizado</label><input class="field" id="doneWork" placeholder="Aceite motor, filtros, engrase…" /></div>
+    <div style="margin-top:12px"><label>Solución / trabajo realizado</label><input class="field" id="doneWork" placeholder="Aceite motor, filtros, engrase…" /></div>
+    <div class="form-row" style="margin-top:12px">
+      <div><label>Horas de taller (h)</label><input class="field" id="doneHoras" type="number" min="0" step="0.5" placeholder="Ej. 3.5" /></div>
+      <div><label>Costo materiales ($)</label><input class="field" id="doneCosto" type="number" min="0" step="100" placeholder="Ej. 95000" /></div>
+    </div>
+    <div style="margin-top:12px"><label>Materiales usados</label><textarea id="doneMateriales" class="field" style="height:60px;resize:vertical" placeholder="Ej. 1 filtro de aceite OF-2210, 2 mangueras…"></textarea></div>
     <div class="notice"><svg class="ic"><use href="#i-checkc"/></svg><div>Al cerrar la OT se actualiza el historial de la máquina y el contador de mantenimiento vuelve a empezar.</div></div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mDone')">Cancelar</button><button class="solid-btn" onclick="APP.completeOT()">Cerrar OT</button></div>
   </div>
@@ -845,10 +850,42 @@
     <h3 id="oiTitle">Detalle</h3><p id="oiSub"></p>
     <input type="hidden" id="oiOtId" />
     <div class="machine-meta" style="grid-template-columns:1fr 1fr;margin-top:4px" id="oiInfo"></div>
+    <div class="form-row" style="margin-top:14px">
+      <div><label>Responsable</label><input class="field" id="oiResp" placeholder="Técnico asignado" /></div>
+      <div><label>Fecha prevista</label><input class="field" id="oiFecha" type="date" /></div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <div><label>Estado del trabajo</label><select class="field" id="oiEstado"><option value="">— sin cambiar —</option><option value="recibida">Recibida</option><option value="diagnostico">Diagnóstico</option><option value="presupuesto">Presupuesto</option><option value="bloqueada">Bloqueada</option><option value="taller">En reparación</option></select></div>
+      <div id="oiBloqueoRow" style="display:none"><label>Bloqueada por</label><select class="field" id="oiBloqueo"><option value="pieza">Falta recambio</option><option value="autorizacion">Falta autorización</option><option value="tecnico">Falta técnico</option></select></div>
+    </div>
+    <div style="margin-top:10px"><label>Detalle del bloqueo (opcional)</label><input class="field" id="oiBloqueoNota" placeholder="Ej. esperando manguera hidráulica" /></div>
     <div id="oiTasks" class="small" style="display:none;margin-top:14px;line-height:1.8;background:#f7f9f6;border-radius:10px;padding:10px 12px"></div>
     <div style="margin-top:14px"><label>Nota del turno</label><textarea id="oiNote" class="field" style="height:80px;resize:vertical" placeholder="Interno: qué preparar, repuestos pedidos, indicaciones para el cliente…"></textarea></div>
     <div class="action-row" id="oiActions" style="margin-top:12px"></div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mOtInfo')">Cerrar</button><button class="solid-btn" onclick="APP.saveOtNote()">Guardar nota</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mMachineInfo">
+  <div class="modal">
+    <h3 id="miTitle">Ficha de la máquina</h3><p id="miSub"></p>
+    <div id="miBody"></div>
+    <div class="action-row" id="miActions" style="margin-top:14px"></div>
+    <div class="modal-actions"><button class="solid-btn" onclick="APP.closeModal('mMachineInfo')">Cerrar</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mBudget">
+  <div class="modal">
+    <h3>Enviar presupuesto al cliente</h3><p id="bgSub"></p>
+    <input type="hidden" id="bgOtId" />
+    <div class="form-row" style="margin-top:14px">
+      <div><label>Base ($)</label><input class="field" id="bgBase" type="number" min="0" step="100" /></div>
+      <div><label>IVA (%)</label><input class="field" id="bgIva" type="number" min="0" value="21" /></div>
+    </div>
+    <div style="margin-top:12px"><label>Nota para el cliente</label><input class="field" id="bgNota" placeholder="Ej. incluye correa y mano de obra" /></div>
+    <div class="notice"><svg class="ic"><use href="#i-mail"/></svg><div>Le llega como alerta en su app con botones <b>Aprobar / Rechazar</b>. Al aprobar, la orden pasa automáticamente a reparación.</div></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mBudget')">Cancelar</button><button class="solid-btn" onclick="APP.sendBudget()"><svg class="ic ic-xs"><use href="#i-send"/></svg>Enviar</button></div>
   </div>
 </div>
 
@@ -1023,8 +1060,8 @@ function seedDb(){
     ],
     ots:[
       {id:'OT-0418',machineId:'m2',type:'Revisión preventiva',issue:'Revisión 1.000 h (vencida)',status:'taller',tech:'Marc',origin:'taller',createdAt:now-2*86400000},
-      {id:'OT-0417',machineId:'m1',type:'Revisión preventiva',issue:'Preventivo 500 h',status:'pendiente',tech:'',origin:'taller',createdAt:now-86400000},
-      {id:'OT-0416',machineId:'m6',type:'Avería',issue:'Fuga hidráulica en brazo',status:'taller',tech:'Pau',origin:'taller',createdAt:now-3*86400000},
+      {id:'OT-0417',machineId:'m1',type:'Revisión preventiva',issue:'Preventivo 500 h',status:'recibida',tech:'',origin:'taller',createdAt:now-86400000},
+      {id:'OT-0416',machineId:'m6',type:'Avería',issue:'Fuga hidráulica en brazo',status:'bloqueada',bloqueo:'pieza',bloqueoNota:'Esperando manguera hidráulica',tech:'Pau',responsable:'Pau',fechaPrevista:now+2*86400000,origin:'taller',createdAt:now-3*86400000},
       {id:'OT-0415',machineId:'m4',type:'Revisión preventiva',issue:'Cambio de cuchillas',status:'terminada',tech:'Marc',origin:'taller',createdAt:now-4*86400000,closedAt:now-3*86400000,workDone:'Cambio de cuchillas y limpieza de plataforma'}
     ],
     notifs:[
@@ -1048,11 +1085,16 @@ function emptyDb(trialStart){
 let db;
 function loadDb(){
   if(storageOk){
-    try{const raw=localStorage.getItem(DB_KEY);if(raw){db=JSON.parse(raw);return}}catch(e){}
+    try{const raw=localStorage.getItem(DB_KEY);if(raw){db=JSON.parse(raw);migrate();return}}catch(e){}
   }
   db=emptyDb();
   db.meta.seenWelcome=false;
   saveDb();
+}
+function migrate(){
+  let dirty=false;
+  (db.ots||[]).forEach(o=>{if(o.status==='pendiente'){o.status='recibida';dirty=true}});
+  if(dirty&&storageOk){try{localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){}}
 }
 function saveDb(){if(!storageOk)return;try{localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){}}
 
@@ -1183,8 +1225,8 @@ function machineCardHTML(m,clientView){
             '<button class="outline-btn" onclick="APP.openOTModal(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Nueva OT</button>'+
             '<button class="outline-btn" onclick="APP.openHistory(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-clock"/></svg>Historial</button>';
   }
-  return '<div class="card machine-card hov">'+
-    '<div class="machine-card-top"><div class="machine-hero-icon"><svg class="ic ic-lg"><use href="'+iconOf(m)+'"/></svg></div>'+badge+'</div>'+
+  return '<div class="card machine-card hov" style="cursor:pointer" onclick="APP.openMachineInfo(\''+m.id+'\')">'+
+    '<div class="machine-card-top" onclick="event.stopPropagation()"><div class="machine-hero-icon"><svg class="ic ic-lg"><use href="'+iconOf(m)+'"/></svg></div>'+badge+'</div>'+
     '<h3>'+esc(mLabel(m))+'</h3><div class="serial">SN '+esc(m.serial||'—')+(clientView?'':' · '+esc(c?c.name:'—'))+'</div>'+
     '<div class="meter"><div><div class="small">Horómetro</div><div class="big">'+nf(m.hours)+' h</div></div><button class="outline-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar</button></div>'+
     '<div class="progress"><div style="width:'+info.pct+'%'+(info.state==='overdue'?';background:var(--red)':'')+'"></div></div>'+
@@ -1213,7 +1255,7 @@ function renderDashboard(){
     '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#'+n.icon+'"/></svg></div><div><div class="tname">'+esc(n.title)+'</div><div class="tdetail">'+esc(n.detail)+'</div></div><div class="date">'+fmtTs(n.ts)+'</div></div>'
   ).join(''):emptyHTML('#i-bell','Sin actividad todavía.');
   const now=new Date(),y=now.getFullYear(),mo=now.getMonth();
-  let hechos=0,cobrados=0,porCobrar=0,fact=0,acept=0,espera=0,rech=0;
+  let hechos=0,cobrados=0,porCobrar=0,fact=0,acept=0,espera=0,rech=0,bloq=0,bloqPiezas=0,bloqAut=0,bloqTec=0;
   db.ots.forEach(o=>{
     if(o.status==='terminada'){
       const c=new Date(o.closedAt||0);
@@ -1226,6 +1268,7 @@ function renderDashboard(){
       if(o.cita==='confirmada')acept++;
       else if(o.cita==='propuesta')espera++;
       else if(o.cita==='rechazada')rech++;
+      if(o.status==='bloqueada'){bloq++;if(o.bloqueo==='pieza')bloqPiezas++;else if(o.bloqueo==='autorizacion')bloqAut++;else bloqTec++}
     }
   });
   $('#dashServ').innerHTML=
@@ -1234,7 +1277,8 @@ function renderDashboard(){
     '<div class="mini-row"><span>Por cobrar</span><b style="color:'+(porCobrar?'#946713':'var(--muted)')+'">'+porCobrar+'</b></div>'+
     '<div class="mini-row"><span>Turnos aceptados</span><b>'+acept+'</b></div>'+
     '<div class="mini-row"><span>Esperando respuesta del cliente</span><b>'+espera+'</b></div>'+
-    '<div class="mini-row"><span>Rechazados (reprogramar)</span><b style="color:'+(rech?'#ac4136':'var(--muted)')+'">'+rech+'</b></div>';
+    '<div class="mini-row"><span>Rechazados (reprogramar)</span><b style="color:'+(rech?'#ac4136':'var(--muted)')+'">'+rech+'</b></div>'+
+    '<div class="mini-row"><span>Bloqueadas ahora</span><b style="color:'+(bloq?'#ac4136':'var(--muted)')+'">'+(bloq?bloq+' ('+bloqPiezas+' pieza · '+bloqAut+' autorización · '+bloqTec+' técnico)':'0')+'</b></div>';
   const recientes=db.ots.filter(o=>o.status==='terminada').sort((a,b)=>(b.closedAt||0)-(a.closedAt||0)).slice(0,6);
   $('#dashRecent').innerHTML=recientes.length?'<table><tbody>'+recientes.map(o=>{
     const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
@@ -1298,8 +1342,11 @@ function wsCounts(){
     propuesta:open.filter(o=>o.cita==='propuesta').length,
     rechazada:open.filter(o=>o.cita==='rechazada').length,
     hoy:open.filter(o=>o.proposedDate===today&&(o.cita==='confirmada'||o.cita==='propuesta')).length,
+    diagnostico:open.filter(o=>o.status==='recibida'||o.status==='diagnostico').length,
+    presupuesto:open.filter(o=>o.status==='presupuesto').length,
+    bloqueada:open.filter(o=>o.status==='bloqueada').length,
     taller:open.filter(o=>o.status==='taller').length,
-    sinfecha:open.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva').length
+    sinfecha:open.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&!['recibida','diagnostico','presupuesto','bloqueada'].includes(o.status)).length
   };
 }
 const WS_FILTERS=[
@@ -1307,7 +1354,10 @@ const WS_FILTERS=[
   {k:'propuesta',icon:'i-clock',l:'Esperando<br>respuesta'},
   {k:'rechazada',icon:'i-alert',l:'Rechazados<br>reprogramar'},
   {k:'hoy',icon:'i-checkc',l:'Citas<br>de hoy'},
-  {k:'taller',icon:'i-wrench',l:'En taller<br>ahora'},
+  {k:'diagnostico',icon:'i-search',l:'Por<br>diagnosticar'},
+  {k:'presupuesto',icon:'i-mail',l:'Presupuesto<br>al cliente'},
+  {k:'bloqueada',icon:'i-alert',l:'Bloqueadas<br>ver por qué'},
+  {k:'taller',icon:'i-wrench',l:'En<br>reparación'},
   {k:'sinfecha',icon:'i-plus',l:'OTs sin<br>fecha'}
 ];
 function renderWsStatus(){
@@ -1441,10 +1491,14 @@ function renderWsDay(){
   }
   el.innerHTML=html||emptyHTML('#i-cal','Sin turnos este día.');
 }
-const WS_TITLES={solicitada:'Turnos pedidos — por confirmar',propuesta:'Esperando respuesta del cliente',rechazada:'Rechazados — proponer otro día',hoy:'Citas de hoy',taller:'En taller ahora',sinfecha:'OTs sin fecha asignada'};
+const WS_TITLES={solicitada:'Turnos pedidos — por confirmar',propuesta:'Esperando respuesta del cliente',rechazada:'Rechazados — proponer otro día',hoy:'Citas de hoy',diagnostico:'Por diagnosticar (recibidas + diagnóstico)',presupuesto:'Presupuesto enviado — espera aprobación',bloqueada:'Bloqueadas — atascos del taller',taller:'En reparación ahora',sinfecha:'OTs sin fecha asignada'};
 function reqCardHTML(o){
   const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
-  let color='var(--line)',state='Sin fecha',btn='Agendar';
+  let color='var(--line)',state=OT_ESTADOS[o.status]||o.status,btn='Agendar';btn=(o.status==='bloqueada')?'Ver':btn;
+  if(o.status==='bloqueada'){color='var(--red)';state='Bloqueada: '+(o.bloqueo==='pieza'?'falta recambio':(o.bloqueo==='autorizacion'?'falta autorización':'falta técnico'))}
+  else if(o.status==='presupuesto'){color='var(--amber)';state='Presupuesto '+money((o.presupuesto&&o.presupuesto.base||0)*(1+(o.presupuesto&&o.presupuesto.iva||0)/100))+' — cliente aprueba'}
+  else if(o.status==='diagnostico'){color='var(--blue)';state='En diagnóstico'}
+  else if(o.status==='recibida'&&o.type!=='Cita preventiva'){color='var(--blue)';state='Recibida — diagnosticar'}
   if(o.cita==='solicitada'){color='var(--blue)';state='Pedido — proponer día';btn='Proponer turno'}
   else if(o.cita==='propuesta'){color='var(--amber)';state='Propuesto '+fmtDate(o.proposedDate)+' — espera respuesta';btn='Cambiar propuesta'}
   else if(o.cita==='rechazada'){color='var(--red)';state='Rechazó el '+fmtDate(o.proposedDate);btn='Nuevo turno'}
@@ -1461,6 +1515,9 @@ function renderWsReqs(){
   const title=document.getElementById('wsReqTitle');
   let items=[];
   if(wsFilter==='taller')items=db.ots.filter(o=>o.status==='taller');
+  else if(wsFilter==='diagnostico')items=db.ots.filter(o=>o.status==='recibida'||o.status==='diagnostico');
+  else if(wsFilter==='presupuesto')items=db.ots.filter(o=>o.status==='presupuesto');
+  else if(wsFilter==='bloqueada')items=db.ots.filter(o=>o.status==='bloqueada');
   else if(wsFilter==='sinfecha')items=db.ots.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&o.status!=='terminada');
   else if(wsFilter==='hoy')items=wsOpenCitas().filter(o=>o.proposedDate===todayISO());
   else if(wsFilter==='solicitada')items=db.ots.filter(o=>o.origin==='cliente'&&o.cita==='solicitada');
@@ -1473,7 +1530,7 @@ function renderWsReqs(){
   }
   title.textContent='Citas y solicitudes';
   const reqs=db.ots.filter(o=>o.origin==='cliente'&&o.status!=='terminada'&&o.cita!=='confirmada');
-  const mine=db.ots.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&o.status!=='terminada');
+  const mine=db.ots.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&!['recibida','diagnostico','presupuesto','bloqueada','terminada'].includes(o.status));
   let html='';
   if(reqs.length)html+='<div class="agenda-day" style="margin-top:0">Del cliente</div>'+reqs.map(reqCardHTML).join('');
   if(mine.length)html+='<div class="agenda-day">Nuestras OTs sin fecha</div>'+mine.map(reqCardHTML).join('');
@@ -1504,8 +1561,8 @@ function renderWorkshop(){
   const order={cita:0,pendiente:1,taller:2,terminada:3};
   const rows=db.ots.slice().sort((a,b)=>(order[a.status]-order[b.status])||String(b.id).localeCompare(String(a.id))).map(o=>{
     const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
-    const badge={pendiente:'info',cita:'warn',taller:'warn',terminada:'ok'}[o.status]||'info';
-    const label={pendiente:'Pendiente',cita:'Cita solicitada',taller:'En taller',terminada:'Terminada'}[o.status]||o.status;
+    const badge={recibida:'info',diagnostico:'info',presupuesto:'warn',bloqueada:'bad',cita:'warn',taller:'warn',terminada:'ok'}[o.status]||'info';
+    const label=OT_ESTADOS[o.status]||o.status;
     const origin=o.origin==='cliente'?'<span class="badge info" style="margin-left:6px">Portal cliente</span>':'';
     const CITA_STATE={
       solicitada:'<span class="badge info">Turno solicitado — proponer día</span>',
@@ -1532,9 +1589,11 @@ function renderWorkshop(){
         '</div>';
     }
     const sel='<select class="statussel" onchange="APP.setOTStatus(\''+o.id+'\',this.value)">'+
-      ['cita','pendiente','taller','terminada'].map(s=>'<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+({cita:'Cita',pendiente:'Pendiente',taller:'En taller',terminada:'Terminada'})[s]+'</option>').join('')+'</select>';
-    return '<tr><td><b>'+esc(o.id)+'</b>'+citaBadge+retiroBadge+'</td><td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div></td>'+
-      '<td>'+esc(o.type)+'<div class="small">'+esc(o.issue||'')+'</div></td><td>'+esc(o.tech||'—')+origin+'</td><td>'+sel+'</td><td>'+action+'</td></tr>';
+      ['cita','recibida','diagnostico','presupuesto','bloqueada','taller','terminada'].map(s=>'<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+OT_ESTADOS[s]+'</option>').join('')+'</select>';
+    const bloqueoBadge=(o.status==='bloqueada')?'<div style="margin-top:4px"><span class="badge bad">'+(o.bloqueo==='pieza'?'Falta recambio':(o.bloqueo==='autorizacion'?'Falta autorización':'Falta técnico'))+(o.bloqueoNota?' — '+esc(o.bloqueoNota.slice(0,26)):'')+'</span></div>':'';
+    const actor=otNextActor(o);
+    return '<tr><td><b>'+esc(o.id)+'</b>'+citaBadge+retiroBadge+bloqueoBadge+(actor?'<div class="small" style="color:var(--green2);margin-top:3px">'+esc(actor)+'</div>':'')+'</td><td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div></td>'+
+      '<td>'+esc(o.type)+'<div class="small">'+esc(o.issue||'')+'</div></td><td>'+esc(o.responsable||o.tech||'—')+(o.fechaPrevista?'<div class="small">Prevista: '+fmtTs(o.fechaPrevista).slice(0,5)+'</div>':'')+origin+'</td><td>'+sel+'</td><td>'+action+'</td></tr>';
   }).join('');
   t.innerHTML='<table><thead><tr><th>OT</th><th>Máquina</th><th>Trabajo</th><th>Técnico</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
@@ -1665,6 +1724,16 @@ function renderClientServices(){
   });
   open.forEach(o=>{
     const m=machineOf(o.machineId);
+    if(o.status==='presupuesto'&&o.presupuesto&&o.presupuesto.approved===null){
+      att+='<div class="req" style="border-left-color:var(--amber)" onclick="APP.budgetApprove(\''+o.id+'\')">'+
+        '<div style="flex:1;min-width:200px"><b>Presupuesto: '+money(o.presupuesto.total)+'</b><div class="small">'+esc(m?mLabel(m):'')+' · '+(o.presupuesto.nota?esc(o.presupuesto.nota):'base '+money(o.presupuesto.base)+' + IVA')+'</div></div>'+
+        '<button class="solid-btn" onclick="event.stopPropagation();APP.budgetApprove(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Aprobar</button>'+
+        '<button class="outline-btn" onclick="event.stopPropagation();APP.budgetReject(\''+o.id+'\')">Rechazar</button></div>';
+    }else if(o.status==='bloqueada'&&o.bloqueo==='pieza'){
+      att+='<div class="req" style="border-left-color:var(--red)"><div><b>Esperando recambio</b><div class="small">'+esc(m?mLabel(m):'')+' — te avisamos cuando llegue la pieza para continuar</div></div></div>';
+    }else if(o.status==='bloqueada'&&o.bloqueo==='autorizacion'){
+      att+='<div class="req" style="border-left-color:var(--amber)"><div><b>Pendiente tu autorización</b><div class="small">El taller necesita tu aprobación para seguir con '+esc(m?mLabel(m):'')+'</div></div></div>';
+    }
     if(o.cita==='propuesta'){
       att+='<div class="req" style="border-left-color:var(--amber)" onclick="APP.gotoPage(\'clientservices\')">'+
         '<div style="flex:1;min-width:200px"><b>Turno propuesto: '+fmtDate(o.proposedDate)+(o.proposedTime?' · '+o.proposedTime:'')+'</b><div class="small">'+esc(m?mLabel(m):'')+' · '+esc(o.type)+'</div></div>'+
@@ -1728,12 +1797,20 @@ function renderBell(){
   bc.textContent=unread;bc.classList.toggle('zero',unread===0);
   $('#npList').innerHTML=list.length?list.slice(0,10).map(n=>{
     let actions='';
+    if(n.kind==='presupuesto'&&n.otId){
+      const ot3=db.ots.find(o=>o.id===n.otId);
+      if(ot3&&ot3.presupuesto&&ot3.presupuesto.approved===null){
+        actions='<div class="action-row" style="margin-top:9px" onclick="event.stopPropagation()"><button class="solid-btn" onclick="APP.budgetApprove(\''+n.otId+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Aprobar '+money(ot3.presupuesto.total)+'</button>'+
+          '<button class="outline-btn" onclick="APP.budgetReject(\''+n.otId+'\')">Rechazar</button></div>';
+      }
+    }
     if(n.kind==='retiro'&&n.otId){
       const ot2=db.ots.find(o=>o.id===n.otId);
       if(ot2&&ot2.ready&&!ot2.signature){
         actions='<div class="action-row" style="margin-top:9px" onclick="event.stopPropagation()"><button class="solid-btn" onclick="APP.openClientSign(\''+n.otId+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
       }
     }
+    if(n.kind==='presupuesto'&&n.otId){const o4=db.ots.find(o=>o.id===n.otId);if(o4&&o4.presupuesto&&o4.presupuesto.approved===null){gotoPage('clientservices');return}}
     if(n.kind==='cita'&&n.otId){
       const ot=db.ots.find(o=>o.id===n.otId);
       if(ot&&ot.cita==='propuesta'){
@@ -1907,7 +1984,46 @@ const APP={
   setOTStatus(id,status){
     const ot=db.ots.find(o=>o.id===id);if(!ot)return;
     if(status==='terminada'){this.openDone(id);return}
-    ot.status=status;saveDb();this.toast(ot.id+' → '+status);renderAll();
+    if(status==='bloqueada'){ot.status='bloqueada';this.openOtInfo(id);saveDb();renderAll();return}
+    const prev=ot.status;
+    ot.status=status;
+    const m=machineOf(ot.machineId);
+    if(m)m.history.unshift({ts:Date.now(),title:'Estado: '+status,detail:ot.id+' pasó de '+(OT_ESTADOS[prev]||prev)+' a '+(OT_ESTADOS[status]||status)});
+    if(status==='diagnostico'&&m){pushNotif('client','i-wrench','Tu '+mLabel(m)+' entró a revisión','Orden '+ot.id+' — el técnico está diagnosticando el equipo.',m.clientId)}
+    if(status==='taller'&&m){pushNotif('client','i-wrench','Reparación en curso','Empezamos a trabajar en tu '+mLabel(m)+' · '+ot.id+'. Te avisamos al terminar.',m.clientId)}
+    saveDb();this.toast(ot.id+' → '+(OT_ESTADOS[status]||status));renderAll();
+  },
+  sendBudget(){
+    const otId=document.getElementById('bgOtId').value;
+    const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
+    const base=Number(document.getElementById('bgBase').value||0);
+    const iva=Number(document.getElementById('bgIva').value||21);
+    const nota=document.getElementById('bgNota').value.trim();
+    if(base<=0){this.toast('Indica el monto del presupuesto');return}
+    ot.presupuesto={base,iva,total:base*(1+iva/100),sentAt:Date.now(),approved:null,nota};
+    ot.status='presupuesto';
+    const m=machineOf(ot.machineId);
+    pushNotif('client','i-mail','Presupuesto para tu '+mLabel(m),money(ot.presupuesto.total)+' (base '+money(base)+' + IVA)'+(nota?' — '+nota:'')+'. Apruébalo o recházalo aquí.',m?m.clientId:null,{kind:'presupuesto',otId:ot.id});
+    if(m)m.history.unshift({ts:Date.now(),title:'Presupuesto enviado · '+ot.id,detail:money(ot.presupuesto.total)});
+    saveDb();this.closeModal('mBudget');toast('Presupuesto enviado al cliente');renderAll();
+  },
+  budgetApprove(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot||!ot.presupuesto||ot.presupuesto.approved!==null)return;
+    ot.presupuesto.approved=true;
+    if(ot.status==='bloqueada'&&ot.bloqueo==='autorizacion'){ot.bloqueo=null}
+    ot.status='taller';
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    pushNotif('admin','i-checkc','Presupuesto aprobado ✓',(c?c.name+' aprobó':'Cliente aprobó')+' '+money(ot.presupuesto.total)+' · '+ot.id+' — a reparar');
+    if(m)m.history.unshift({ts:Date.now(),title:'Presupuesto aprobado · '+ot.id,detail:money(ot.presupuesto.total)+' — el trabajo sigue'});
+    saveDb();toast('Presupuesto aprobado ✓ Comienza la reparación');renderAll();
+  },
+  budgetReject(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot||!ot.presupuesto||ot.presupuesto.approved!==null)return;
+    ot.presupuesto.approved=false;
+    const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
+    pushNotif('admin','i-alert','Presupuesto rechazado',(c?c.name+' rechazó':'Cliente rechazó')+' el presupuesto de '+ot.id+' — contactar para ajustar');
+    if(m)m.history.unshift({ts:Date.now(),title:'Presupuesto rechazado · '+ot.id,detail:'El cliente no aprobó '+money(ot.presupuesto.total)});
+    saveDb();toast('Presupuesto rechazado — avisamos al taller');renderAll();
   },
   openDone(id){
     const ot=db.ots.find(o=>o.id===id);if(!ot)return;
@@ -1925,13 +2041,22 @@ const APP={
     ot.status='terminada';ot.closedAt=Date.now();
     ot.tech=$('#doneTech').value.trim()||'—';
     ot.workDone=$('#doneWork').value.trim()||ot.type;
+    ot.horasTrabajo=Number($('#doneHoras').value||0);
+    ot.costoMateriales=Number($('#doneCosto').value||0);
+    ot.materiales=$('#doneMateriales').value.trim();
     const newH=Math.max(m.hours,Number($('#doneHours').value||m.hours));
     if(newH!==m.hours){m.history.unshift({ts:Date.now(),title:'Actualización de horómetro',detail:nf(m.hours)+' h → '+nf(newH)+' h · en taller'});m.hours=newH}
     m.lastServiceHours=m.hours;m.lastServiceDate=todayISO();
     m.history.unshift({ts:Date.now(),title:'Servicio completado · '+ot.id,detail:($('#doneWork').value.trim()||ot.type)+' · técnico '+ot.tech});
     m.stage=dueInfo(m).state;
     pushNotif('client','i-checkc','Servicio completado','Tu '+mLabel(m)+' está lista · '+ot.id,m.clientId);
-    pushNotif('admin','i-checkc','OT cerrada',ot.id+' · '+mLabel(m));
+    pushNotif('admin','i-checkc','OT cerrada',ot.id+' · '+mLabel(m)+(ot.horasTrabajo?' · '+ot.horasTrabajo+' h taller':'')+(ot.costoMateriales?' · materiales '+money(ot.costoMateriales):''));
+    const rep=repeatedIssueAlert(ot);
+    if(rep){
+      ot.repeatFlag=rep;
+      pushNotif('admin','i-alert','Fallo repetido en '+mLabel(m),rep+' — revisar causa de fondo antes de la próxima venta/reparación');
+      m.history.unshift({ts:Date.now(),title:'⚠ '+rep,detail:'Detectado al cerrar '+ot.id});
+    }
     saveDb();this.closeModal('mDone');this.toast(ot.id+' cerrada · mantenimiento reiniciado');renderAll();
   },
 
@@ -1962,7 +2087,7 @@ const APP={
     if(!text){this.toast('Describe brevemente qué está pasando');return}
     const m=machineOf(mid);
     db.meta.satSeq=(db.meta.satSeq||80)+1;
-    const ot={id:'SAT-'+db.meta.satSeq,machineId:m.id,type:$('#supType').value,issue:text,status:'pendiente',tech:'',origin:'cliente',createdAt:Date.now()};
+    const ot={id:'SAT-'+db.meta.satSeq,machineId:m.id,type:$('#supType').value,issue:text,status:'recibida',tech:'',origin:'cliente',createdAt:Date.now()};
     db.ots.unshift(ot);
     m.history.unshift({ts:Date.now(),title:'Asistencia solicitada · '+ot.id,detail:text});
     pushNotif('admin','i-alert','Asistencia solicitada',mLabel(m)+' · '+text.slice(0,60));
@@ -2056,6 +2181,37 @@ const SERVICE_GROUPS={
     ]
   }
 };
+const OT_ESTADOS={
+  cita:'Cita',recibida:'Recibida',diagnostico:'Diagnóstico',presupuesto:'Presupuesto',bloqueada:'Bloqueada',taller:'En reparación',terminada:'Cerrada'
+};
+function otNextActor(o){
+  if(o.status==='cita')return o.cita==='propuesta'?'→ Cliente: responder':(o.cita==='confirmada'?'→ Taller: preparar servicio':'→ Taller: proponer día');
+  if(o.status==='recibida')return '→ Taller: diagnosticar';
+  if(o.status==='diagnostico')return '→ Técnico: revisar';
+  if(o.status==='presupuesto')return '→ Cliente: aprobar $';
+  if(o.status==='bloqueada')return o.bloqueo==='pieza'?'→ Compras: conseguir recambio':(o.bloqueo==='autorizacion'?'→ Cliente: autorizar':'→ Taller: asignar técnico');
+  if(o.status==='taller')return '→ Técnico: reparar';
+  if(o.status==='terminada')return o.ready?(o.signature?'✓ Entregada':'→ Cliente: retirar y firmar'):'→ Taller: cerrar con informe';
+  return '';
+}
+function repeatedIssueAlert(ot,machineId){
+  const esIncidencia=/aver|incid|fallo|reparac/i.test(String(ot.type)+' '+String(ot.issue));
+  if(!esIncidencia)return null;
+  const norm=s=>String(s||'').toLowerCase().replace(/[^a-záéíóúüñ0-9 ]/g,' ').split(/s+/).join(' ').split(/\s+/).filter(w=>w.length>3);
+  const cur=norm(ot.issue+' '+(ot.workDone||''));
+  if(cur.length<2)return null;
+  const curSet=new Set(cur);
+  let hits=0;
+  db.ots.forEach(o=>{
+    if(o.id===ot.id||(machineId?o.machineId!==machineId:o.machineId!==ot.machineId))return;
+    const past=norm(o.issue+' '+(o.workDone||''));
+    if(past.length<2)return;
+    const pastSet=new Set(past);
+    let inter=0;curSet.forEach(w=>{if(pastSet.has(w))inter++});
+    if(inter>=2||inter>=Math.ceil(Math.min(curSet.size,pastSet.size)*0.6))hits++;
+  });
+  return hits>=2?('Fallo repetido: '+hits+' incidencias similares en esta máquina'):(hits===1?'Atención: 2ª incidencia similar en esta máquina':null);
+}
 function iconGuess(brand,model){
   const s=((brand||'')+' '+(model||'')).toLowerCase();
   if(/zero|radiomaster|4500|z ?track|zt|radio cero/.test(s))return 'zturn';
@@ -2135,7 +2291,8 @@ function buildReportHTML(ot){
       '<div class="box"><h3>Equipo</h3><div><b>'+esc(m?mLabel(m):'—')+'</b>'+(m&&m.serial?'<br>SN: '+esc(m.serial):'')+(m?'<br>Horómetro al cierre: '+nf(m.hours)+' h':'')+(m&&m.warrantyEnd?'<br>Garantía: '+fmtDate(m.warrantyEnd):'')+'</div></div>'+
       '</div>'+
       '<div class="works"><b>Trabajo realizado</b><br>'+esc(ot.workDone||ot.issue||ot.type)+(ot.tech?'<br><span style="color:#555;font-size:12px">Técnico: '+esc(ot.tech)+'</span>':'')+
-      (ot.reportObs?'<br><br><b>Observaciones</b><br>'+esc(ot.reportObs):'')+'</div>'+
+      (ot.reportObs?'<br><br><b>Observaciones</b><br>'+esc(ot.reportObs):'')+
+      ((ot.horasTrabajo||ot.materiales||ot.costoMateriales)?('<br><br><b>Registro del taller</b><br>Horas de taller: '+(ot.horasTrabajo||0)+' h'+(ot.materiales?' · Materiales: '+esc(ot.materiales):'')+(ot.costoMateriales?' · Costo materiales: '+money(ot.costoMateriales):'')):'')+'</div>'+
       (ot.tasks&&ot.tasks.length?'<div class="works"><b>Tareas</b><br>'+ot.tasks.map(t=>(t.done?'<span style="color:#1c6b3a">✓</span>':'○')+' '+esc(t.t)+(t.done?'':'<span style="color:#a33"> — no se realizó'+(t.why?': '+esc(t.why):'')+'</span>')).join('<br>')+'</div>':'')+
       '<div class="firmas">'+
       '<div class="firma">'+(ot.signature?'<img src="'+ot.signature+'">':'')+'<span>Firma del cliente — '+esc(c?c.name:'')+'</span></div>'+
@@ -2173,6 +2330,41 @@ Object.assign(APP,{
   wsToday(){wsWeekOff=0;wsMonthOff=0;wsDaySel=todayISO();renderPage('workshop')},
   setWsDay(iso){wsDaySel=iso;wsFilter=null;renderPage('workshop')},
   wsWeek(d){if(d===0){wsWeekOff=0;wsDaySel=todayISO()}else wsWeekOff+=d;renderPage('workshop')},
+  openMachineInfo(mid){
+    const m=machineOf(mid);if(!m)return;
+    const c=clientOf(m.clientId),info=dueInfo(m);
+    document.getElementById('miTitle').textContent=mLabel(m);
+    document.getElementById('miSub').textContent='SN '+esc(m.serial||'—')+' · '+(c?c.name:'')+(m.serviceGroup?' · '+SERVICE_GROUPS[m.serviceGroup].name:'');
+    const abiertas=db.ots.filter(o=>o.machineId===mid&&o.status!=='terminada');
+    let rep=null;
+    db.ots.forEach(o=>{if(o.machineId===mid&&o.repeatFlag)rep=o.repeatFlag});
+    if(!rep&&abiertas.length){const probe={issue:abiertas[0].issue,workDone:abiertas[0].workDone,type:abiertas[0].type,machineId:mid,id:'probe'};rep=repeatedIssueAlert(probe,mid)}
+    let html='';
+    if(rep)html+='<div class="notice" style="background:var(--red-soft)"><svg class="ic" style="color:#ac4136"><use href="#i-alert"/></svg><div><b>'+esc(rep)+'</b><br>Analiza la causa de fondo: esta máquina ya presentó este problema varias veces.</div></div>';
+    html+='<div class="machine-meta" style="grid-template-columns:1fr 1fr">'+
+      '<div class="meta">Mantenimiento<span>'+STATE_BADGE[info.state]+' '+esc(info.label)+'</span></div>'+
+      '<div class="meta">Horómetro<span>'+nf(m.hours)+' h</span></div>'+
+      '<div class="meta">Garantía<span>'+(info.warrantyLeft==null?'—':(info.warrantyLeft>0?fmtDate(m.warrantyEnd):'Finalizada'))+'</span></div>'+
+      '<div class="meta">Grupo<span>'+(m.serviceGroup?esc(SERVICE_GROUPS[m.serviceGroup].name):'—')+'</span></div></div>';
+    html+='<div class="agenda-day" style="margin-top:14px">Trabajos abiertos ('+abiertas.length+')</div>';
+    html+=abiertas.length?abiertas.map(o=>{
+      const bloq=(o.status==='bloqueada')?'<span class="badge bad">'+(o.bloqueo==='pieza'?'Falta recambio':(o.bloqueo==='autorizacion'?'Falta autorización':'Falta técnico'))+'</span>':'';
+      return '<div class="req" style="border-left-color:'+(o.status==='bloqueada'?'var(--red)':'var(--green2)')+'" onclick="APP.openOtInfo(\''+o.id+'\')">'+
+        '<div style="flex:1"><b>'+esc(o.id)+'</b> · <span class="badge info">'+esc(OT_ESTADOS[o.status]||o.status)+'</span> '+bloq+
+        '<div class="small">'+esc(o.type)+(o.issue?' · '+esc(o.issue.slice(0,40)):'')+'</div>'+
+        '<div class="small" style="color:var(--green2)">'+esc(otNextActor(o))+(o.responsable?' · resp. '+esc(o.responsable):'')+(o.fechaPrevista?' · prevista '+fmtTs(o.fechaPrevista).slice(0,5):'')+'</div></div></div>';
+    }).join(''):'<div class="small">Sin trabajos abiertos ✓</div>';
+    const hist=(m.history||[]).slice(0,5);
+    html+='<div class="agenda-day" style="margin-top:14px">Historial reciente</div><div class="timeline">'+hist.map(h=>
+      '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-clock"/></svg></div><div><div class="tname">'+esc(h.title)+'</div><div class="tdetail">'+esc(h.detail||'')+'</div></div><div class="date">'+fmtTs(h.ts)+'</div></div>').join('')+'</div>';
+    document.getElementById('miBody').innerHTML=html;
+    const admin=currentRole==='admin';
+    document.getElementById('miActions').innerHTML=(admin?'<button class="solid-btn" onclick="APP.closeModal(\'mMachineInfo\');APP.openOTModal(\''+mid+'\')">Nueva OT</button>'+
+      '<button class="outline-btn" onclick="APP.closeModal(\'mMachineInfo\');APP.openMachineModal(\''+mid+'\')">Editar</button>':'')+
+      '<button class="outline-btn" onclick="APP.closeModal(\'mMachineInfo\');APP.openHours(\''+mid+'\')">Actualizar horas</button>'+
+      '<button class="outline-btn" onclick="APP.closeModal(\'mMachineInfo\');APP.openHistory(\''+mid+'\')">Historial completo</button>';
+    this.openModal('mMachineInfo');
+  },
   openOtInfo(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
     const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
@@ -2187,6 +2379,12 @@ Object.assign(APP,{
       '<div class="meta">Fecha<span>'+(ot.proposedDate?fmtDate(ot.proposedDate)+(ot.proposedTime?' · '+ot.proposedTime:''):'sin fecha')+'</span></div>'+
       '<div class="meta">Estado<span>'+estado+'</span></div>'+
       '<div class="meta">Técnico<span>'+esc(ot.tech||'—')+'</span></div>';
+    document.getElementById('oiResp').value=ot.responsable||ot.tech||'';
+    document.getElementById('oiFecha').value=ot.fechaPrevista?new Date(ot.fechaPrevista).toISOString().slice(0,10):'';
+    document.getElementById('oiEstado').value='';
+    document.getElementById('oiBloqueo').value=ot.bloqueo||'pieza';
+    document.getElementById('oiBloqueoNota').value=ot.bloqueoNota||'';
+    document.getElementById('oiBloqueoRow').style.display='';
     document.getElementById('oiNote').value=ot.note||'';
     const oiT=document.getElementById('oiTasks');
     if(ot.tasks&&ot.tasks.length){
@@ -2196,6 +2394,7 @@ Object.assign(APP,{
     let acts='';
     if(ot.status!=='terminada'){
       acts='<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openTurno(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+(ot.proposedDate?'Cambiar día':'Agendar')+'</button>'+
+        ((ot.status==='recibida'||ot.status==='diagnostico'||ot.status==='presupuesto')?'<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openBudget(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-mail"/></svg>Presupuesto</button>':'')+
         '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openTasks(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas</button>'+
         '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openDone(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button>';
     }else{
@@ -2205,6 +2404,31 @@ Object.assign(APP,{
     }
     document.getElementById('oiActions').innerHTML=acts;
     this.openModal('mOtInfo');
+  },
+  saveOtInfo(){
+    const ot=db.ots.find(o=>o.id===document.getElementById('oiOtId').value);if(!ot)return;
+    const resp=document.getElementById('oiResp').value.trim();
+    const fecha=document.getElementById('oiFecha').value;
+    const estado=document.getElementById('oiEstado').value;
+    const bloq=document.getElementById('oiBloqueo').value;
+    const bloqNota=document.getElementById('oiBloqueoNota').value.trim();
+    if(resp!==(ot.responsable||''))ot.responsable=resp;
+    ot.fechaPrevista=fecha?new Date(fecha+'T12:00:00').getTime():null;
+    if(estado){ot.status=estado;if(estado==='bloqueada'){ot.bloqueo=bloq;ot.bloqueoNota=bloqNota}else{ot.bloqueo=null;ot.bloqueoNota=''}}
+    else if(ot.status==='bloqueada'){ot.bloqueo=bloq;ot.bloqueoNota=bloqNota}
+    const m=machineOf(ot.machineId);
+    if(m)m.history.unshift({ts:Date.now(),title:'Orden actualizada · '+ot.id,detail:'Responsable: '+(resp||'—')+(fecha?' · prevista '+fmtDate(fecha):'')+(ot.status==='bloqueada'?' · bloqueada por '+(ot.bloqueo==='pieza'?'recambio':(ot.bloqueo==='autorizacion'?'autorización':'técnico')):'')});
+    saveDb();this.closeModal('mOtInfo');toast('Orden actualizada');renderAll();
+  },
+  openBudget(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
+    const m=machineOf(ot.machineId);
+    document.getElementById('bgOtId').value=otId;
+    document.getElementById('bgSub').textContent=ot.id+' · '+(m?mLabel(m):'');
+    document.getElementById('bgBase').value=(ot.presupuesto&&ot.presupuesto.base)||'';
+    document.getElementById('bgIva').value=(ot.presupuesto&&ot.presupuesto.iva)||21;
+    document.getElementById('bgNota').value='';
+    this.openModal('mBudget');
   },
   saveOtNote(){
     const ot=db.ots.find(o=>o.id===document.getElementById('oiOtId').value);if(!ot)return;
