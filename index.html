@@ -351,6 +351,9 @@
     <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
     <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>
     <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></symbol>
+    <symbol id="i-tractorcab" viewBox="0 0 24 24"><circle cx="7" cy="16.5" r="3.4"/><circle cx="17.6" cy="17.4" r="2.4"/><path d="M3.5 13.5V6.5h4v3.2h1"/><path d="M8.5 9.7h3.2l3.1 4.3"/><path d="M10.4 16.9h4.9"/><path d="M7 6.5V3.2h4.4l1.5 3.3"/><path d="M8.4 4.9h3.4"/></symbol>
+    <symbol id="i-ride" viewBox="0 0 24 24"><circle cx="5.2" cy="17" r="2.7"/><circle cx="18.6" cy="17.4" r="2.2"/><path d="M3.2 14.6h5.6l1.2-4.6h4.6l2.4 3.6"/><path d="M10 10l1.8-3.2h2.2"/><rect x="8.6" y="13.8" width="8" height="2.4" rx="1"/><path d="M14.6 6.8l.6 2"/></symbol>
+    <symbol id="i-zturn" viewBox="0 0 24 24"><circle cx="6" cy="16.4" r="2.7"/><circle cx="17.8" cy="16.8" r="2.3"/><rect x="7.6" y="11.6" width="9.6" height="3.4" rx="1.2"/><path d="M2.6 7.4h4.2l1.6 4.2"/><path d="M16.6 11.4l2.6-5"/><path d="M4.6 7.4v3"/></symbol>
     <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></symbol>
     <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
     <symbol id="i-cal" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></symbol>
@@ -464,8 +467,10 @@
             </div>
           </div>
           <div class="card section-card">
-            <div class="section-head"><div><div class="section-title">Carga del taller</div><div class="section-sub">Órdenes por estado, en vivo.</div></div></div>
-            <div id="dashLoad"></div>
+            <div class="section-head"><div><div class="section-title">Servicios · este mes</div><div class="section-sub">Cifras reales de tu taller.</div></div></div>
+            <div id="dashServ"></div>
+            <div class="section-head" style="margin:18px 0 8px"><div><div class="section-title">Últimos servicios realizados</div><div class="section-sub">Clic en cualquiera para ver su informe.</div></div></div>
+            <div id="dashRecent"></div>
           </div>
         </div>
       </section>
@@ -607,14 +612,15 @@
             <div class="eyebrow" style="font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600">Portal cliente</div>
             <h2 id="chGreeting">Hola</h2>
             <p style="color:var(--muted);line-height:1.65;font-size:14px">Este es el estado real de tus máquinas: horas, próximos mantenimientos e historial. Cuando toque revisar algo, te avisaremos nosotros.</p>
+            <div id="chAttention"></div>
             <div class="action-row">
-              <button class="solid-btn" onclick="APP.gotoPage('clientmachines')">Ver mis equipos<svg class="ic ic-xs"><use href="#i-arrowr"/></svg></button>
-              <button class="outline-btn" onclick="APP.gotoPage('clientsupport')"><svg class="ic ic-xs"><use href="#i-headset"/></svg>Solicitar asistencia</button>
+              <button class="solid-btn" onclick="APP.gotoPage('clientservices')">Mis servicios<svg class="ic ic-xs"><use href="#i-arrowr"/></svg></button>
+              <button class="outline-btn" onclick="APP.gotoPage('clientmachines')">Ver mis equipos</button>
+              <button class="outline-btn" onclick="APP.gotoPage('clientsupport')"><svg class="ic ic-xs"><use href="#i-headset"/></svg>Soporte</button>
             </div>
           </div>
           <div class="card next-service" id="chNextCard"></div>
         </div>
-        <div class="kpis" id="chKpis"></div>
         <div class="card section-card">
           <div class="section-head"><div><div class="section-title">Tus próximos hitos</div><div class="section-sub">Calculados con las horas registradas.</div></div></div>
           <div class="timeline" id="chTimeline"></div>
@@ -632,16 +638,16 @@
 
       <section class="page" id="clientservices">
         <div class="section-head"><div><div class="section-title" style="font-size:24px">Servicios y mantenimientos</div><div class="section-sub">Pide cita cuando te venga bien: la solicitud llega directa al taller.</div></div></div>
+        <div class="card section-card" style="margin-bottom:16px;border-left:4px solid var(--green2)">
+          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Para ti ahora</div><div class="section-sub">Solo lo que necesita tu respuesta o acción.</div></div></div>
+          <div id="csAttention"></div>
+        </div>
         <div class="card section-card" style="margin-bottom:16px">
-          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Próximos servicios</div></div></div>
+          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Próximos servicios</div><div class="section-sub">Lo que le toca a cada equipo según su uso.</div></div></div>
           <div id="csTable"></div>
         </div>
-        <div class="card section-card" style="margin-bottom:16px">
-          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">En curso con el taller</div><div class="section-sub">Cuando te propongan un turno, acéptalo o recházalo aquí mismo.</div></div></div>
-          <div id="csOpen"></div>
-        </div>
         <div class="card section-card">
-          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Historial de servicios</div><div class="section-sub">Todo lo que se le hizo a tus equipos, con su informe.</div></div></div>
+          <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Historial</div><div class="section-sub">Todo lo que se hizo, con su informe.</div></div></div>
           <div id="csHist"></div>
         </div>
       </section>
@@ -698,7 +704,7 @@
     <input type="hidden" id="maId" />
     <div class="form-row">
       <div><label>Cliente</label><select class="field" id="maClient"></select></div>
-      <div><label>Tipo</label><select class="field" id="maIcon"><option value="tractor">Tractor</option><option value="leaf">Cortacéspedes</option><option value="scissors">Podadora</option><option value="sprout">Desbrozadora</option><option value="layers">Cargadora / otros</option></select></div>
+      <div><label>Tipo de máquina (imagen)</label><select class="field" id="maIcon"><option value="tractor">Tractor</option><option value="tractorcab">Tractor con cabina</option><option value="ride">Cortacésped a asiento</option><option value="zturn">Radio cero (zero-turn)</option><option value="scissors">Podadora / cortadora manual</option><option value="sprout">Desbrozadora</option><option value="layers">Cargadora / otra</option></select><div class="small" style="margin-top:5px">Se sugiere según marca y modelo.</div></div>
     </div>
     <div class="form-row" style="margin-top:12px">
       <div><label>Marca</label><input class="field" id="maBrand" placeholder="Kubota" /></div>
@@ -1000,17 +1006,17 @@ function seedDb(){
       {id:'c4',name:'Serveis Maresme',contact:'Laura Vidal',phone:'+34 610 23 45 67',email:'laura@smareme.cat',plan:'Premium'}
     ],
     machines:[
-      {id:'m1',clientId:'c1',brand:'Kubota',model:'M5-112',serial:'KBT-M5-88421',iconKey:'tractor',hours:491,lastServiceHours:0,lastServiceDate:'2026-03-20',intervalH:500,intervalM:12,warrantyEnd:'2028-06-30',salePrice:95000000,servicePrice:750000,stage:'soon',
+      {id:'m1',clientId:'c1',brand:'Kubota',model:'M5-112',serial:'KBT-M5-88421',iconKey:'tractorcab',hours:491,lastServiceHours:0,lastServiceDate:'2026-03-20',intervalH:500,intervalM:12,warrantyEnd:'2028-06-30',salePrice:95000000,servicePrice:750000,stage:'soon',
        history:[{ts:now-90*86400000,title:'Servicio 250 h',detail:'Aceite motor + filtros · OT-2026-0291'},{ts:now-160*86400000,title:'Servicio inicial 50 h',detail:'Revisión de entrega · OT-2025-0110'},{ts:now-200*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 30/06/2028'}]},
-      {id:'m2',clientId:'c2',brand:'Toro',model:'Groundsmaster 4500-D',serial:'TR-4500-10231',iconKey:'leaf',serviceGroup:'mini',hours:1014,lastServiceHours:0,lastServiceDate:'2025-11-01',intervalH:1000,intervalM:24,warrantyEnd:'2024-11-01',salePrice:62000000,servicePrice:480000,stage:'overdue',
+      {id:'m2',clientId:'c2',brand:'Toro',model:'Groundsmaster 4500-D',serial:'TR-4500-10231',iconKey:'zturn',serviceGroup:'mini',hours:1014,lastServiceHours:0,lastServiceDate:'2025-11-01',intervalH:1000,intervalM:24,warrantyEnd:'2024-11-01',salePrice:62000000,servicePrice:480000,stage:'overdue',
        history:[{ts:now-140*86400000,title:'Servicio 750 h',detail:'Filtros y comprobación hidráulica · OT-2025-0355'},{ts:now-400*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]},
       {id:'m3',clientId:'c3',brand:'John Deere',model:'5075E',serial:'JD5075-72190',iconKey:'tractor',hours:726,lastServiceHours:0,lastServiceDate:'2025-10-01',intervalH:2000,intervalM:12,warrantyEnd:'2027-02-28',salePrice:88000000,servicePrice:700000,stage:'soon',
        history:[{ts:now-180*86400000,title:'Revisión anual',detail:'Aceite, filtros y engrase · OT-2025-0301'},{ts:now-500*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 28/02/2027'}]},
-      {id:'m4',clientId:'c4',brand:'Husqvarna',model:'P 525DX',serial:'HQ525-40117',iconKey:'scissors',serviceGroup:'mini',hours:358,lastServiceHours:0,lastServiceDate:'2026-06-15',intervalH:400,intervalM:12,warrantyEnd:'2027-11-30',salePrice:12000000,servicePrice:180000,stage:'soon',
+      {id:'m4',clientId:'c4',brand:'Husqvarna',model:'P 525DX',serial:'HQ525-40117',iconKey:'ride',serviceGroup:'mini',hours:358,lastServiceHours:0,lastServiceDate:'2026-06-15',intervalH:400,intervalM:12,warrantyEnd:'2027-11-30',salePrice:12000000,servicePrice:180000,stage:'soon',
        history:[{ts:now-70*86400000,title:'Cambio de cuchillas',detail:'Kit BL-4500 · OT-2026-0415'},{ts:now-300*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]},
       {id:'m5',clientId:'c1',brand:'Stihl',model:'RT 6112 ZL',serial:'ST6112-88912',iconKey:'sprout',serviceGroup:'mini',hours:81,lastServiceHours:0,lastServiceDate:'2026-06-01',intervalH:200,intervalM:12,warrantyEnd:'2028-09-04',salePrice:9500000,servicePrice:95000,stage:'ok',
        history:[{ts:now-100*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 04/09/2028'}]},
-      {id:'m7',clientId:'c3',brand:'Lovol',model:'TE254',serial:'LV-TE254-33021',iconKey:'tractor',serviceGroup:'lovol',hours:494,lastServiceHours:0,lastServiceDate:'2026-05-11',intervalH:500,intervalM:12,warrantyEnd:'2028-05-11',salePrice:42000000,servicePrice:520000,stage:'soon',
+      {id:'m7',clientId:'c3',brand:'Lovol',model:'TE254',serial:'LV-TE254-33021',iconKey:'tractorcab',serviceGroup:'lovol',hours:494,lastServiceHours:0,lastServiceDate:'2026-05-11',intervalH:500,intervalM:12,warrantyEnd:'2028-05-11',salePrice:42000000,servicePrice:520000,stage:'soon',
        history:[{ts:now-150*86400000,title:'Entrega de la máquina',detail:'Venta inicial · garantía hasta 11/05/2028'}]},
       {id:'m6',clientId:'c2',brand:'Avant',model:'635',serial:'AV635-22013',iconKey:'layers',hours:1244,lastServiceHours:0,lastServiceDate:'2025-09-10',intervalH:1500,intervalM:24,warrantyEnd:'2023-09-10',salePrice:78000000,servicePrice:520000,stage:'ok',
        history:[{ts:now-250*86400000,title:'Servicio 1.000 h',detail:'Transmisión e hidráulico · OT-2025-0280'},{ts:now-800*86400000,title:'Entrega de la máquina',detail:'Venta inicial'}]}
@@ -1206,13 +1212,38 @@ function renderDashboard(){
   $('#dashFeed').innerHTML=feed.length?feed.map(n=>
     '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#'+n.icon+'"/></svg></div><div><div class="tname">'+esc(n.title)+'</div><div class="tdetail">'+esc(n.detail)+'</div></div><div class="date">'+fmtTs(n.ts)+'</div></div>'
   ).join(''):emptyHTML('#i-bell','Sin actividad todavía.');
-  const byS={pendiente:0,cita:0,taller:0,terminada:0};
-  db.ots.forEach(o=>{byS[o.status]=(byS[o.status]||0)+1});
-  $('#dashLoad').innerHTML=
-    '<div class="mini-row"><span>Pendientes</span><span>'+byS.pendiente+'</span></div><div class="progress"><div style="width:'+(byS.pendiente/Math.max(1,db.ots.length)*100)+'%"></div></div>'+
-    '<div class="mini-row"><span>Citas solicitadas</span><span>'+byS.cita+'</span></div><div class="progress"><div style="width:'+(byS.cita/Math.max(1,db.ots.length)*100)+'%;background:var(--blue)"></div></div>'+
-    '<div class="mini-row"><span>En taller</span><span>'+byS.taller+'</span></div><div class="progress"><div style="width:'+(byS.taller/Math.max(1,db.ots.length)*100)+'%;background:var(--amber)"></div></div>'+
-    '<div class="mini-row"><span>Terminadas (histórico)</span><span>'+byS.terminada+'</span></div><div class="progress"><div style="width:'+(byS.terminada/Math.max(1,db.ots.length)*100)+'%"></div></div>';
+  const now=new Date(),y=now.getFullYear(),mo=now.getMonth();
+  let hechos=0,cobrados=0,porCobrar=0,fact=0,acept=0,espera=0,rech=0;
+  db.ots.forEach(o=>{
+    if(o.status==='terminada'){
+      const c=new Date(o.closedAt||0);
+      if(c.getFullYear()===y&&c.getMonth()===mo){
+        hechos++;
+        if(o.invoiced){cobrados++;fact+=Number(o.invoiceBase||0)*(1+Number(o.invoiceIva||0)/100)}
+        else porCobrar++;
+      }
+    }else{
+      if(o.cita==='confirmada')acept++;
+      else if(o.cita==='propuesta')espera++;
+      else if(o.cita==='rechazada')rech++;
+    }
+  });
+  $('#dashServ').innerHTML=
+    '<div class="mini-row"><span>Servicios completados</span><b>'+hechos+'</b></div>'+
+    '<div class="mini-row"><span>Cobrados</span><b style="color:#2b724b">'+cobrados+' · '+money(fact)+'</b></div>'+
+    '<div class="mini-row"><span>Por cobrar</span><b style="color:'+(porCobrar?'#946713':'var(--muted)')+'">'+porCobrar+'</b></div>'+
+    '<div class="mini-row"><span>Turnos aceptados</span><b>'+acept+'</b></div>'+
+    '<div class="mini-row"><span>Esperando respuesta del cliente</span><b>'+espera+'</b></div>'+
+    '<div class="mini-row"><span>Rechazados (reprogramar)</span><b style="color:'+(rech?'#ac4136':'var(--muted)')+'">'+rech+'</b></div>';
+  const recientes=db.ots.filter(o=>o.status==='terminada').sort((a,b)=>(b.closedAt||0)-(a.closedAt||0)).slice(0,6);
+  $('#dashRecent').innerHTML=recientes.length?'<table><tbody>'+recientes.map(o=>{
+    const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
+    const d=new Date(o.closedAt||0);
+    return '<tr class="rowlink" onclick="APP.viewReport(\''+o.id+'\')"><td><b>'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'</b></td>'+
+      '<td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+'</div></td>'+
+      '<td>'+esc((o.workDone||o.issue||o.type).slice(0,34))+'</td>'+
+      '<td>'+(o.invoiced?'<span class="badge ok">Cobrado</span>':'<span class="badge warn">Por cobrar</span>')+'</td></tr>';
+  }).join('')+'</tbody></table>':emptyHTML('#i-checkc','Todavía no hay servicios completados.');
 }
 function kpi(tile,icon,value,label,trend,red,go){
   const onclick=go?(' onclick="'+(go==='machines-alert'?'APP.goAlert()':"APP.gotoPage('"+go+"')")+'" style="cursor:pointer"'):'';
@@ -1575,13 +1606,20 @@ function renderClientHome(){
   }else{
     $('#chNextCard').innerHTML='<span class="badge">Sin máquinas</span><div class="service-number">—</div><div style="font-size:13px;color:#d7e7dc">Cuando el taller registre tus equipos, aparecerán aquí.</div>';
   }
-  const warrantyAct=ms.filter(m=>{const w=dueInfo(m).warrantyLeft;return w!=null&&w>0}).length;
-  const open=ms.reduce((s,m)=>s+db.ots.filter(o=>o.machineId===m.id&&o.status!=='terminada').length,0);
-  $('#chKpis').innerHTML=
-    kpi('t-lime','i-tractor',nf(ms.length),'Equipos registrados')+
-    kpi('t-green','i-shield',nf(warrantyAct),'Garantías activas')+
-    kpi('t-blue','i-clock',nf(ms.filter(m=>dueInfo(m).state!=='ok').length),'Servicios próximos')+
-    kpi('t-amber','i-wrench',nf(open),'Trabajos en curso');
+  const myOpen=db.ots.filter(o=>o.status!=='terminada'&&ms.some(m=>m.id===o.machineId));
+  const firmar=myOpen.length; // no usado
+  const at=[];
+  myOpen.forEach(o=>{if(o.cita==='propuesta')at.push('un turno esperando tu respuesta');else if(o.status==='terminada')0});
+  const paraFirmar=db.ots.filter(o=>o.status==='terminada'&&o.ready&&!o.signature&&ms.some(m=>m.id===o.machineId)).length;
+  const propuestas=myOpen.filter(o=>o.cita==='propuesta').length;
+  let att='';
+  if(propuestas||paraFirmar){
+    att='<div style="display:flex;flex-direction:column;gap:8px;margin:0 0 4px">'+
+      (paraFirmar?'<button class="solid-btn" style="background:var(--lime);color:#17321f" onclick="APP.gotoPage(\'clientservices\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>'+paraFirmar+' informe'+(paraFirmar>1?'s':'')+' para firmar — tu máquina está lista</button>':'')+
+      (propuestas?'<button class="solid-btn" onclick="APP.gotoPage(\'clientservices\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+propuestas+' turno'+(propuestas>1?'s':'')+' esperando tu respuesta</button>':'')+
+      '</div>';
+  }
+  $('#chAttention').innerHTML=att;
   const items=ms.filter(m=>dueInfo(m).state!=='ok').map(m=>'<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-clock"/></svg></div><div><div class="tname">'+esc(mLabel(m))+' · '+esc(dueInfo(m).label)+'</div><div class="tdetail">Aceite, filtros, engrase y chequeo general.</div></div><div class="date">pronto</div></div>').join('');
   const hist=ms.flatMap(m=>m.history.slice(0,2).map(h=>({...h,m}))).sort((a,b)=>b.ts-a.ts).slice(0,4)
     .map(h=>'<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-checkc"/></svg></div><div><div class="tname">'+esc(h.title)+' · '+esc(mLabel(h.m))+'</div><div class="tdetail">'+esc(h.detail||'')+'</div></div><div class="date">'+fmtTs(h.ts)+'</div></div>').join('');
@@ -1617,25 +1655,30 @@ function renderClientServices(){
         '<td>'+(already?'<span class="badge ok">Solicitada</span>':'<button class="solid-btn" onclick="APP.requestCita(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>Pedir cita</button>')+'</td></tr>';
     }).join('')+'</tbody></table>':emptyHTML('#i-clock','Sin equipos registrados.');
   const open=db.ots.filter(o=>o.status!=='terminada'&&ms.some(m=>m.id===o.machineId));
-  $('#csOpen').innerHTML=open.length?'<table><thead><tr><th>Solicitud</th><th>Trabajo</th><th>Estado</th><th>Turno propuesto</th></tr></thead><tbody>'+
-    open.map(o=>{
-      const m=machineOf(o.machineId);
-      let stateBadge=({cita:'<span class="badge warn">Cita</span>',pendiente:'<span class="badge info">Pendiente</span>',taller:'<span class="badge warn">En taller</span>'}[o.status]||'');
-      let turnoCell='—';
-      if(o.type==='Cita preventiva'){
-        if(o.cita==='propuesta'){
-          turnoCell='<b>'+fmtDate(o.proposedDate)+(o.proposedTime?' · '+esc(o.proposedTime):'')+'</b>'+
-            '<div class="action-row" style="margin-top:8px"><button class="solid-btn" onclick="APP.citaAccept(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Aceptar turno</button>'+
-            '<button class="outline-btn" onclick="APP.citaReject(\''+o.id+'\')">Rechazar</button></div>';
-          stateBadge='<span class="badge warn">Esperando tu respuesta</span>';
-        }else if(o.cita==='confirmada'){turnoCell='<b>'+fmtDate(o.proposedDate)+'</b>';stateBadge='<span class="badge ok">Confirmado ✓</span>'}
-        else if(o.cita==='rechazada'){turnoCell='—';stateBadge='<span class="badge bad">Rechazado — el taller propondrá otro día</span>'}
-        else{stateBadge='<span class="badge info">Solicitada — esperando propuesta</span>'}
-      }
-      return '<tr><td><b>'+esc(o.id)+'</b><div class="small">'+esc(m?mLabel(m):'')+'</div></td>'+
-      '<td>'+esc(o.type)+'<div class="small">'+esc(o.issue||'')+'</div></td><td>'+stateBadge+'</td><td>'+turnoCell+'</td></tr>';
-    }).join('')+'</tbody></table>'
-    :emptyHTML('#i-checkc','Sin trabajos en curso con el taller.');
+  const listos=db.ots.filter(o=>o.status==='terminada'&&o.ready&&!o.signature&&ms.some(m=>m.id===o.machineId));
+  let att='';
+  listos.forEach(o=>{
+    const m=machineOf(o.machineId);
+    att+='<div class="req" style="border-left-color:var(--green2)" onclick="APP.openClientSign(\''+o.id+'\')">'+
+      '<div style="flex:1;min-width:200px"><b>'+esc(m?mLabel(m):'')+' está lista</b><div class="small">Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+' · '+esc(o.id)+'</div></div>'+
+      '<button class="solid-btn" onclick="event.stopPropagation();APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
+  });
+  open.forEach(o=>{
+    const m=machineOf(o.machineId);
+    if(o.cita==='propuesta'){
+      att+='<div class="req" style="border-left-color:var(--amber)" onclick="APP.gotoPage(\'clientservices\')">'+
+        '<div style="flex:1;min-width:200px"><b>Turno propuesto: '+fmtDate(o.proposedDate)+(o.proposedTime?' · '+o.proposedTime:'')+'</b><div class="small">'+esc(m?mLabel(m):'')+' · '+esc(o.type)+'</div></div>'+
+        '<button class="solid-btn" onclick="event.stopPropagation();APP.citaAccept(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Aceptar</button>'+
+        '<button class="outline-btn" onclick="event.stopPropagation();APP.citaReject(\''+o.id+'\')">Rechazar</button></div>';
+    }else if(o.cita==='rechazada'){
+      att+='<div class="req" style="border-left-color:var(--red)"><div><b>Turno rechazado</b><div class="small">El taller te propondrá otro día para '+esc(m?mLabel(m):'')+'</div></div></div>';
+    }else if(o.status==='taller'){
+      att+='<div class="req" style="border-left-color:var(--line)"><div><b>'+esc(m?mLabel(m):'')+' está en el taller</b><div class="small">Te avisamos cuando esté lista para retirar.</div></div></div>';
+    }else if(o.cita==='solicitada'){
+      att+='<div class="req" style="border-left-color:var(--blue)"><div><b>Cita pedida</b><div class="small">Esperando que el taller proponga día para '+esc(m?mLabel(m):'')+'</div></div></div>';
+    }
+  });
+  $('#csAttention').innerHTML=att||emptyHTML('#i-checkc','Nada pendiente — todo al día ✓');
 
   const hist=db.ots.filter(o=>o.status==='terminada'&&ms.some(m=>m.id===o.machineId)).sort((a,b)=>(b.closedAt||0)-(a.closedAt||0));
   $('#csHist').innerHTML=hist.length?'<table><thead><tr><th>Fecha</th><th>Equipo</th><th>Trabajo realizado</th><th>Técnico</th><th></th></tr></thead><tbody>'+
@@ -1776,6 +1819,7 @@ const APP={
     $('#maId').value=m?m.id:'';
     $('#maClient').innerHTML=db.clients.map(c=>'<option value="'+c.id+'"'+(m&&m.clientId===c.id?' selected':'')+'>'+esc(c.name)+'</option>').join('');
     $('#maBrand').value=m?m.brand:'';$('#maModel').value=m?m.model:'';$('#maSerial').value=m?m.serial||'':'';
+    $('#maBrand').oninput=$('#maModel').oninput=function(){if($('#maId').value)return;const g=iconGuess($('#maBrand').value,$('#maModel').value);if(g)$('#maIcon').value=g};
     $('#maIcon').value=m?m.iconKey:'tractor';
     $('#maHours').value=m?m.hours:0;$('#maHours').disabled=!!m;
     $('#maIntH').value=m?m.intervalH:500;$('#maIntM').value=m?m.intervalM:12;
@@ -2012,6 +2056,14 @@ const SERVICE_GROUPS={
     ]
   }
 };
+function iconGuess(brand,model){
+  const s=((brand||'')+' '+(model||'')).toLowerCase();
+  if(/zero|radiomaster|4500|z ?track|zt|radio cero/.test(s))return 'zturn';
+  if(/525|rider|rt ?6|sentad|ride/.test(s))return 'ride';
+  if(/avant|carg|loader|635/.test(s))return 'layers';
+  if(/lovol|te ?2|te ?3|m5|5075|m[0-9]0[0-9]/.test(s))return 'tractorcab';
+  return '';
+}
 function normHeader(h){return String(h||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
 function parseCSVText(text){
   const lines=String(text||'').split(/\r?\n/).filter(l=>l.trim());
