@@ -952,10 +952,11 @@
 <div class="modal-backdrop" id="mView">
   <div class="modal wide">
     <h3 id="viewTitle">Informe</h3>
+    <div id="viewGate" style="display:none;align-items:center;gap:12px;border:1px solid var(--amber);background:var(--amber-soft);border-radius:12px;padding:12px 14px;margin-bottom:10px;flex-wrap:wrap"></div>
     <iframe id="viewFrame" style="flex:1;border:1px solid var(--line);border-radius:12px;background:#fff"></iframe>
     <div class="modal-actions">
       <button class="outline-btn" onclick="APP.closeModal('mView')">Cerrar</button>
-      <button class="solid-btn" onclick="APP.printView()"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Descargar / PDF</button>
+      <button id="viewPrintBtn" class="solid-btn" onclick="APP.printView()"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Descargar / PDF</button>
     </div>
   </div>
 </div>
@@ -1536,6 +1537,7 @@ function renderWsDay(){
         '<button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button>'+
         '<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>Factura</button>'+
         (!o.ready?'<button class="solid-btn" onclick="APP.markReady(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg>Avisar retiro</button>':'')+
+        (o.ready&&!o.signature?'<button class="solid-btn" onclick="APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Firmar</button>':'')+
         '</div></div>';
     }).join('');
   }
@@ -1621,7 +1623,7 @@ function renderWorkshop(){
       rechazada:'<span class="badge bad">Rechazado — proponer otro día</span>'
     };
     const citaBadge=(o.type==='Cita preventiva'&&o.status!=='terminada')?('<div style="margin-top:5px">'+(CITA_STATE[o.cita||'solicitada']||'')+'</div>'):'';
-    const retiroBadge=(o.status==='terminada')?('<div style="margin-top:5px">'+(o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+' — espera firma</span>':''))+'</div>'):'';
+    const retiroBadge=(o.status==='terminada')?('<div style="margin-top:5px">'+(o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+' — falta firma</span>':'<span class="badge info">Terminada — falta avisar retiro</span>'))+'</div>'):'';
     let action='';
     const tasksBtn='<button class="outline-btn" onclick="APP.openTasks(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas'+(o.tasks&&o.tasks.length?' '+o.tasks.filter(t=>t.done).length+'/'+o.tasks.length:'')+'</button>';
     if(o.status!=='terminada'){
@@ -1636,6 +1638,7 @@ function renderWorkshop(){
         '<button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button>'+
         '<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>'+(o.invoiced?'Ver factura':'Factura')+'</button>'+
         (!o.ready?'<button class="solid-btn" onclick="APP.markReady(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg>Avisar retiro</button>':'')+
+        (o.ready&&!o.signature?'<button class="solid-btn" onclick="APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Firmar en mostrador</button>':'')+
         '</div>';
     }
     const sel='<select class="statussel" onchange="APP.setOTStatus(\''+o.id+'\',this.value)">'+
@@ -1776,12 +1779,14 @@ function otSteps(o){
   if(o.presupuesto&&o.presupuesto.total)st.push({t:'Presupuesto '+money(o.presupuesto.total),st:cur>3?'done':(cur===3?'now':'next'),s:o.presupuesto.approved===true?'Aprobado por ti':(cur===3?'Esperando tu respuesta':'')});
   if(o.status==='bloqueada')st.push({t:'En espera',st:'now',s:o.bloqueo==='pieza'?'Falta un recambio — te avisamos apenas llegue':(o.bloqueo==='autorizacion'?'Necesitamos tu autorización para seguir':'Coordinando con el taller')});
   st.push({t:'Trabajo en el taller',st:o.status==='terminada'?'done':(cur>=5?'now':'next')});
-  st.push({t:'Lista para retirar',st:o.status==='terminada'?'done':(o.ready?'now':'next'),s:(o.status!=='terminada'&&o.ready)?'Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' · '+o.pickupTime:''):''});
-  st.push({t:'Entregada',st:o.status==='terminada'?'done':'next'});
+  const fin=o.status==='terminada';
+  st.push({t:'Lista para retirar',st:fin?(o.ready?'done':'now'):'next',s:fin?(o.ready?'Podés buscarla el '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' · a las '+o.pickupTime:''):'El taller está definiendo el día y la hora de retiro — te avisamos'):''});
+  st.push({t:'Firma del informe',st:o.signature?'done':(fin&&o.ready?'now':'next'),s:o.signature?'Firmado ✓':(fin&&o.ready?'Firmalo antes de retirar (o en el mostrador)':'')});
+  st.push({t:'Entregada',st:o.signature?'done':'next'});
   return st;
 }
 function renderCsTrack(ms){
-  const act=db.ots.filter(o=>o.status!=='terminada'&&ms.some(m=>m.id===o.machineId)&&['recibida','diagnostico','presupuesto','bloqueada','taller'].indexOf(o.status)>=0);
+  const act=db.ots.filter(o=>ms.some(m=>m.id===o.machineId)&&((o.status!=='terminada'&&['recibida','diagnostico','presupuesto','bloqueada','taller'].indexOf(o.status)>=0)||(o.status==='terminada'&&!o.signature)));
   const card=$('#csTrackCard');
   if(!act.length){card.style.display='none';return}
   card.style.display='block';
@@ -1842,13 +1847,19 @@ function renderClientServices(){
   renderCsPlan(ms);
   renderCsTrack(ms);
   const open=db.ots.filter(o=>o.status!=='terminada'&&ms.some(m=>m.id===o.machineId));
-  const listos=db.ots.filter(o=>o.status==='terminada'&&o.ready&&!o.signature&&ms.some(m=>m.id===o.machineId));
+  const pendRet=db.ots.filter(o=>o.status==='terminada'&&!o.signature&&ms.some(m=>m.id===o.machineId));
   let att='';
-  listos.forEach(o=>{
+  pendRet.forEach(o=>{
     const m=machineOf(o.machineId);
-    att+='<div class="req" style="border-left-color:var(--green2)" onclick="APP.openClientSign(\''+o.id+'\')">'+
-      '<div style="flex:1;min-width:200px"><b>'+esc(m?mLabel(m):'')+' está lista</b><div class="small">Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+' · '+esc(o.id)+'</div></div>'+
-      '<button class="solid-btn" onclick="event.stopPropagation();APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
+    if(o.ready){
+      att+='<div class="req" style="border-left-color:var(--green2)" onclick="APP.openClientSign(\''+o.id+'\')">'+
+        '<div style="flex:1;min-width:200px"><b>✓ '+esc(m?mLabel(m):'')+' está lista</b><div class="small">Podés buscarla el <b>'+fmtDate(o.pickupDate||todayISO())+'</b>'+(o.pickupTime?' a las <b>'+o.pickupTime+'</b>':'')+' · '+esc(o.id)+' — revisá el informe y firmalo.</div></div>'+
+        '<button class="solid-btn" onclick="event.stopPropagation();APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
+    }else{
+      att+='<div class="req" style="border-left-color:var(--blue)" onclick="APP.viewReport(\''+o.id+'\')">'+
+        '<div style="flex:1;min-width:200px"><b>Servicio terminado ✓</b><div class="small">'+esc(m?mLabel(m):'')+' · '+esc(o.id)+' — el taller te va a confirmar el día y la hora de retiro.</div></div>'+
+        '<button class="outline-btn" onclick="event.stopPropagation();APP.viewReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Ver informe</button></div>';
+    }
   });
   open.forEach(o=>{
     const m=machineOf(o.machineId);
@@ -2360,7 +2371,7 @@ function otNextActor(o){
   if(o.status==='presupuesto')return '→ Cliente: aprobar $';
   if(o.status==='bloqueada')return o.bloqueo==='pieza'?'→ Compras: conseguir recambio':(o.bloqueo==='autorizacion'?'→ Cliente: autorizar':'→ Taller: asignar técnico');
   if(o.status==='taller')return '→ Técnico: reparar';
-  if(o.status==='terminada')return o.ready?(o.signature?'✓ Entregada':'→ Cliente: retirar y firmar'):'→ Taller: cerrar con informe';
+  if(o.status==='terminada')return o.ready?(o.signature?'✓ Entregada':'→ Cliente: retirar y firmar'):'→ Taller: avisar día de retiro';
   return '';
 }
 function repeatedIssueAlert(ot,machineId){
@@ -3005,11 +3016,23 @@ Object.assign(APP,{
   },
   viewReport(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
+    this._viewOt=otId;
     document.getElementById('viewTitle').textContent='Informe de servicio · '+ot.id;
     document.getElementById('viewFrame').srcdoc=buildReportHTML(ot);
+    const needSig=ot.status==='terminada'&&!ot.signature;
+    const gate=document.getElementById('viewGate'),btn=document.getElementById('viewPrintBtn');
+    if(needSig){
+      gate.style.display='flex';
+      gate.innerHTML='<svg class="ic" style="width:22px;height:22px;color:var(--amber)"><use href="#i-file"/></svg>'+
+        '<div style="flex:1;min-width:220px"><b>Informe sin firma</b><div class="small">Primero firmalo — es tu conformidad con el servicio. Después podés descargarlo o imprimirlo.</div></div>'+
+        '<button class="solid-btn" onclick="APP.closeModal(\'mView\');APP.openClientSign(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Firmar ahora</button>';
+      btn.style.display='none';
+    }else{gate.style.display='none';btn.style.display=''}
     this.openModal('mView');
   },
   printView(){
+    const ot=db.ots.find(o=>o.id===this._viewOt);
+    if(ot&&ot.status==='terminada'&&!ot.signature){this.toast('Primero firmá el informe — después podés descargarlo');return}
     const f=document.getElementById('viewFrame');
     try{f.contentWindow.print()}catch(e){toast('Usa el botón derecho → Imprimir')};
   },
