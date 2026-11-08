@@ -650,7 +650,7 @@
           <div class="card next-service" id="chNextCard"></div>
         </div>
         <div class="card section-card">
-          <div class="section-head"><div><div class="section-title">Tus próximos hitos</div><div class="section-sub">Calculados con las horas registradas.</div></div></div>
+          <div class="section-head"><div><div class="section-title">¿Qué service le toca a cada equipo?</div><div class="section-sub">Según las horas de uso registradas — cuando algo esté por vencer, te avisamos nosotros para reservar el turno.</div></div></div>
           <div class="timeline" id="chTimeline"></div>
         </div>
       </section>
@@ -1739,10 +1739,15 @@ function renderClientHome(){
       '</div>';
   }
   $('#chAttention').innerHTML=att;
-  const items=ms.filter(m=>dueInfo(m).state!=='ok').map(m=>'<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-clock"/></svg></div><div><div class="tname">'+esc(mLabel(m))+' · '+esc(dueInfo(m).label)+'</div><div class="tdetail">Aceite, filtros, engrase y chequeo general.</div></div><div class="date">pronto</div></div>').join('');
-  const hist=ms.flatMap(m=>m.history.slice(0,2).map(h=>({...h,m}))).sort((a,b)=>b.ts-a.ts).slice(0,4)
+  const pend=ms.filter(m=>dueInfo(m).state!=='ok');
+  const items=(pend.length?'<div class="agenda-day" style="margin-top:0">Por venir</div>':'')+pend.map(m=>{
+    const st=dueInfo(m).state;
+    return '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-clock"/></svg></div><div><div class="tname">'+esc(mLabel(m))+' · '+esc(dueInfo(m).label)+'</div><div class="tdetail">'+esc(dueServiceLabel(m))+'</div></div><div class="date"'+(st==='overdue'?' style="background:var(--red-soft);color:var(--red)"':'')+'>'+(st==='overdue'?'¡Ahora!':'Pronto')+'</div></div>';
+  }).join('');
+  const movs=ms.flatMap(m=>m.history.slice(0,2).map(h=>({...h,m}))).sort((a,b)=>b.ts-a.ts).slice(0,4);
+  const hist=(movs.length?'<div class="agenda-day">Últimos movimientos</div>':'')+movs
     .map(h=>'<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-checkc"/></svg></div><div><div class="tname">'+esc(h.title)+' · '+esc(mLabel(h.m))+'</div><div class="tdetail">'+esc(h.detail||'')+'</div></div><div class="date">'+fmtTs(h.ts)+'</div></div>').join('');
-  $('#chTimeline').innerHTML=(items||'')+hist||emptyHTML('#i-clock','Sin hitos todavía.');
+  $('#chTimeline').innerHTML=items+hist||emptyHTML('#i-checkc','Todo al día — no hay servicios próximos por ahora.');
 }
 function renderClientMachines(){
   const c=requireClient();if(!c)return;
@@ -1764,6 +1769,15 @@ function renderClientMachines(){
   }).join('');
 }
 function svcHours(t){const m=t.match(/([\d.]+)\s*horas?/i);return m?parseInt(m[1].replace(/\./g,''),10):null}
+function dueServiceLabel(m){
+  const g=m.serviceGroup&&SERVICE_GROUPS[m.serviceGroup];
+  if(!g)return 'Aceite, filtros, engrase y chequeo general.';
+  const base=(m.lastServiceHours!=null?m.lastServiceHours:0);
+  let nxt=null;
+  if(g.byService)nxt=g.services.find(s=>{const h=svcHours(s.t);return h!=null&&h>base});
+  else{const since=m.hours-base;nxt=g.services.find(s=>{const h=svcHours(s.t);return h!=null&&h>since})}
+  return nxt?'Le toca: '+nxt.t:'Aceite, filtros, engrase y chequeo general.';
+}
 function mThumb(m){
   const pix=machinePix(m);
   if(pix)return '<img src="'+pix+'" alt="">';
