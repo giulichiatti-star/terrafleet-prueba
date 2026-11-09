@@ -190,13 +190,14 @@
   .chk input{width:15px;height:15px;accent-color:var(--green2)}
   tr.rowlink{cursor:pointer}
   tr.rowlink:hover td{background:#f4f9f2}
-  .wsstat{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px}
-  .schip{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px 11px;background:#fff;cursor:pointer;transition:.15s;position:relative}
+  .wsstat{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+  .schip{border:1.5px solid var(--line);border-radius:14px;padding:13px 14px 12px;background:#fff;cursor:pointer;transition:.15s;position:relative}
   .schip:hover{border-color:var(--green2);transform:translateY(-1px)}
   .schip.sel{background:var(--green);border-color:var(--green);color:#fff}
-  .schip .v{font-size:24px;font-weight:800;line-height:1}
-  .schip .l{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.3}
-  .schip.sel .l{color:#cde4d4}
+  .schip .v{font-size:30px;font-weight:800;line-height:1}
+  .schip .l{font-size:12px;font-weight:700;color:var(--ink);margin-top:5px;line-height:1.25}
+  .schip .sd{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.3}
+  .schip.sel .l,.schip.sel .sd{color:#cde4d4}
   .wscal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
   .wscal-d{border:1.5px solid var(--line);border-radius:13px;padding:9px 4px 8px;text-align:center;background:#fff;cursor:pointer;transition:.15s;position:relative;min-height:64px}
   .wscal-d:hover{border-color:var(--green2)}
@@ -326,7 +327,7 @@
     .kpis{grid-template-columns:1fr 1fr;gap:10px}
     .kpi .value{font-size:24px}
     .machine-grid,#cmGrid{grid-template-columns:1fr}
-    .wsstat{grid-template-columns:repeat(3,1fr)}
+    .wsstat{grid-template-columns:repeat(2,1fr)}
     .wscal{grid-template-columns:repeat(7,1fr);gap:5px}
     .wscal .d{min-height:54px;padding:6px 2px}
     .wscal .d .dn{font-size:15px}
@@ -539,7 +540,7 @@
 
         <div class="card section-card" style="margin-bottom:16px">
           <div class="section-head" style="margin-bottom:12px">
-            <div><div class="section-title">Calendario de turnos</div><div class="section-sub" id="wsCalSub">Pulsa un día para ver sus turnos y actuar.</div></div>
+            <div><div class="section-title">Calendario de turnos</div><div class="section-sub" id="wsCalSub">Solo turnos confirmados y completados — lo pendiente vive en «Turnos por confirmar». Pulsa un día para ver y actuar.</div></div>
             <div style="display:flex;gap:8px;align-items:center">
               <div class="filters" style="margin:0">
                 <button class="filter" id="wcmA" onclick="APP.setCalMode('agenda')">Agenda</button>
@@ -558,7 +559,7 @@
         </div>
 
         <div class="card section-card" style="margin-bottom:16px">
-          <div class="section-head" style="margin-bottom:10px"><div><div class="section-title" id="wsReqTitle">Citas y solicitudes</div><div class="section-sub">Lo que piden los clientes y lo que les enviamos a confirmar o cambiar.</div></div></div>
+          <div class="section-head" style="margin-bottom:10px"><div><div class="section-title" id="wsReqTitle">Turnos por confirmar</div><div class="section-sub">Cada turno vive en un solo lugar: lo pendiente acá; lo confirmado, en el calendario.</div></div></div>
           <div id="wsReqs"></div>
         </div>
 
@@ -1385,38 +1386,34 @@ function dayLabel(iso){
   return DIA_SEM_L[d.getDay()]+' '+Number(iso.slice(8,10))+'/'+Number(iso.slice(5,7));
 }
 let wsDaySel=null,wsWeekOff=0,wsFilter=null,wsMode='agenda',wsView='semana',wsMonthOff=0;
-function wsOpenCitas(){return db.ots.filter(o=>o.status!=='terminada'&&o.proposedDate&&(o.cita==='confirmada'||o.cita==='propuesta'))}
+function wsOpenCitas(){return db.ots.filter(o=>o.status!=='terminada'&&o.proposedDate&&o.cita==='confirmada')}
 function wsCounts(){
   const today=todayISO();const open=db.ots.filter(o=>o.status!=='terminada');
+  const curso=open.filter(o=>['recibida','diagnostico','presupuesto','taller'].includes(o.status));
   return{
-    solicitada:open.filter(o=>o.origin==='cliente'&&o.cita==='solicitada').length,
-    propuesta:open.filter(o=>o.cita==='propuesta').length,
-    rechazada:open.filter(o=>o.cita==='rechazada').length,
-    hoy:open.filter(o=>o.proposedDate===today&&(o.cita==='confirmada'||o.cita==='propuesta')).length,
-    diagnostico:open.filter(o=>o.status==='recibida'||o.status==='diagnostico').length,
-    presupuesto:open.filter(o=>o.status==='presupuesto').length,
+    confirmar:open.filter(o=>['solicitada','propuesta','rechazada'].includes(o.cita)).length,
+    hoy:open.filter(o=>o.proposedDate===today&&o.cita==='confirmada').length,
+    curso:curso.length,
+    sinfecha:curso.filter(o=>!o.proposedDate).length,
     bloqueada:open.filter(o=>o.status==='bloqueada').length,
-    taller:open.filter(o=>o.status==='taller').length,
-    sinfecha:open.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&!['recibida','diagnostico','presupuesto','bloqueada'].includes(o.status)).length
+    entrega:db.ots.filter(o=>o.status==='terminada'&&!o.signature).length
   };
 }
 const WS_FILTERS=[
-  {k:'solicitada',icon:'i-cal',l:'Turnos pedidos<br>por confirmar'},
-  {k:'propuesta',icon:'i-clock',l:'Esperando<br>respuesta'},
-  {k:'rechazada',icon:'i-alert',l:'Rechazados<br>reprogramar'},
-  {k:'hoy',icon:'i-checkc',l:'Citas<br>de hoy'},
-  {k:'diagnostico',icon:'i-search',l:'Por<br>diagnosticar'},
-  {k:'presupuesto',icon:'i-mail',l:'Presupuesto<br>al cliente'},
-  {k:'bloqueada',icon:'i-alert',l:'Bloqueadas<br>ver por qué'},
-  {k:'taller',icon:'i-wrench',l:'En<br>reparación'},
-  {k:'sinfecha',icon:'i-plus',l:'OTs sin<br>fecha'}
+  {k:'confirmar',icon:'i-clock',col:'var(--amber)',l:'Por confirmar',d:'turnos sin resolver'},
+  {k:'hoy',icon:'i-checkc',col:'var(--green2)',l:'Confirmados hoy',d:'agenda del día'},
+  {k:'curso',icon:'i-wrench',col:'var(--blue)',l:'En taller',d:'órdenes en curso'},
+  {k:'bloqueada',icon:'i-alert',col:'var(--red)',l:'Bloqueadas',d:'atascos del taller'},
+  {k:'entrega',icon:'i-send',col:'var(--green)',l:'Para entregar',d:'retiro y firma'}
 ];
 function renderWsStatus(){
   const c=wsCounts();
-  document.getElementById('wsStatus').innerHTML=WS_FILTERS.map(f=>
-    '<div class="schip'+(wsFilter===f.k?' sel':'')+'" onclick="APP.setWsFilter(\''+f.k+'\')" title="Ver esta lista">'+
-    '<svg class="ic ic-sm" style="position:absolute;top:10px;right:10px;opacity:.5"><use href="#'+f.icon+'"/></svg>'+
-    '<div class="v">'+c[f.k]+'</div><div class="l">'+f.l+'</div></div>').join('');
+  document.getElementById('wsStatus').innerHTML=WS_FILTERS.map(f=>{
+    const sub=f.k==='curso'&&c.sinfecha?c.sinfecha+' sin fecha asignada':f.d;
+    return '<div class="schip'+(wsFilter===f.k?' sel':'')+'" onclick="APP.setWsFilter(\''+f.k+'\')" title="Ver esta lista">'+
+    '<svg class="ic ic-sm" style="position:absolute;top:10px;right:10px;opacity:.55;color:'+f.col+'"><use href="#'+f.icon+'"/></svg>'+
+    '<div class="v"'+(wsFilter===f.k?'':' style="color:'+f.col+'"')+'>'+c[f.k]+'</div><div class="l">'+f.l+'</div><div class="sd">'+sub+'</div></div>';
+  }).join('');
 }
 function isoOf(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function wsDoneOf(iso){return db.ots.filter(o=>o.status==='terminada'&&isoOf(o.closedAt||o.createdAt)===iso)}
@@ -1426,7 +1423,7 @@ function renderWsStatsLine(){
   const y=base.getFullYear(),mo=base.getMonth();
   let turnos=0,conf=0,hechos=0,fact=0,demoraSum=0,demoraN=0;
   db.ots.forEach(o=>{
-    if(o.proposedDate){const d=new Date(o.proposedDate+'T00:00:00');if(d.getFullYear()===y&&d.getMonth()===mo){turnos++;if(o.cita==='confirmada'||o.status==='terminada')conf++}}
+    if(o.proposedDate&&((o.cita==='confirmada')||o.status==='terminada')){const d=new Date(o.proposedDate+'T00:00:00');if(d.getFullYear()===y&&d.getMonth()===mo){turnos++;conf++}}
     if(o.status==='terminada'){
       const c=new Date(o.closedAt||0);
       if(c.getFullYear()===y&&c.getMonth()===mo){
@@ -1436,7 +1433,7 @@ function renderWsStatsLine(){
     }
   });
   if(wsMode==='agenda'){
-    el.innerHTML='<b style="color:var(--ink)">'+base.toLocaleDateString('es-AR',{month:'long'})+':</b> '+turnos+' turnos · '+conf+' confirmados · '+hechos+' completados con éxito';
+    el.innerHTML='<b style="color:var(--ink)">'+base.toLocaleDateString('es-AR',{month:'long'})+':</b> '+conf+' turnos confirmados · '+hechos+' completados';
   }else{
     const dm=demoraN?(demoraSum/demoraN).toFixed(1):'0';
     el.innerHTML='<b style="color:var(--ink)">'+base.toLocaleDateString('es-AR',{month:'long',year:'numeric'})+':</b> '+hechos+' trabajos completados · facturado '+money(fact)+' · demora media '+dm+' días';
@@ -1543,7 +1540,7 @@ function renderWsDay(){
   }
   el.innerHTML=html||emptyHTML('#i-cal','Sin turnos este día.');
 }
-const WS_TITLES={solicitada:'Turnos pedidos — por confirmar',propuesta:'Esperando respuesta del cliente',rechazada:'Rechazados — proponer otro día',hoy:'Citas de hoy',diagnostico:'Por diagnosticar (recibidas + diagnóstico)',presupuesto:'Presupuesto enviado — espera aprobación',bloqueada:'Bloqueadas — atascos del taller',taller:'En reparación ahora',sinfecha:'OTs sin fecha asignada'};
+const WS_TITLES={confirmar:'Turnos por confirmar',hoy:'Confirmados para hoy',curso:'En taller — órdenes en curso',bloqueada:'Bloqueadas — atascos del taller',entrega:'Para entregar — retiro y firma'};
 function reqCardHTML(o){
   const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
   let color='var(--line)',state=OT_ESTADOS[o.status]||o.status,btn='Agendar';btn=(o.status==='bloqueada')?'Ver':btn;
@@ -1551,42 +1548,43 @@ function reqCardHTML(o){
   else if(o.status==='presupuesto'){color='var(--amber)';state='Presupuesto '+money((o.presupuesto&&o.presupuesto.base||0)*(1+(o.presupuesto&&o.presupuesto.iva||0)/100))+' — cliente aprueba'}
   else if(o.status==='diagnostico'){color='var(--blue)';state='En diagnóstico'}
   else if(o.status==='recibida'&&o.type!=='Cita preventiva'){color='var(--blue)';state='Recibida — diagnosticar'}
+  let act='APP.openTurno(\''+o.id+'\')';
   if(o.cita==='solicitada'){color='var(--blue)';state='Pedido — proponer día';btn='Proponer turno'}
   else if(o.cita==='propuesta'){color='var(--amber)';state='Propuesto '+fmtDate(o.proposedDate)+' — espera respuesta';btn='Cambiar propuesta'}
   else if(o.cita==='rechazada'){color='var(--red)';state='Rechazó el '+fmtDate(o.proposedDate);btn='Nuevo turno'}
   else if(o.proposedDate){color='var(--green2)';state='Confirmado '+fmtDate(o.proposedDate);btn='Cambiar día'}
+  else if(o.status==='terminada'&&!o.ready){color='var(--blue)';state='Terminada — falta avisar retiro';btn='Avisar retiro';act='APP.markReady(\''+o.id+'\')'}
+  else if(o.status==='terminada'){color='var(--green2)';state='Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+' — falta firma';btn='Firmar en mostrador';act='APP.openClientSign(\''+o.id+'\')'}
   return '<div class="req" style="border-left-color:'+color+'" onclick="APP.openOtInfo(\''+o.id+'\')">'+
     '<div style="flex:1;min-width:210px"><b>'+esc(o.id)+'</b> · '+esc(c?c.name:'—')+
     '<div class="small">'+esc(m?mLabel(m):'')+(m&&m.serial?' · SN '+esc(m.serial):'')+' · '+esc(o.type)+'</div></div>'+
     '<span class="small" style="white-space:nowrap">'+state+'</span>'+
-    '<button class="solid-btn" onclick="event.stopPropagation();APP.openTurno(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+btn+'</button>'+
+    '<button class="solid-btn" onclick="event.stopPropagation();'+act+'"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+btn+'</button>'+
     '</div>';
 }
 function renderWsReqs(){
   const el=document.getElementById('wsReqs');
   const title=document.getElementById('wsReqTitle');
   let items=[];
-  if(wsFilter==='taller')items=db.ots.filter(o=>o.status==='taller');
-  else if(wsFilter==='diagnostico')items=db.ots.filter(o=>o.status==='recibida'||o.status==='diagnostico');
-  else if(wsFilter==='presupuesto')items=db.ots.filter(o=>o.status==='presupuesto');
+  if(wsFilter==='confirmar')items=db.ots.filter(o=>o.status!=='terminada'&&['solicitada','propuesta','rechazada'].includes(o.cita));
+  else if(wsFilter==='curso')items=db.ots.filter(o=>['recibida','diagnostico','presupuesto','taller'].includes(o.status));
   else if(wsFilter==='bloqueada')items=db.ots.filter(o=>o.status==='bloqueada');
-  else if(wsFilter==='sinfecha')items=db.ots.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&o.status!=='terminada');
+  else if(wsFilter==='entrega')items=db.ots.filter(o=>o.status==='terminada'&&!o.signature);
   else if(wsFilter==='hoy')items=wsOpenCitas().filter(o=>o.proposedDate===todayISO());
-  else if(wsFilter==='solicitada')items=db.ots.filter(o=>o.origin==='cliente'&&o.cita==='solicitada');
-  else if(wsFilter==='propuesta')items=db.ots.filter(o=>o.cita==='propuesta');
-  else if(wsFilter==='rechazada')items=db.ots.filter(o=>o.cita==='rechazada');
   if(wsFilter){
     title.textContent=WS_TITLES[wsFilter]+' · '+items.length;
     el.innerHTML=items.length?items.map(reqCardHTML).join(''):emptyHTML('#i-checkc','Nada pendiente aquí ✓');
     return;
   }
-  title.textContent='Citas y solicitudes';
-  const reqs=db.ots.filter(o=>o.origin==='cliente'&&o.status!=='terminada'&&o.cita!=='confirmada');
-  const mine=db.ots.filter(o=>!o.proposedDate&&o.type!=='Cita preventiva'&&!['recibida','diagnostico','presupuesto','bloqueada','terminada'].includes(o.status));
+  title.textContent='Turnos por confirmar';
+  const sol=db.ots.filter(o=>o.status!=='terminada'&&o.cita==='solicitada');
+  const pro=db.ots.filter(o=>o.status!=='terminada'&&o.cita==='propuesta');
+  const rec=db.ots.filter(o=>o.status!=='terminada'&&o.cita==='rechazada');
   let html='';
-  if(reqs.length)html+='<div class="agenda-day" style="margin-top:0">Del cliente</div>'+reqs.map(reqCardHTML).join('');
-  if(mine.length)html+='<div class="agenda-day">Nuestras OTs sin fecha</div>'+mine.map(reqCardHTML).join('');
-  el.innerHTML=html||emptyHTML('#i-checkc','Sin solicitudes pendientes ✓');
+  if(sol.length)html+='<div class="agenda-day" style="margin-top:0">Turnos pedidos · '+sol.length+'</div>'+sol.map(reqCardHTML).join('');
+  if(pro.length)html+='<div class="agenda-day">Esperando respuesta del cliente · '+pro.length+'</div>'+pro.map(reqCardHTML).join('');
+  if(rec.length)html+='<div class="agenda-day">Rechazados — proponer otro día · '+rec.length+'</div>'+rec.map(reqCardHTML).join('');
+  el.innerHTML=html||emptyHTML('#i-checkc','Sin turnos por confirmar — todo resuelto ✓');
 }
 function renderTemplates(){
   const el=document.getElementById('tplPage');
