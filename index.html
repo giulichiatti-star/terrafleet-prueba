@@ -442,7 +442,6 @@
 
     <div class="sidebar-foot">
       <div class="status"><span class="dot" id="footDot"></span> <span id="footStatus">Datos guardados en este navegador</span></div>
-      <span id="footTrial">Prueba de 30 días</span>
     </div>
   </aside>
 
@@ -453,7 +452,6 @@
         <div class="page-title" id="pagetitle">Dashboard</div>
       </div>
       <div class="top-actions">
-        <span class="trialchip" id="trialChip"><span class="dot"></span>Prueba · 30 días</span>
         <button class="iconbtn" id="btnBell" title="Notificaciones" aria-label="Notificaciones">
           <svg class="ic ic-sm"><use href="#i-bell"/></svg>
           <span class="bcount zero" id="notifCount">0</span>
@@ -606,12 +604,7 @@
             <div class="action-row">
               <button class="outline-btn" onclick="APP.copyDataLink()"><svg class="ic ic-xs"><use href="#i-link"/></svg>Copiar enlace con mis datos</button>
             </div>
-            <div class="small" style="margin-top:10px;line-height:1.5">«Enlace con mis datos» incluye clientes y máquinas actuales: quien lo abra en otro dispositivo verá lo mismo y podrá seguir trabajando allí.</div>
-          </div>
-          <div class="card section-card">
-            <div class="section-title">Prueba</div>
-            <div class="section-sub" style="margin-bottom:10px">Periodo de evaluación de 30 días desde el primer uso.</div>
-            <div id="setTrial"></div>
+            <div class="small" style="margin-top:10px;line-height:1.5">«Enlace con mis datos» incluye clientes y máquinas actuales: quien lo abra en otro dispositivo verá lo mismo y podrá seguir trabajando allí. <b>Ojo: el enlace contiene toda la información — usalo solo para transferir entre navegadores de confianza.</b></div>
           </div>
           <div class="card section-card">
             <div class="section-title">Tus datos</div>
@@ -624,6 +617,7 @@
               <button class="outline-btn" onclick="APP.reseed()"><svg class="ic ic-xs"><use href="#i-replay"/></svg>Cargar datos de ejemplo</button>
               <button class="outline-btn" style="color:#ac4136" onclick="APP.wipe()"><svg class="ic ic-xs"><use href="#i-trash"/></svg>Empezar de cero</button>
             </div>
+            <div id="bakInfo"></div>
             <input type="file" id="impFile" accept=".json,application/json" style="display:none" />
             <div id="setStats" style="margin-top:14px"></div>
           </div>
@@ -807,7 +801,7 @@
 
 <div class="modal-backdrop" id="mDone">
   <div class="modal">
-    <h3>Cerrar orden · ficha del servicio</h3><p id="mDoneSub"></p>
+    <h3 id="mDoneTitle">Cerrar orden · ficha del servicio</h3><p id="mDoneSub"></p>
     <input type="hidden" id="doneId" />
     <div class="form-row">
       <div><label>Técnico</label><input class="field" id="doneTech" placeholder="Marc" /></div>
@@ -819,8 +813,9 @@
       <div><label>Costo materiales ($)</label><input class="field" id="doneCosto" type="number" min="0" step="100" placeholder="Ej. 95000" /></div>
     </div>
     <div style="margin-top:12px"><label>Materiales usados</label><textarea id="doneMateriales" class="field" style="height:60px;resize:vertical" placeholder="Ej. 1 filtro de aceite OF-2210, 2 mangueras…"></textarea></div>
-    <div class="notice"><svg class="ic"><use href="#i-checkc"/></svg><div>Al cerrar la OT se actualiza el historial de la máquina y el contador de mantenimiento vuelve a empezar.</div></div>
-    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mDone')">Cancelar</button><button class="solid-btn" onclick="APP.completeOT()">Cerrar OT</button></div>
+    <label style="display:flex;gap:9px;align-items:center;margin-top:12px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="doneReset" style="width:16px;height:16px;accent-color:var(--green2);flex:none"/>Esta OT cuenta como un service: reiniciar el plan de mantenimiento</label>
+    <div class="notice"><svg class="ic"><use href="#i-checkc"/></svg><div>Al cerrar la OT se actualiza el historial de la máquina. Marcá la casilla solo si fue un mantenimiento (una avería no reinicia el plan).</div></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mDone')">Cancelar</button><button class="solid-btn" id="doneBtn" onclick="APP.completeOT()">Cerrar OT</button></div>
   </div>
 </div>
 
@@ -911,6 +906,16 @@
     <div style="margin-top:14px"><label>Nota del turno</label><textarea id="oiNote" class="field" style="height:80px;resize:vertical" placeholder="Interno: qué preparar, repuestos pedidos, indicaciones para el cliente…"></textarea></div>
     <div class="action-row" id="oiActions" style="margin-top:12px"></div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mOtInfo')">Cerrar</button><button class="solid-btn" onclick="APP.saveOtNote()">Guardar nota</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mAnular">
+  <div class="modal">
+    <h3>Anular orden</h3><p id="anSub"></p>
+    <input type="hidden" id="anId"/>
+    <div style="margin-top:8px"><label>Motivo (queda en el historial de la máquina)</label><input class="field" id="anMotivo" placeholder="Ej. cargada por error / el cliente canceló"/></div>
+    <div class="notice"><svg class="ic"><use href="#i-alert"/></svg><div>La OT deja de contar como pendiente y desaparece del portal del cliente y del calendario. Queda en la tabla con estado «Anulada», con este motivo.</div></div>
+    <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mAnular')">Cancelar</button><button class="solid-btn" style="background:#ac4136" onclick="APP.doAnular()">Anular OT</button></div>
   </div>
 </div>
 
@@ -1145,14 +1150,33 @@ function migrate(){
   (db.ots||[]).forEach(o=>{if(o.status==='pendiente'){o.status='recibida';dirty=true}});
   if(dirty&&storageOk){try{localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){}}
 }
-function saveDb(){if(!storageOk)return;try{localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){}}
+function saveDb(){
+  if(!storageOk)return;
+  try{localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){}
+  saveBakDaily();
+}
+function saveBakDaily(){
+  try{
+    const last=Number(localStorage.getItem(DB_KEY+'_bakts')||0);
+    if(Date.now()-last>86400000){
+      localStorage.setItem(DB_KEY+'_bak',JSON.stringify({ts:Date.now(),db:db}));
+      localStorage.setItem(DB_KEY+'_bakts',String(Date.now()));
+    }
+  }catch(e){}
+}
 
 /* ================= CÁLCULOS ================= */
 function clientOf(id){return db.clients.find(c=>c.id===id)}
 function machineOf(id){return db.machines.find(m=>m.id===id)}
 function mLabel(m){return (m.brand+' '+m.model).trim()||'(sin nombre)'}
+function nextServiceHours(m){
+  const base=Number(m.lastServiceHours)||0;
+  const g=m.serviceGroup&&SERVICE_GROUPS[m.serviceGroup];
+  if(g&&g.byService){const nxt=g.services.find(s=>{const h=svcHours(s.t);return h!=null&&h>base});if(nxt)return svcHours(nxt.t)}
+  return base+Number(m.intervalH||500);
+}
 function dueInfo(m){
-  const target=(Number(m.lastServiceHours)||0)+Number(m.intervalH||500);
+  const target=nextServiceHours(m);
   const hoursLeft=target-Number(m.hours||0);
   const dateTarget=addMonths(m.lastServiceDate||todayISO(),m.intervalM||12);
   const dateTargetISO=dateTarget.toISOString().slice(0,10);
@@ -1177,7 +1201,7 @@ function dueInfo(m){
 const STATE_BADGE={overdue:'<span class="badge bad">Vencido</span>',soon:'<span class="badge warn">Próximo</span>',ok:'<span class="badge ok">Correcto</span>'};
 const RANK={overdue:0,soon:1,ok:2};
 function machinesOf(clientId){return db.machines.filter(m=>m.clientId===clientId)}
-function urgencySort(list){return list.slice().sort((a,b)=>(RANK[dueInfo(a).state]-RANK[dueInfo(b).state])||((a.lastServiceHours+a.intervalH-a.hours)-(b.lastServiceHours+b.intervalH-b.hours)))}
+function urgencySort(list){return list.slice().sort((a,b)=>(RANK[dueInfo(a).state]-RANK[dueInfo(b).state])||((nextServiceHours(a)-a.hours)-(nextServiceHours(b)-b.hours)))}
 function trialDaysLeft(){return 30-Math.floor((Date.now()-db.meta.trialStart)/86400000)}
 function iconOf(m){return '#i-'+(m.iconKey||'tractor')}
 
@@ -1244,11 +1268,6 @@ function renderAll(){
   if(active)renderPage(active.id);
 }
 function updateTrialUI(){
-  const left=trialDaysLeft();
-  const chip=$('#trialChip');
-  if(left>0){chip.className='trialchip';chip.innerHTML='<span class="dot"></span>Prueba · '+left+(left===1?' día':' días')}
-  else{chip.className='trialchip expired';chip.innerHTML='<span class="dot red"></span>Prueba finalizada · exporta tus datos'}
-  $('#footTrial').textContent=left>0?('Prueba · quedan '+left+' días'):'Prueba finalizada';
   if(!storageOk){
     $('#footDot').classList.add('red');
     $('#footStatus').textContent='Advertencia: este navegador bloquea el guardado';
@@ -1290,7 +1309,7 @@ function machineCardHTML(m,clientView){
 function emptyHTML(icon,text){return '<div class="empty"><svg class="ic"><use href="'+icon+'"/></svg><div>'+text+'</div></div>'}
 
 function renderDashboard(){
-  const open=db.ots.filter(o=>o.status!=='terminada');
+  const open=db.ots.filter(o=>otAbierta(o));
   const overdue=db.machines.filter(m=>dueInfo(m).state==='overdue');
   const soon=db.machines.filter(m=>dueInfo(m).state==='soon');
   $('#dashKpis').innerHTML=
@@ -1386,9 +1405,9 @@ function dayLabel(iso){
   return DIA_SEM_L[d.getDay()]+' '+Number(iso.slice(8,10))+'/'+Number(iso.slice(5,7));
 }
 let wsDaySel=null,wsWeekOff=0,wsFilter=null,wsMode='agenda',wsView='semana',wsMonthOff=0;
-function wsOpenCitas(){return db.ots.filter(o=>o.status!=='terminada'&&o.proposedDate&&o.cita==='confirmada')}
+function wsOpenCitas(){return db.ots.filter(o=>otAbierta(o)&&o.proposedDate&&o.cita==='confirmada')}
 function wsCounts(){
-  const today=todayISO();const open=db.ots.filter(o=>o.status!=='terminada');
+  const today=todayISO();const open=db.ots.filter(o=>otAbierta(o));
   const curso=open.filter(o=>['recibida','diagnostico','presupuesto','taller'].includes(o.status));
   return{
     confirmar:open.filter(o=>['solicitada','propuesta','rechazada'].includes(o.cita)).length,
@@ -1566,7 +1585,7 @@ function renderWsReqs(){
   const el=document.getElementById('wsReqs');
   const title=document.getElementById('wsReqTitle');
   let items=[];
-  if(wsFilter==='confirmar')items=db.ots.filter(o=>o.status!=='terminada'&&['solicitada','propuesta','rechazada'].includes(o.cita));
+  if(wsFilter==='confirmar')items=db.ots.filter(o=>otAbierta(o)&&['solicitada','propuesta','rechazada'].includes(o.cita));
   else if(wsFilter==='curso')items=db.ots.filter(o=>['recibida','diagnostico','presupuesto','taller'].includes(o.status));
   else if(wsFilter==='bloqueada')items=db.ots.filter(o=>o.status==='bloqueada');
   else if(wsFilter==='entrega')items=db.ots.filter(o=>o.status==='terminada'&&!o.signature);
@@ -1577,9 +1596,9 @@ function renderWsReqs(){
     return;
   }
   title.textContent='Turnos por confirmar';
-  const sol=db.ots.filter(o=>o.status!=='terminada'&&o.cita==='solicitada');
-  const pro=db.ots.filter(o=>o.status!=='terminada'&&o.cita==='propuesta');
-  const rec=db.ots.filter(o=>o.status!=='terminada'&&o.cita==='rechazada');
+  const sol=db.ots.filter(o=>otAbierta(o)&&o.cita==='solicitada');
+  const pro=db.ots.filter(o=>otAbierta(o)&&o.cita==='propuesta');
+  const rec=db.ots.filter(o=>otAbierta(o)&&o.cita==='rechazada');
   let html='';
   if(sol.length)html+='<div class="agenda-day" style="margin-top:0">Turnos pedidos · '+sol.length+'</div>'+sol.map(reqCardHTML).join('');
   if(pro.length)html+='<div class="agenda-day">Esperando respuesta del cliente · '+pro.length+'</div>'+pro.map(reqCardHTML).join('');
@@ -1608,10 +1627,10 @@ function renderWorkshop(){
   renderWsStatus();renderCalendar();renderWsReqs();
   const t=$('#otTable');
   if(!db.ots.length){t.innerHTML=emptyHTML('#i-wrench','Sin órdenes de trabajo. Crea una desde «Nueva OT» o desde una máquina.');return}
-  const order={cita:0,pendiente:1,taller:2,terminada:3};
+  const order={cita:0,pendiente:1,taller:2,terminada:3,anulada:4};
   const rows=db.ots.slice().sort((a,b)=>(order[a.status]-order[b.status])||String(b.id).localeCompare(String(a.id))).map(o=>{
     const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
-    const badge={recibida:'info',diagnostico:'info',presupuesto:'warn',bloqueada:'bad',cita:'warn',taller:'warn',terminada:'ok'}[o.status]||'info';
+    const badge={recibida:'info',diagnostico:'info',presupuesto:'warn',bloqueada:'bad',cita:'warn',taller:'warn',terminada:'ok',anulada:'bad'}[o.status]||'info';
     const label=OT_ESTADOS[o.status]||o.status;
     const origin=o.origin==='cliente'?'<span class="badge info" style="margin-left:6px">Portal cliente</span>':'';
     const CITA_STATE={
@@ -1620,11 +1639,13 @@ function renderWorkshop(){
       confirmada:'<span class="badge ok">Confirmado '+fmtDate(o.proposedDate)+'</span>',
       rechazada:'<span class="badge bad">Rechazado — proponer otro día</span>'
     };
-    const citaBadge=(o.type==='Cita preventiva'&&o.status!=='terminada')?('<div style="margin-top:5px">'+(CITA_STATE[o.cita||'solicitada']||'')+'</div>'):'';
+    const citaBadge=(o.type==='Cita preventiva'&&otAbierta(o))?('<div style="margin-top:5px">'+(CITA_STATE[o.cita||'solicitada']||'')+'</div>'):'';
     const retiroBadge=(o.status==='terminada')?('<div style="margin-top:5px">'+(o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+' — falta firma</span>':'<span class="badge info">Terminada — falta avisar retiro</span>'))+'</div>'):'';
     let action='';
     const tasksBtn='<button class="outline-btn" onclick="APP.openTasks(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas'+(o.tasks&&o.tasks.length?' '+o.tasks.filter(t=>t.done).length+'/'+o.tasks.length:'')+'</button>';
-    if(o.status!=='terminada'){
+    if(o.status==='anulada'){
+      action='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tasksBtn+'<span class="badge bad">Anulada'+(o.anuladaMotivo?' — '+esc(o.anuladaMotivo.slice(0,26)):'')+'</span></div>';
+    }else if(otAbierta(o)){
       let lbl=null;
       if(o.type==='Cita preventiva')lbl=(o.cita==='confirmada'?'Cambiar día':(o.cita==='rechazada'?'Nuevo turno':'Proponer turno'));
       else if(!o.proposedDate)lbl='Agendar';
@@ -1633,6 +1654,7 @@ function renderWorkshop(){
         '<button class="solid-btn" onclick="APP.openDone(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button></div>';
     }else{
       action='<div style="display:flex;gap:6px;flex-wrap:wrap">'+tasksBtn+
+        '<button class="outline-btn" onclick="APP.openDone(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-cog"/></svg>Editar cierre</button>'+
         '<button class="outline-btn" onclick="APP.openReport(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe</button>'+
         '<button class="outline-btn" onclick="APP.openInvoice(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-printer"/></svg>'+(o.invoiced?'Ver factura':'Factura')+'</button>'+
         (!o.ready?'<button class="solid-btn" onclick="APP.markReady(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-send"/></svg>Avisar retiro</button>':'')+
@@ -1681,12 +1703,6 @@ function renderReports(){
   $('#repMonths').innerHTML=months.map(m=>'<span>'+m+'</span>').join('');
 }
 function renderSettings(){
-  const left=trialDaysLeft();
-  $('#setTrial').innerHTML=
-    '<div class="kv"><span>Estado</span><b>'+(left>0?'En curso':'Finalizada')+'</b></div>'+
-    '<div class="kv"><span>Días restantes</span><b>'+Math.max(0,left)+'</b></div>'+
-    '<div class="kv"><span>Inicio</span><b>'+fmtTs(db.meta.trialStart)+'</b></div>'+
-    '<div class="kv"><span>Guardado local</span><b>'+(storageOk?'Activo':'Bloqueado por el navegador')+'</b></div>';
   const biz=db.meta.biz||{};
   $('#bizName').value=biz.name||'';$('#bizCif').value=biz.cif||'';
   $('#bizPhone').value=biz.phone||'';$('#bizCity').value=biz.city||'';
@@ -1695,6 +1711,15 @@ function renderSettings(){
     '<div class="kv"><span>Máquinas</span><b>'+db.machines.length+'</b></div>'+
     '<div class="kv"><span>Órdenes de trabajo</span><b>'+db.ots.length+'</b></div>'+
     '<div class="kv"><span>Tamaño de los datos</span><b>'+(storageOk?Math.round((localStorage.getItem(DB_KEY)||'').length/1024)+' KB':'—')+'</b></div>';
+  try{
+    const raw=localStorage.getItem(DB_KEY+'_bak');
+    if(raw){
+      const bj=JSON.parse(raw);
+      $('#bakInfo').innerHTML='<div class="notice" style="background:var(--blue-soft)"><svg class="ic" style="color:var(--blue)"><use href="#i-shield"/></svg><div><b>Copia automática interna del '+fmtTs(bj.ts)+'.</b> Se guarda una vez por día en este navegador y sirve como red de seguridad. No reemplaza la exportación: '+
+        (db.meta.lastExport?'última copia exportada '+fmtTs(db.meta.lastExport)+'.':'<b>aún no exportaste ninguna copia — usá el botón de arriba.</b>')+
+        ' <button class="outline-btn" style="margin-top:8px" onclick="APP.restoreBak()">Restaurar copia automática</button></div></div>';
+    }
+  }catch(e){}
 }
 
 /* ---------- PORTAL CLIENTE ---------- */
@@ -1723,8 +1748,7 @@ function renderClientHome(){
       '<div style="width:120px;height:78px;border-radius:12px;overflow:hidden;background:#e9f1e8;display:grid;place-items:center">'+(pix?'<img src="'+pix+'" style="width:100%;height:100%;object-fit:cover"/>':'<svg class="ic" style="width:30px;height:30px;color:#2f7a52"><use href="'+iconOf(mm)+'"/></svg>')+'</div>'+
       '<div class="small" style="margin-top:3px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(mLabel(mm))+'</div></div>';
   }).join('');
-  const myOpen=db.ots.filter(o=>o.status!=='terminada'&&ms.some(m=>m.id===o.machineId));
-  const firmar=myOpen.length; // no usado
+  const myOpen=db.ots.filter(o=>otAbierta(o)&&ms.some(m=>m.id===o.machineId));
   const at=[];
   myOpen.forEach(o=>{if(o.cita==='propuesta')at.push('un turno esperando tu respuesta');else if(o.status==='terminada')0});
   const paraFirmar=db.ots.filter(o=>o.status==='terminada'&&o.ready&&!o.signature&&ms.some(m=>m.id===o.machineId)).length;
@@ -1858,7 +1882,7 @@ function renderClientServices(){
   const ms=urgencySort(machinesOf(c.id));
   renderCsPlan(ms);
   renderCsTrack(ms);
-  const open=db.ots.filter(o=>o.status!=='terminada'&&ms.some(m=>m.id===o.machineId));
+  const open=db.ots.filter(o=>otAbierta(o)&&ms.some(m=>m.id===o.machineId));
   const pendRet=db.ots.filter(o=>o.status==='terminada'&&!o.signature&&ms.some(m=>m.id===o.machineId));
   let att='';
   pendRet.forEach(o=>{
@@ -2220,16 +2244,24 @@ const APP={
   openDone(id){
     const ot=db.ots.find(o=>o.id===id);if(!ot)return;
     const m=machineOf(ot.machineId);if(!m){this.toast('Máquina no encontrada');return}
+    const editing=ot.status==='terminada';
     $('#doneId').value=id;
+    $('#mDoneTitle').textContent=editing?'Editar cierre · '+ot.id:'Cerrar orden · ficha del servicio';
+    $('#doneBtn').textContent=editing?'Guardar cambios':'Cerrar OT';
     $('#mDoneSub').textContent=ot.id+' · '+mLabel(m)+(m.serial?' · SN '+m.serial:'')+' · '+ot.type;
     $('#doneTech').value=ot.tech||'';
     $('#doneHours').value=m.hours;
     $('#doneWork').value=ot.issue||'';
+    $('#doneHoras').value=ot.horasTrabajo!=null?ot.horasTrabajo:'';
+    $('#doneCosto').value=ot.costoMateriales!=null?ot.costoMateriales:'';
+    $('#doneMateriales').value=ot.materiales||'';
+    $('#doneReset').checked=!editing&&String(ot.type).indexOf('preventi')>=0;
     this.openModal('mDone');
   },
   completeOT(){
     const ot=db.ots.find(o=>o.id===$('#doneId').value);if(!ot)return;
     const m=machineOf(ot.machineId);if(!m)return;
+    const editing=ot.status==='terminada';
     ot.status='terminada';ot.closedAt=Date.now();
     ot.tech=$('#doneTech').value.trim()||'—';
     ot.workDone=$('#doneWork').value.trim()||ot.type;
@@ -2238,9 +2270,14 @@ const APP={
     ot.materiales=$('#doneMateriales').value.trim();
     const newH=Math.max(m.hours,Number($('#doneHours').value||m.hours));
     if(newH!==m.hours){m.history.unshift({ts:Date.now(),title:'Actualización de horómetro',detail:nf(m.hours)+' h → '+nf(newH)+' h · en taller'});m.hours=newH}
-    m.lastServiceHours=m.hours;m.lastServiceDate=todayISO();
-    m.history.unshift({ts:Date.now(),title:'Servicio completado · '+ot.id,detail:($('#doneWork').value.trim()||ot.type)+' · técnico '+ot.tech});
+    const reset=$('#doneReset').checked;
+    if(reset){m.lastServiceHours=m.hours;m.lastServiceDate=todayISO()}
     m.stage=dueInfo(m).state;
+    if(editing){
+      m.history.unshift({ts:Date.now(),title:'Cierre editado · '+ot.id,detail:($('#doneWork').value.trim()||ot.type)+' · técnico '+ot.tech+(reset?' · plan reiniciado':'')});
+      saveDb();this.closeModal('mDone');this.toast(ot.id+' actualizada');renderAll();return;
+    }
+    m.history.unshift({ts:Date.now(),title:'Servicio completado · '+ot.id,detail:($('#doneWork').value.trim()||ot.type)+' · técnico '+ot.tech+(reset?' · plan reiniciado':'')});
     pushNotif('client','i-checkc','Servicio completado','Tu '+mLabel(m)+' está lista · '+ot.id,m.clientId);
     pushNotif('admin','i-checkc','OT cerrada',ot.id+' · '+mLabel(m)+(ot.horasTrabajo?' · '+ot.horasTrabajo+' h taller':'')+(ot.costoMateriales?' · materiales '+money(ot.costoMateriales):''));
     const rep=repeatedIssueAlert(ot);
@@ -2249,7 +2286,7 @@ const APP={
       pushNotif('admin','i-alert','Fallo repetido en '+mLabel(m),rep+' — revisar causa de fondo antes de la próxima venta/reparación');
       m.history.unshift({ts:Date.now(),title:'⚠ '+rep,detail:'Detectado al cerrar '+ot.id});
     }
-    saveDb();this.closeModal('mDone');this.toast(ot.id+' cerrada · mantenimiento reiniciado');renderAll();
+    saveDb();this.closeModal('mDone');this.toast(ot.id+' cerrada'+(reset?' · plan reiniciado':''));renderAll();
   },
 
   /* ---- portal cliente ---- */
@@ -2264,7 +2301,7 @@ const APP={
   changeClient(){db.session.clientId=null;saveDb();showLogin()},
   requestCita(machineId){
     const m=machineOf(machineId);if(!m)return;
-    if(db.ots.some(o=>o.machineId===machineId&&o.origin==='cliente'&&o.status!=='terminada')){this.toast('Ya tienes una solicitud abierta para esta máquina');return}
+    if(db.ots.some(o=>o.machineId===machineId&&otAbierta(o))){this.toast('Ya tienes una solicitud abierta para esta máquina');return}
     db.meta.otSeq=(db.meta.otSeq||4100)+1;
     const ot={id:'OT-'+db.meta.otSeq,machineId:m.id,type:'Cita preventiva',issue:'Solicitada desde el portal · '+dueInfo(m).label,status:'cita',cita:'solicitada',tech:'',origin:'cliente',createdAt:Date.now()};
     db.ots.unshift(ot);
@@ -2296,13 +2333,22 @@ const APP={
   },
   exportData(){
     try{
+      db.meta.lastExport=Date.now();
       const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
       const a=document.createElement('a');
       a.href=URL.createObjectURL(blob);
       a.download='terrafleet-datos-'+todayISO()+'.json';
-      document.body.appendChild(a);a.click();a.remove();
+      document.body.appendChild(a);a.click();a.remove();saveDb();
       this.toast('Copia exportada (archivo JSON)');
     }catch(e){this.toast('No se pudo exportar en este navegador')}
+  },
+  restoreBak(){
+    let bj=null;
+    try{bj=JSON.parse(localStorage.getItem(DB_KEY+'_bak')||'null')}catch(e){}
+    if(!bj||!bj.db){this.toast('No hay copia automática guardada');return}
+    if(!confirm('Se reemplazará todo por la copia del '+fmtTs(bj.ts)+'. ¿Continuar?'))return;
+    db=bj.db;migrate();saveDb();renderAll();
+    this.toast('Copia automática restaurada ✓');
   },
   importData(file){
     const r=new FileReader();
@@ -2374,9 +2420,11 @@ const SERVICE_GROUPS={
   }
 };
 const OT_ESTADOS={
-  cita:'Cita',recibida:'Recibida',diagnostico:'Diagnóstico',presupuesto:'Presupuesto',bloqueada:'Bloqueada',taller:'En reparación',terminada:'Cerrada'
+  cita:'Cita',recibida:'Recibida',diagnostico:'Diagnóstico',presupuesto:'Presupuesto',bloqueada:'Bloqueada',taller:'En reparación',terminada:'Cerrada',anulada:'Anulada'
 };
+function otAbierta(o){return o.status!=='terminada'&&o.status!=='anulada'}
 function otNextActor(o){
+  if(o.status==='anulada')return 'Anulada'+(o.anuladaMotivo?' — '+o.anuladaMotivo:'');
   if(o.status==='cita')return o.cita==='propuesta'?'→ Cliente: responder':(o.cita==='confirmada'?'→ Taller: preparar servicio':'→ Taller: proponer día');
   if(o.status==='recibida')return '→ Taller: diagnosticar';
   if(o.status==='diagnostico')return '→ Técnico: revisar';
@@ -2562,7 +2610,7 @@ Object.assign(APP,{
     const c=clientOf(m.clientId),info=dueInfo(m);
     document.getElementById('miTitle').textContent=mLabel(m);
     document.getElementById('miSub').textContent='SN '+esc(m.serial||'—')+' · '+(c?c.name:'')+(m.serviceGroup?' · '+SERVICE_GROUPS[m.serviceGroup].name:'');
-    const abiertas=db.ots.filter(o=>o.machineId===mid&&o.status!=='terminada');
+    const abiertas=db.ots.filter(o=>o.machineId===mid&&otAbierta(o));
     let rep=null;
     db.ots.forEach(o=>{if(o.machineId===mid&&o.repeatFlag)rep=o.repeatFlag});
     if(!rep&&abiertas.length){const probe={issue:abiertas[0].issue,workDone:abiertas[0].workDone,type:abiertas[0].type,machineId:mid,id:'probe'};rep=repeatedIssueAlert(probe,mid)}
@@ -2620,11 +2668,14 @@ Object.assign(APP,{
       oiT.innerHTML='<b style="color:var(--ink)">Tareas</b><br>'+ot.tasks.map(tk=>(tk.done?'<span style="color:#1c6b3a">✓</span>':'○')+' '+esc(tk.t)+(tk.why&&!tk.done?' <i style="color:#a33">('+esc(tk.why)+')</i>':'')).join('<br>');
     }else oiT.style.display='none';
     let acts='';
-    if(ot.status!=='terminada'){
+    if(ot.status==='anulada'){
+      acts='<span class="badge bad">Anulada'+(ot.anuladaMotivo?' — '+esc(ot.anuladaMotivo):'')+'</span>';
+    }else if(otAbierta(ot)){
       acts='<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openTurno(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+(ot.proposedDate?'Cambiar día':'Agendar')+'</button>'+
         ((ot.status==='recibida'||ot.status==='diagnostico'||ot.status==='presupuesto')?'<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openBudget(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-mail"/></svg>Presupuesto</button>':'')+
         '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openTasks(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-clip"/></svg>Tareas</button>'+
-        '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openDone(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button>';
+        '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openDone(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Cerrar</button>'+
+        '<button class="outline-btn" style="color:#ac4136" onclick="APP.openAnular(\''+ot.id+'\')">Anular</button>';
     }else{
       acts='<button class="solid-btn" onclick="APP.closeModal(\'mOtInfo\');APP.openReport(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-file"/></svg>Informe firmado</button>'+
       '<button class="outline-btn" onclick="APP.closeModal(\'mOtInfo\');APP.viewReport(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-search"/></svg>Ver</button>'+
@@ -2647,6 +2698,23 @@ Object.assign(APP,{
     const m=machineOf(ot.machineId);
     if(m)m.history.unshift({ts:Date.now(),title:'Orden actualizada · '+ot.id,detail:'Responsable: '+(resp||'—')+(fecha?' · prevista '+fmtDate(fecha):'')+(ot.status==='bloqueada'?' · bloqueada por '+(ot.bloqueo==='pieza'?'recambio':(ot.bloqueo==='autorizacion'?'autorización':'técnico')):'')});
     saveDb();this.closeModal('mOtInfo');toast('Orden actualizada');renderAll();
+  },
+  openAnular(otId){
+    const ot=db.ots.find(o=>o.id===otId);if(!ot||!otAbierta(ot)){this.toast('Solo se pueden anular órdenes abiertas');return}
+    const m=machineOf(ot.machineId);
+    document.getElementById('anId').value=otId;
+    document.getElementById('anSub').textContent=ot.id+' · '+(m?mLabel(m):'');
+    document.getElementById('anMotivo').value='';
+    this.openModal('mAnular');
+  },
+  doAnular(){
+    const ot=db.ots.find(o=>o.id===document.getElementById('anId').value);if(!ot)return;
+    const motivo=document.getElementById('anMotivo').value.trim()||'sin motivo';
+    ot.status='anulada';ot.anuladaMotivo=motivo;ot.anuladaAt=Date.now();
+    ot.cita=null;ot.proposedDate=null;ot.proposedTime=null;
+    const m=machineOf(ot.machineId);
+    if(m)m.history.unshift({ts:Date.now(),title:'Orden anulada · '+ot.id,detail:motivo});
+    saveDb();this.closeModal('mAnular');toast(ot.id+' anulada');renderAll();
   },
   openBudget(otId){
     const ot=db.ots.find(o=>o.id===otId);if(!ot)return;
@@ -3054,7 +3122,7 @@ Object.assign(APP,{
     const m=machineOf(ot.machineId),c=m?clientOf(m.clientId):null;
     ot.reportObs=document.getElementById('repObs').value.trim();
     const canvas=document.getElementById('sigCanvas');
-    ot.signature=(this._sigDirty&&!this.isBlankSig(canvas))?canvas.toDataURL('image/png'):null;
+    if(this._sigDirty&&!this.isBlankSig(canvas))ot.signature=canvas.toDataURL('image/png');
     ot.reportPrinted=true;
     const biz=db.meta.biz||{};
     const fecha=ot.closedAt?new Date(ot.closedAt):new Date();
