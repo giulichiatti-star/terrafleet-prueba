@@ -81,6 +81,26 @@ productor dueño de las máquinas, portal simplificado).
    nueva" les llega solo a los usuarios (banner no descartable, sin recarga
    automática, no toca localStorage).
 
+## Estado de la fase nube (2026-11-10)
+
+- **Repo fijo**: esta carpeta es un clon de `terrafleet-prueba`. Ya no se trabaja
+  desde `/tmp` ni desde un archivo suelto: `index.html` del repo es la fuente.
+- **Supabase producción**: proyecto `MAQ-TRA BARADERO` (ref `gytxfmjqfmcbetwxchlh`,
+  región `sa-east-1`). Credenciales en `.env` local (ignorado por git).
+- **Esquema aplicado** (`supabase/migrations/`): agencies, profiles, platform_admins,
+  clients, machines, machine_history (solo alta), work_orders, parts,
+  work_order_parts (descuenta stock), notifications, audit_log. Multi-agencia con
+  RLS; roles `admin`, `tecnico`, `cliente`. Lo que el cliente puede cambiar de una
+  OT o máquina lo limitan triggers (`private.guard_*`).
+- **Pruebas de permisos**: `supabase db query --linked -f supabase/tests/rls_test.sql`
+  debe terminar en "RESULTADO: 38 pruebas OK. Fallos: ninguno". Se deshace sola.
+- **Aplicar migraciones**: `supabase db push --linked` (no requiere Docker).
+- **Pendiente**: login y conexión de `index.html` a la nube, migración de datos
+  locales, respaldo diario, publicación automática, alertas por email (espera los
+  datos de la agencia), mejoras de idioma/estética, quitar fotos embebidas.
+- Sin Docker en la Mac no hay base local de pruebas: hoy se prueba contra
+  producción con datos de mentira que se deshacen.
+
 ## Roadmap (lo que falta, en prioridad)
 
 1. **FASE NUBE — Supabase (confirmada, pendiente del token de la dueña)**:
