@@ -1147,11 +1147,17 @@ function emptyDb(trialStart){
 let db;
 function loadDb(){
   if(storageOk){
-    try{const raw=localStorage.getItem(DB_KEY);if(raw){db=JSON.parse(raw);migrate();return}}catch(e){}
+    try{const raw=localStorage.getItem(DB_KEY);if(raw){db=JSON.parse(raw);migrate();return}}
+    catch(e){try{const raw2=localStorage.getItem(DB_KEY);if(raw2)localStorage.setItem(DB_KEY+'_corrupt',raw2)}catch(e2){}}
   }
   db=emptyDb();
   db.meta.seenWelcome=false;
-  saveDb();
+  try{if(storageOk)localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){storageOk=false}
+  let bak=null;
+  try{bak=JSON.parse(localStorage.getItem(DB_KEY+'_bak')||'null')}catch(e){}
+  if(bak&&bak.db&&((bak.db.clients||[]).length||(bak.db.machines||[]).length||(bak.db.ots||[]).length)){
+    db.notifs.unshift({id:uid('n'),audience:'admin',icon:'i-alert',title:'Datos dañados detectados',detail:'La información guardada no se pudo leer. Hay una copia automática del '+fmtTs(bak.ts)+' — restaurala desde Ajustes › Tus datos.',ts:Date.now(),read:false,clientId:null});
+  }
 }
 function migrate(){
   let dirty=false;
@@ -1160,16 +1166,26 @@ function migrate(){
 }
 function saveDb(){
   if(!storageOk)return;
-  try{localStorage.setItem(DB_KEY,JSON.stringify(db))}catch(e){}
+  try{localStorage.setItem(DB_KEY,JSON.stringify(db))}
+  catch(e){
+    storageOk=false;
+    try{$('#footStatus').textContent='No se puede guardar (almacenamiento lleno) — exportá una copia';$('#footDot').classList.add('red')}catch(e2){}
+  }
   saveBakDaily();
 }
 function saveBakDaily(){
   try{
     const last=Number(localStorage.getItem(DB_KEY+'_bakts')||0);
-    if(Date.now()-last>86400000){
-      localStorage.setItem(DB_KEY+'_bak',JSON.stringify({ts:Date.now(),db:db}));
-      localStorage.setItem(DB_KEY+'_bakts',String(Date.now()));
+    if(Date.now()-last<=86400000)return;
+    const vacia=!db.clients.length&&!db.machines.length&&!db.ots.length;
+    if(vacia){
+      try{
+        const prev=JSON.parse(localStorage.getItem(DB_KEY+'_bak')||'null');
+        if(prev&&prev.db&&((prev.db.clients||[]).length+(prev.db.machines||[]).length+(prev.db.ots||[]).length)>0)return;
+      }catch(e){}
     }
+    localStorage.setItem(DB_KEY+'_bak',JSON.stringify({ts:Date.now(),db:db}));
+    localStorage.setItem(DB_KEY+'_bakts',String(Date.now()));
   }catch(e){}
 }
 
@@ -1187,7 +1203,7 @@ function dueInfo(m){
   const target=nextServiceHours(m);
   const hoursLeft=target-Number(m.hours||0);
   const dateTarget=addMonths(m.lastServiceDate||todayISO(),m.intervalM||12);
-  const dateTargetISO=dateTarget.toISOString().slice(0,10);
+  const dateTargetISO=isoOf(dateTarget.getTime());
   const dateLeftDays=daysUntil(dateTarget);
   let state='ok';
   if(hoursLeft<=0||dateLeftDays<=0)state='overdue';
@@ -1635,7 +1651,7 @@ function renderWorkshop(){
   renderWsStatus();renderCalendar();renderWsReqs();
   const t=$('#otTable');
   if(!db.ots.length){t.innerHTML=emptyHTML('#i-wrench','Sin órdenes de trabajo. Crea una desde «Nueva OT» o desde una máquina.');return}
-  const order={cita:0,pendiente:1,taller:2,terminada:3,anulada:4};
+  const order={cita:0,recibida:1,diagnostico:2,presupuesto:3,bloqueada:4,taller:5,terminada:6,anulada:7};
   const rows=db.ots.slice().sort((a,b)=>(order[a.status]-order[b.status])||String(b.id).localeCompare(String(a.id))).map(o=>{
     const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
     const badge={recibida:'info',diagnostico:'info',presupuesto:'warn',bloqueada:'bad',cita:'warn',taller:'warn',terminada:'ok',anulada:'bad'}[o.status]||'info';
@@ -1846,7 +1862,7 @@ function renderCsPlan(ms){
   let html='';
   ms.forEach(m=>{
     const g=m.serviceGroup&&SERVICE_GROUPS[m.serviceGroup];
-    const already=db.ots.some(o=>o.machineId===m.id&&o.status!=='terminada');
+    const already=db.ots.some(o=>o.machineId===m.id&&otAbierta(o));
     const cta=already?'<span class="badge ok">Turno solicitado</span>':'<button class="solid-btn" onclick="APP.requestCita(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>Solicitar turno</button>';
     html+='<div class="planm"><div class="planm-h">'+mThumb(m)+'<div style="flex:1;min-width:0"><b>'+esc(mLabel(m))+'</b><div class="small">'+(m.serial?'SN '+esc(m.serial)+' · ':'')+nf(m.hours)+' h de uso'+(g?' · '+esc(g.name):'')+'</div></div></div>';
     if(!g){
@@ -1936,7 +1952,7 @@ function renderClientServices(){
   $('#csHist').innerHTML=hist.length?'<table><thead><tr><th>Fecha</th><th>Equipo</th><th>Trabajo realizado</th><th>Técnico</th><th></th></tr></thead><tbody>'+
     hist.map(o=>{
       const m=machineOf(o.machineId);
-      return '<tr><td>'+fmtDate((o.closedAt?new Date(o.closedAt):new Date()).toISOString().slice(0,10))+'</td>'+
+      return '<tr><td>'+fmtDate(isoOf(o.closedAt||Date.now()))+'</td>'+
         '<td><b>'+esc(m?mLabel(m):'—')+'</b><div class="small">'+esc(o.id)+(m&&m.serial?' · SN '+esc(m.serial):'')+'</div></td>'+
         '<td>'+esc(o.workDone||o.issue||o.type)+'</td><td>'+esc(o.tech||'—')+'</td>'+
         '<td>'+(o.signature?'<span class="badge ok">Firmado ✓</span>':(o.ready?'<button class="solid-btn" onclick="APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver y firmar</button>':''))+
@@ -1993,7 +2009,6 @@ function renderBell(){
         actions='<div class="action-row" style="margin-top:9px" onclick="event.stopPropagation()"><button class="solid-btn" onclick="APP.openClientSign(\''+n.otId+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
       }
     }
-    if(n.kind==='presupuesto'&&n.otId){const o4=db.ots.find(o=>o.id===n.otId);if(o4&&o4.presupuesto&&o4.presupuesto.approved===null){gotoPage('clientservices');return}}
     if(n.kind==='cita'&&n.otId){
       const ot=db.ots.find(o=>o.id===n.otId);
       if(ot&&ot.cita==='propuesta'){
@@ -2199,7 +2214,7 @@ const APP={
   saveOT(){
     const m=machineOf($('#otMach').value);if(!m){this.toast('Selecciona una máquina');return}
     db.meta.otSeq=(db.meta.otSeq||4100)+1;
-    const ot={id:'OT-'+db.meta.otSeq,machineId:m.id,type:$('#otType').value,issue:$('#otIssue').value.trim(),status:'pendiente',tech:'',origin:'taller',createdAt:Date.now()};
+    const ot={id:'OT-'+db.meta.otSeq,machineId:m.id,type:$('#otType').value,issue:$('#otIssue').value.trim(),status:'recibida',tech:'',origin:'taller',createdAt:Date.now()};
     db.ots.unshift(ot);
     m.history.unshift({ts:Date.now(),title:'OT creada · '+ot.id,detail:ot.type+(ot.issue?' · '+ot.issue:'')});
     pushNotif('admin','i-clip','OT creada',ot.id+' · '+mLabel(m));
@@ -2363,11 +2378,14 @@ const APP={
     r.onload=()=>{
       try{
         const obj=JSON.parse(r.result);
-        if(!obj||!Array.isArray(obj.clients)||!Array.isArray(obj.machines)||!obj.meta)throw 0;
+        if(!obj||!Array.isArray(obj.clients)||!Array.isArray(obj.machines)||!Array.isArray(obj.ots)||!Array.isArray(obj.notifs)||!Array.isArray(obj.parts)||!obj.meta)throw 0;
         if(!confirm('Esto sustituirá los datos actuales por los de la copia. ¿Continuar?'))return;
-        db=obj;saveDb();recomputeStages(true);renderAll();
+        obj.session=obj.session&&obj.session.clientId!==undefined?obj.session:{clientId:null};
+        obj.meta.biz=obj.meta.biz||{name:'Mi Empresa S.L.',cif:'',phone:'',city:''};
+        db=obj;migrate();
+        saveDb();recomputeStages(true);renderAll();
         this.toast('Datos importados correctamente');
-      }catch(e){this.toast('El archivo no es una copia válida')}
+      }catch(e){this.toast('El archivo no es una copia válida (faltan secciones: clientes, máquinas, OTs, notificaciones o recambios)')}
     };
     r.readAsText(file);
   },
@@ -2911,7 +2929,7 @@ Object.assign(APP,{
     document.getElementById('turnoOtId').value=otId;
     document.getElementById('turnoSub').textContent=ot.id+' · '+(m?mLabel(m):'')+' · '+(c?c.name:'');
     const d=new Date();d.setDate(d.getDate()+1);
-    document.getElementById('turnoDate').value=d.toISOString().slice(0,10);
+    document.getElementById('turnoDate').value=isoOf(d.getTime());
     document.getElementById('turnoTime').value='';
     document.getElementById('turnoNote').value='';
     this.openModal('mTurno');
@@ -3174,13 +3192,15 @@ Object.assign(APP,{
   },
   applyHashData(){
     if(location.hash.indexOf('#datos=')!==0)return false;
-    const obj=(()=>{try{const raw=b64dec(decodeURIComponent(location.hash.slice(7)));if(!raw)return null;const o=JSON.parse(raw);return (o&&Array.isArray(o.clients)&&Array.isArray(o.machines)&&o.meta)?o:null}catch(e){return null}})();
+    const obj=(()=>{try{const raw=b64dec(decodeURIComponent(location.hash.slice(7)));if(!raw)return null;const o=JSON.parse(raw);return (o&&Array.isArray(o.clients)&&Array.isArray(o.machines)&&Array.isArray(o.ots)&&Array.isArray(o.notifs)&&Array.isArray(o.parts)&&o.meta)?o:null}catch(e){return null}})();
     history.replaceState(null,'',location.pathname+location.search);
     if(!obj){toast('El enlace traía datos pero no se pudieron leer');return false}
     if(!confirm('Este enlace contiene datos de una copia ('+obj.clients.length+' clientes, '+obj.machines.length+' máquinas). ¿Cargarlos y sustituir los actuales?'))return false;
     db=obj;
     db.session={clientId:null};
+    db.notifs=db.notifs||[];db.parts=db.parts||[];
     db.meta.biz=db.meta.biz||{name:'Mi Empresa S.L.',cif:'',phone:'',city:''};
+    migrate();
     recomputeStages(true);
     saveDb();renderAll();
     toast('Datos del enlace cargados ('+obj.clients.length+' clientes)');
