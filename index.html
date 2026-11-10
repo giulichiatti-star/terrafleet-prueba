@@ -561,7 +561,13 @@
           <div id="wsReqs"></div>
         </div>
 
-        <div class="card section-card"><div id="otTable"></div></div>
+        <div class="card section-card">
+          <div class="section-head" style="margin-bottom:10px">
+            <div><div class="section-title">Registro completo de órdenes</div><div class="section-sub">El archivo: todas las OTs, incluidas las históricas y las anuladas — cambio de estado manual, edición de cierre y facturas. El día a día está arriba.</div></div>
+            <button class="outline-btn" id="otTableBtn" onclick="APP.toggleOtTable()">Mostrar registro</button>
+          </div>
+          <div id="otTable" style="display:none"></div>
+        </div>
       </section>
 
       <section class="page" id="parts">
@@ -637,7 +643,7 @@
             <p style="color:var(--muted);line-height:1.65;font-size:14px">Este es el estado real de tus máquinas: horas, próximos mantenimientos e historial. Cuando toque revisar algo, te avisaremos nosotros.</p>
             <div id="chAttention"></div>
             <div class="action-row">
-              <button class="solid-btn" onclick="APP.gotoPage('clientservices')">Mis servicios<svg class="ic ic-xs"><use href="#i-arrowr"/></svg></button>
+              <button class="solid-btn" onclick="APP.gotoPage('clientservices')">Servicios<svg class="ic ic-xs"><use href="#i-arrowr"/></svg></button>
               <button class="outline-btn" onclick="APP.gotoPage('clientmachines')">Ver mis equipos</button>
               <button class="outline-btn" onclick="APP.gotoPage('clientsupport')"><svg class="ic ic-xs"><use href="#i-headset"/></svg>Soporte</button>
             </div>
@@ -660,7 +666,7 @@
       </section>
 
       <section class="page" id="clientservices">
-        <div class="section-head"><div><div class="section-title" style="font-size:24px">Servicios y mantenimientos</div><div class="section-sub">Pide cita cuando te venga bien: la solicitud llega directa al taller.</div></div></div>
+        <div class="section-head"><div><div class="section-title" style="font-size:24px">Servicios</div><div class="section-sub">Pide cita cuando te venga bien: la solicitud llega directa al taller.</div></div></div>
         <div class="card section-card" style="margin-bottom:16px;border-left:4px solid var(--green2)">
           <div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Para ti ahora</div><div class="section-sub">Solo lo que necesita tu respuesta o acción.</div></div></div>
           <div id="csAttention"></div>
@@ -1239,11 +1245,11 @@ const titles={
   parts:['Recambios','Panel interno / Inventario'],
   reports:['Informes','Panel interno / Analytics'],
   settings:['Ajustes y datos','Panel interno / Configuración'],
-  clienthome:['Mi maquinaria','Área cliente / Inicio'],
-  clientmachines:['Mis equipos','Área cliente / Activos'],
-  clientservices:['Servicios','Área cliente / Mantenimiento'],
-  clientdocs:['Documentos','Área cliente / Archivos'],
-  clientsupport:['Soporte','Área cliente / Asistencia']
+  clienthome:['Inicio','Área cliente / Inicio'],
+  clientmachines:['Mis equipos','Área cliente / Mis equipos'],
+  clientservices:['Servicios','Área cliente / Servicios'],
+  clientdocs:['Documentos','Área cliente / Documentos'],
+  clientsupport:['Soporte','Área cliente / Soporte']
 };
 function gotoPage(id){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
@@ -2597,6 +2603,12 @@ Object.assign(APP,{
   },
 
   /* ---- tareas de la orden ---- */
+  toggleOtTable(){
+    const t=$('#otTable');
+    const show=t.style.display==='none';
+    t.style.display=show?'block':'none';
+    $('#otTableBtn').textContent=show?'Ocultar registro':'Mostrar registro';
+  },
   setWsFilter(k){wsFilter=(wsFilter===k?null:k);if(wsFilter==='hoy'){wsDaySel=todayISO();wsWeekOff=0;wsMonthOff=0;wsMode='agenda';wsView='semana'}renderPage('workshop')},
   setCalMode(m){wsMode=m;wsDaySel=null;if(m==='historico')wsWeekOff=0;renderPage('workshop')},
   setCalView(v){wsView=v;renderPage('workshop')},
