@@ -346,6 +346,8 @@
     .mobile-nav .ic{width:21px;height:21px}
   }
   #cmGrid{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:720px){#cmGrid{grid-template-columns:1fr}}
+  .linkbtn{border:0;background:none;color:var(--green2);font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:0}
 
   .mmenu{position:fixed;left:0;right:0;bottom:0;z-index:70;background:white;border-radius:22px 22px 0 0;box-shadow:0 -12px 44px rgba(10,30,18,.25);padding:8px 14px calc(18px + env(safe-area-inset-bottom));display:none;max-height:72vh;overflow:auto}
   .mmenu.show{display:block;animation:modin .25s ease}
@@ -354,7 +356,6 @@
   .mm-list button{display:flex;gap:13px;align-items:center;width:100%;border:0;background:transparent;padding:13px 10px;border-radius:12px;font-size:15px;font-weight:550;color:var(--ink);text-align:left}
   .mm-list button:active,.mm-list button:hover{background:#f2f6f1}
   .mm-sep{height:1px;background:var(--line);margin:8px 6px}
-</style>
 </style>
 </head>
 <body>
@@ -610,7 +611,7 @@
             <div class="action-row">
               <button class="outline-btn" onclick="APP.copyDataLink()"><svg class="ic ic-xs"><use href="#i-link"/></svg>Copiar enlace con mis datos</button>
             </div>
-            <div class="small" style="margin-top:10px;line-height:1.5">«Enlace con mis datos» incluye clientes y máquinas actuales: quien lo abra en otro dispositivo verá lo mismo y podrá seguir trabajando allí. <b>Ojo: el enlace contiene toda la información — usalo solo para transferir entre navegadores de confianza.</b></div>
+            <div class="small" style="margin-top:10px;line-height:1.5">«Enlace con mis datos» incluye clientes y máquinas actuales: quien lo abra en otro dispositivo verá lo mismo y podrá seguir trabajando allí. <b>Ojo: el enlace contiene toda la información — úsalo solo para transferir entre navegadores de confianza.</b></div>
           </div>
           <div class="card section-card">
             <div class="section-title">Tus datos</div>
@@ -1002,7 +1003,7 @@
 
 <div class="modal-backdrop" id="mShare">
   <div class="modal">
-    <h3>Copiar el enlace</h3><p>Se ha copiado al portapapeles. Si no, selecciónalo y cópialo a mano:</p>
+    <h3>Copiar el enlace</h3><p>Se ha copiado al portapapeles. Si no, seleccionalo y cópialo a mano:</p>
     <textarea class="field" id="shareBox" style="height:110px;resize:vertical;font-size:11px" readonly></textarea>
     <div class="modal-actions"><button class="solid-btn" onclick="APP.closeModal('mShare')">Listo</button></div>
   </div>
@@ -1076,6 +1077,7 @@
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const trunc=(t,n)=>{t=String(t==null?'':t);return t.length>n?t.slice(0,n)+'…':t};
 const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const nf=n=>Number(n||0).toLocaleString('es-ES');
 const money=v=>'$ '+Number(v||0).toLocaleString('es-AR',{maximumFractionDigits:0});
@@ -1362,7 +1364,7 @@ function renderDashboard(){
     const d=new Date(o.closedAt||0);
     return '<tr class="rowlink" onclick="APP.viewReport(\''+o.id+'\')"><td><b>'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'</b></td>'+
       '<td>'+esc(m?mLabel(m):'—')+'<div class="small">'+esc(c?c.name:'')+'</div></td>'+
-      '<td>'+esc((o.workDone||o.issue||o.type).slice(0,34))+'</td>'+
+      '<td>'+esc(trunc(o.workDone||o.issue||o.type,34))+'</td>'+
       '<td>'+(o.invoiced?'<span class="badge ok">Cobrado</span>':'<span class="badge warn">Por cobrar</span>')+'</td></tr>';
   }).join('')+'</tbody></table>':emptyHTML('#i-checkc','Todavía no hay servicios completados.');
 }
@@ -1895,7 +1897,7 @@ function renderClientServices(){
     const m=machineOf(o.machineId);
     if(o.ready){
       att+='<div class="req" style="border-left-color:var(--green2)" onclick="APP.openClientSign(\''+o.id+'\')">'+
-        '<div style="flex:1;min-width:200px"><b>✓ '+esc(m?mLabel(m):'')+' está lista</b><div class="small">Podés buscarla el <b>'+fmtDate(o.pickupDate||todayISO())+'</b>'+(o.pickupTime?' a las <b>'+o.pickupTime+'</b>':'')+' · '+esc(o.id)+' — revisá el informe y firmalo.</div></div>'+
+        '<div style="flex:1;min-width:200px"><b>✓ '+esc(m?mLabel(m):'')+' está lista</b><div class="small">Podés buscarla el <b>'+fmtDate(o.pickupDate||todayISO())+'</b>'+(o.pickupTime?' a las <b>'+o.pickupTime+'</b>':'')+' · '+esc(o.id)+' — revisá el informe y fírmalo.</div></div>'+
         '<button class="solid-btn" onclick="event.stopPropagation();APP.openClientSign(\''+o.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Ver informe y firmar</button></div>';
     }else{
       att+='<div class="req" style="border-left-color:var(--blue)" onclick="APP.viewReport(\''+o.id+'\')">'+
@@ -2325,7 +2327,7 @@ const APP={
     const ot={id:'SAT-'+db.meta.satSeq,machineId:m.id,type:$('#supType').value,issue:text,status:'recibida',tech:'',origin:'cliente',createdAt:Date.now()};
     db.ots.unshift(ot);
     m.history.unshift({ts:Date.now(),title:'Asistencia solicitada · '+ot.id,detail:text});
-    pushNotif('admin','i-alert','Asistencia solicitada',mLabel(m)+' · '+text.slice(0,60));
+    pushNotif('admin','i-alert','Asistencia solicitada',mLabel(m)+' · '+trunc(text,60));
     $('#supText').value='';
     saveDb();this.toast('Solicitud registrada: '+ot.id);renderAll();
   },
@@ -2638,7 +2640,7 @@ Object.assign(APP,{
       const bloq=(o.status==='bloqueada')?'<span class="badge bad">'+(o.bloqueo==='pieza'?'Falta recambio':(o.bloqueo==='autorizacion'?'Falta autorización':'Falta técnico'))+'</span>':'';
       return '<div class="req" style="border-left-color:'+(o.status==='bloqueada'?'var(--red)':'var(--green2)')+'" onclick="APP.openOtInfo(\''+o.id+'\')">'+
         '<div style="flex:1"><b>'+esc(o.id)+'</b> · <span class="badge info">'+esc(OT_ESTADOS[o.status]||o.status)+'</span> '+bloq+
-        '<div class="small">'+esc(o.type)+(o.issue?' · '+esc(o.issue.slice(0,40)):'')+'</div>'+
+        '<div class="small">'+esc(o.type)+(o.issue?' · '+esc(trunc(o.issue,40)):'')+'</div>'+
         '<div class="small" style="color:var(--green2)">'+esc(otNextActor(o))+(o.responsable?' · resp. '+esc(o.responsable):'')+(o.fechaPrevista?' · prevista '+fmtTs(o.fechaPrevista).slice(0,5):'')+'</div></div></div>';
     }).join(''):'<div class="small">Sin trabajos abiertos ✓</div>';
     const hist=(m.history||[]).slice(0,5);
@@ -3116,7 +3118,7 @@ Object.assign(APP,{
     if(needSig){
       gate.style.display='flex';
       gate.innerHTML='<svg class="ic" style="width:22px;height:22px;color:var(--amber)"><use href="#i-file"/></svg>'+
-        '<div style="flex:1;min-width:220px"><b>Informe sin firma</b><div class="small">Primero firmalo — es tu conformidad con el servicio. Después podés descargarlo o imprimirlo.</div></div>'+
+        '<div style="flex:1;min-width:220px"><b>Informe sin firma</b><div class="small">Primero fírmalo — es tu conformidad con el servicio. Después podés descargarlo o imprimirlo.</div></div>'+
         '<button class="solid-btn" onclick="APP.closeModal(\'mView\');APP.openClientSign(\''+ot.id+'\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>Firmar ahora</button>';
       btn.style.display='none';
     }else{gate.style.display='none';btn.style.display=''}
