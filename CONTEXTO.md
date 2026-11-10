@@ -16,8 +16,8 @@ productor dueño de las máquinas, portal simplificado).
 
 ## Arquitectura (fase actual — local)
 
-- **UN solo archivo HTML** (`index.html` en este repo; fuente de trabajo:
-  `terrafleet-prueba-real.html` en la Mac de la dueña). Sin build, sin
+- **Un archivo HTML** (`index.html`) más `nube.js` (capa de nube) y
+  `vendor/supabase-2.45.4.js` (librería, copiada al repo para no depender de un CDN). Sin build, sin
   dependencias, sin framework: HTML + CSS + JS vanilla. Esto es a propósito:
   máxima portabilidad.
 - **Datos en `localStorage`** (clave `terrafleet_prueba_v1`), un JSON con:
@@ -83,23 +83,44 @@ productor dueño de las máquinas, portal simplificado).
 
 ## Estado de la fase nube (2026-11-10)
 
-- **Repo fijo**: esta carpeta es un clon de `terrafleet-prueba`. Ya no se trabaja
-  desde `/tmp` ni desde un archivo suelto: `index.html` del repo es la fuente.
+- **Repo fijo**: esta carpeta es un clon de `terrafleet-prueba`. `index.html` del
+  repo es la fuente; ya no existe el archivo suelto ni la carpeta `/tmp`.
 - **Supabase producción**: proyecto `MAQ-TRA BARADERO` (ref `gytxfmjqfmcbetwxchlh`,
-  región `sa-east-1`). Credenciales en `.env` local (ignorado por git).
-- **Esquema aplicado** (`supabase/migrations/`): agencies, profiles, platform_admins,
-  clients, machines, machine_history (solo alta), work_orders, parts,
-  work_order_parts (descuenta stock), notifications, audit_log. Multi-agencia con
-  RLS; roles `admin`, `tecnico`, `cliente`. Lo que el cliente puede cambiar de una
-  OT o máquina lo limitan triggers (`private.guard_*`).
-- **Pruebas de permisos**: `supabase db query --linked -f supabase/tests/rls_test.sql`
-  debe terminar en "RESULTADO: 38 pruebas OK. Fallos: ninguno". Se deshace sola.
+  región `sa-east-1`). Credenciales en `.env` local (ignorado por git). La clave
+  pública (anon) está en `index.html` a propósito: la seguridad la impone RLS.
+- **Un solo link, dos modos**: sin cuenta la app es la demo local de siempre
+  (localStorage). Con cuenta ("Ingresar con mi cuenta") baja los datos de la agencia
+  y cada `saveDb()` sube solo las diferencias.
+- **Cómo sincroniza** (`nube.js`, sin DOM, probado con Node): al entrar guarda una
+  foto de cada fila; al guardar compara y sube altas/cambios. Cada cambio verifica
+  `updated_at`: si otra persona tocó la fila, hay "conflicto", se recarga y se avisa
+  (nunca se pisa en silencio). Refresca solo cada 45 s y al volver a la pestaña.
+  Números de OT repetidos se renumeran pidiéndole el siguiente a la base.
+- **Esquema** (`supabase/migrations/`): agencies, profiles, platform_admins,
+  invitations, clients, machines, machine_history (solo alta), work_orders, parts,
+  work_order_parts (descuenta stock), catalog_models, notifications, audit_log,
+  alert_outbox. Roles `admin`, `tecnico`, `cliente`. Lo que el cliente puede cambiar
+  lo limitan triggers (`private.guard_*`). Los campos de la app que no relacionan
+  nada viven en la columna `data` (jsonb) de cada tabla.
+- **Alta de usuarios**: el admin carga una fila en `invitations` (email, rol y, si es
+  cliente, su `client_id`). La persona crea su cuenta en la app con ese email,
+  confirma por correo y queda vinculada sola (trigger `accept_invitation`). Una
+  cuenta sin invitación no ve nada. Todavía NO hay pantalla para invitar: se hace
+  por SQL. El correo de confirmación sale por el servicio de Supabase, que sin SMTP
+  propio solo envía a miembros de la organización y pocos por hora.
+- **Alertas por email**: planteadas y NO activas. `private.daily_alerts()` encola en
+  `alert_outbox`; nadie la programa ni envía. Las alertas dentro de la app siguen
+  como siempre.
+- **Pruebas** (todas se deshacen solas; usan una agencia "ZZ PRUEBA NUBE"):
+  - `supabase db query --linked -f supabase/tests/rls_test.sql` → 38 OK
+  - `bash supabase/tests/nube_test.sh` → 36 OK (capa de datos)
+  - `bash supabase/tests/nube_test.sh ui` → 33 OK (app real en jsdom)
 - **Aplicar migraciones**: `supabase db push --linked` (no requiere Docker).
-- **Pendiente**: login y conexión de `index.html` a la nube, migración de datos
-  locales, respaldo diario, publicación automática, alertas por email (espera los
-  datos de la agencia), mejoras de idioma/estética, quitar fotos embebidas.
-- Sin Docker en la Mac no hay base local de pruebas: hoy se prueba contra
-  producción con datos de mentira que se deshacen.
+- **Pendiente**: pantalla para invitar usuarios, catálogo en la app (la tabla ya
+  existe), repuestos ligados a OTs en la app, respaldo diario, quitar fotos
+  embebidas, idioma/estética, activar alertas por email.
+- Sin Docker en la Mac no hay base local: se prueba contra producción con datos de
+  mentira que se borran.
 
 ## Roadmap (lo que falta, en prioridad)
 
