@@ -1,0 +1,137 @@
+/* TerraFleet — estilos de las funciones nuevas (buscador, tablero, QR, informes, marca) y modo oscuro */
+
+/* ───────── Marca ───────── */
+.brandmark.has-logo{background:#fff;padding:4px;overflow:hidden}
+.brandmark.has-logo img{width:100%;height:100%;object-fit:contain;display:block}
+.brandname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.logo-prev{width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;overflow:hidden;color:var(--muted);flex:none}
+.logo-prev img{width:100%;height:100%;object-fit:contain}
+
+/* ───────── Buscador ───────── */
+.modal-backdrop.tfs{align-items:flex-start;padding-top:10vh}
+.tfs-panel{width:min(620px,100%);background:var(--panel);border-radius:18px;box-shadow:0 30px 70px rgba(0,0,0,.3);overflow:hidden;animation:modin .22s cubic-bezier(.2,.7,.3,1)}
+.tfs-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);color:var(--muted)}
+.tfs-top input{flex:1;border:0;outline:0;background:transparent;font-size:16px;color:var(--ink);font-family:inherit;min-width:0}
+.tfs-top input::-webkit-search-cancel-button{display:none}
+.tfs-esc{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:7px;font-size:11px;padding:3px 7px;font-family:inherit}
+#tfSearchRes{max-height:min(56vh,460px);overflow:auto;padding:6px}
+.tfs-hint{padding:22px 16px;color:var(--muted);font-size:13px;text-align:center}
+.tfs-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:transparent;padding:9px 10px;border-radius:12px;color:var(--ink);font-family:inherit}
+.tfs-item:hover,.tfs-item.on{background:var(--lime-soft)}
+.tfs-item .tile{width:34px;height:34px;flex:none}
+.tfs-txt{display:flex;flex-direction:column;min-width:0}
+.tfs-txt b{font-size:13.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tfs-txt small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ───────── Tablero (kanban) ───────── */
+.kb{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,1fr);gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.kb-col{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:8px;min-height:120px;scroll-snap-align:start;transition:border-color .15s,background .15s}
+.kb-col.over{border-color:var(--green2);background:var(--lime-soft)}
+.kb-head{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.kb-head b{background:var(--panel);border:1px solid var(--line);border-radius:999px;min-width:22px;text-align:center;padding:1px 6px;color:var(--ink);font-size:11px}
+.kb-list{display:flex;flex-direction:column;gap:8px}
+.kb-empty{text-align:center;color:var(--muted);font-size:12px;padding:14px 0;opacity:.6}
+.kb-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 11px;cursor:pointer;box-shadow:0 2px 6px rgba(28,54,41,.05);transition:transform .12s,box-shadow .12s,opacity .12s}
+.kb-card:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(28,54,41,.1)}
+.kb-card.drag{opacity:.45}
+.kb-top{display:flex;align-items:center;gap:6px;font-size:12px}
+.kb-top b{font-weight:700}
+.kb-dot{width:7px;height:7px;border-radius:50%;background:var(--blue)}
+.kb-move{margin-left:auto;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;font-size:11px;padding:3px 4px;font-family:inherit;max-width:86px}
+.kb-m{font-size:13.5px;font-weight:650;margin-top:5px;line-height:1.25}
+.kb-c{font-size:11.5px;color:var(--muted)}
+.kb-i{font-size:12px;margin-top:6px;line-height:1.35}
+.kb-foot{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.kb-chip{font-size:10.5px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 7px;color:var(--muted);font-weight:600}
+.kb-chip.late{background:var(--red-soft);border-color:transparent;color:#a33}
+.kb-next{font-size:11px;color:var(--green2);margin-top:6px;font-weight:600}
+
+/* ───────── QR ───────── */
+.qr-box{width:210px;max-width:70%;margin:6px auto 12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
+.qr-box svg{display:block;width:100%;height:auto}
+.qr-lbl{text-align:center}
+.qr-lbl b{display:block;font-size:16px}
+.qr-lbl span{font-size:12.5px;color:var(--muted)}
+
+/* ───────── Informes ───────── */
+.rent-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.rent-kpis>div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.rent-kpis span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.rent-kpis b{font-size:18px;letter-spacing:-.02em}
+.rent-kpis small{font-size:11.5px;color:var(--muted);font-weight:600}
+.tf-scroll{overflow-x:auto}
+table.rent .num,table.rent th.num{text-align:right;white-space:nowrap}
+
+/* ───────── Celular: objetivos táctiles más grandes ───────── */
+@media(max-width:720px){
+  .rent-kpis{grid-template-columns:repeat(2,1fr)}
+  .kb{grid-auto-columns:82vw}
+  .kb-move{font-size:13px;padding:6px 6px;max-width:110px}
+  .kb-card{padding:13px 13px}
+  .kb-m{font-size:15px}
+  .outline-btn,.solid-btn{padding:10px 13px;font-size:13px}
+  .mini-btn{width:38px;height:38px}
+  .field,.login-card input,.login-card select{font-size:16px} /* evita el zoom automático de iOS al enfocar */
+  .modal-backdrop.tfs{padding:10px;padding-top:12px}
+  #btnSearch{display:none}
+}
+
+/* ───────── Modo oscuro ───────── */
+:root[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#0b1711; --panel:#13221b; --ink:#e7f0ea; --muted:#93a89b; --line:#24382d;
+  --lime-soft:#1f3322; --amber-soft:#3a2f14; --red-soft:#3d1f1b; --blue-soft:#1a2b40;
+  --shadow:0 14px 36px rgba(0,0,0,.4);
+}
+:root[data-theme=dark] body{background:var(--bg);color:var(--ink)}
+:root[data-theme=dark] .topbar{background:rgba(11,23,17,.85)}
+:root[data-theme=dark] .iconbtn,
+:root[data-theme=dark] .outline-btn,
+:root[data-theme=dark] .filter,
+:root[data-theme=dark] .field,
+:root[data-theme=dark] .mini-btn,
+:root[data-theme=dark] .stepper button,
+:root[data-theme=dark] select.statussel,
+:root[data-theme=dark] .lov,
+:root[data-theme=dark] .schip,
+:root[data-theme=dark] .wscal-d,
+:root[data-theme=dark] .apt,
+:root[data-theme=dark] .svcdet,
+:root[data-theme=dark] .mcal-d,
+:root[data-theme=dark] .modal,
+:root[data-theme=dark] .notifpop,
+:root[data-theme=dark] .mobile-nav,
+:root[data-theme=dark] .mmenu,
+:root[data-theme=dark] .btn:not(.dark){background:var(--panel);color:var(--ink);border-color:var(--line)}
+:root[data-theme=dark] .outline-btn,
+:root[data-theme=dark] .btn:not(.dark),
+:root[data-theme=dark] .stepper button{color:#bfe3cb}
+:root[data-theme=dark] .filter{color:var(--muted)}
+:root[data-theme=dark] .filter.active{background:var(--green2);border-color:var(--green2);color:#fff}
+:root[data-theme=dark] .solid-btn,
+:root[data-theme=dark] .btn.dark{background:var(--green2);color:#fff}
+:root[data-theme=dark] .req{background:#16271f}
+:root[data-theme=dark] .req:hover{background:#1b3026}
+:root[data-theme=dark] .ok{background:#1c3a27;color:#9be0b1}
+:root[data-theme=dark] .warn{color:#f0c874}
+:root[data-theme=dark] .notice{color:var(--ink)}
+:root[data-theme=dark] .chart{background:linear-gradient(to top,transparent 24%,#1d2f25 25%,transparent 26%,transparent 49%,#1d2f25 50%,transparent 51%,transparent 74%,#1d2f25 75%,transparent 76%),#101d16}
+:root[data-theme=dark] .bar:hover:after{background:#e7f0ea;color:#0b1711}
+:root[data-theme=dark] .mobile-nav button,
+:root[data-theme=dark] .mmenu button{color:var(--ink)}
+:root[data-theme=dark] .machine-hero-icon,
+:root[data-theme=dark] .lov-ic,
+:root[data-theme=dark] .meta,
+:root[data-theme=dark] .tile.t-green{background:#1b2e24}
+:root[data-theme=dark] [style*="background:#edf4ec"],
+:root[data-theme=dark] [style*="background:#fbfdfc"],
+:root[data-theme=dark] [style*="background:#e9f1e8"],
+:root[data-theme=dark] [style*="background:#e4efe7"],
+:root[data-theme=dark] [style*="background:#f4f7f3"]{background:#1b2e24!important}
+:root[data-theme=dark] .sigpad,
+:root[data-theme=dark] .qr-box,
+:root[data-theme=dark] .logo-prev,
+:root[data-theme=dark] .brandmark.has-logo{background:#fff}
+:root[data-theme=dark] .kb-chip.late{color:#ffb4a8}
+:root[data-theme=dark] input[type=date],
+:root[data-theme=dark] input[type=time]{color-scheme:dark}

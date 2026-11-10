@@ -1,0 +1,35 @@
+name: Pruebas
+# Corre en cada publicación. Avisa por mail de GitHub si algo se rompió.
+# (La compuerta que frena una publicación mala es publicar.sh, que corre lo mismo antes de subir.)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency: pruebas   # usan una agencia de prueba compartida: de a una
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sintaxis
+        run: for f in nube.js sw.js js/*.js; do [ -f "$f" ] && node --check "$f"; done
+      - name: Permisos de la base (RLS)
+        if: env.SUPABASE_DB_URL != ''
+        run: |
+          OUT="$(docker run --rm -i -e SUPABASE_DB_URL postgres:17 sh -c 'psql "$SUPABASE_DB_URL" -f -' < supabase/tests/rls_test.sql 2>&1 || true)"
+          echo "$OUT" | grep -o "RESULTADO.*"
+          echo "$OUT" | grep -q "Fallos: ninguno"
+      - name: Capa de datos
+        if: env.SUPABASE_DB_URL != ''
+        run: bash supabase/tests/nube_test.sh
+      - name: App completa
+        if: env.SUPABASE_DB_URL != ''
+        run: bash supabase/tests/nube_test.sh ui

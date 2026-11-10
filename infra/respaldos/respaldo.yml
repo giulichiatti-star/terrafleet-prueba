@@ -1,0 +1,42 @@
+name: Respaldo diario
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 03:00 Argentina
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: respaldo
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copiar la base
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$DB_URL" || { echo "Falta el secreto SUPABASE_DB_URL"; exit 1; }
+          F="respaldos/$(date -u +%F).sql"
+          mkdir -p respaldos
+          docker run --rm -e DB_URL postgres:17 sh -c '
+            set -e
+            pg_dump "$DB_URL" --no-owner --no-privileges --schema=public --schema=private
+            echo "-- ===== cuentas de usuario (solo datos) ====="
+            pg_dump "$DB_URL" --data-only --no-owner --table=auth.users --table=auth.identities
+          ' > "$F"
+          # una copia vacía o cortada no se guarda
+          grep -q "CREATE TABLE public.agencies" "$F"
+          grep -q "PostgreSQL database dump complete" "$F"
+          test "$(wc -c < "$F")" -gt 20000
+          gzip -9 -f "$F"
+          ls -1 respaldos/*.sql.gz | sort | head -n -60 | xargs -r rm -f
+          ls -la respaldos | tail -5
+      - name: Guardar en el repo
+        run: |
+          git config user.name "respaldo-automatico"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A respaldos
+          git diff --cached --quiet || git commit -m "Respaldo $(date -u +%F)"
+          git push

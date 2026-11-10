@@ -19,17 +19,20 @@ async function hasta(fn, ms = 20000) { const t0 = Date.now(); while (Date.now() 
 
 class Loader extends ResourceLoader {
   fetch(url) {
-    if (url.includes('vendor/supabase')) return Promise.resolve(fs.readFileSync(process.env.SUPABASE_JS + '/dist/umd/supabase.js'));
-    if (url.includes('nube.js')) return Promise.resolve(fs.readFileSync(path.join(decodeURIComponent(root), 'nube.js')));
-    return Promise.resolve(Buffer.from(''));
+    const u = new URL(url);
+    if (u.hostname !== 'giulichiatti-star.github.io') return Promise.resolve(Buffer.from(''));
+    const rel = decodeURIComponent(u.pathname.replace('/terrafleet-prueba/', ''));
+    const f = path.join(decodeURIComponent(root), rel);
+    return Promise.resolve(fs.existsSync(f) ? fs.readFileSync(f) : Buffer.from(''));
   }
 }
-function abrir(nombre) {
+function abrir(nombre, semilla, sinRed) {
   const vc = new VirtualConsole();
-  vc.on('jsdomError', e => { const m = String(e && (e.detail && e.detail.message || e.message)); if (!/Not implemented/.test(m)) errores.push(nombre + ': ' + m); });
-  vc.on('error', e => errores.push(nombre + ': ' + e));
+  vc.on('jsdomError', e => { const m = String(e && (e.detail && e.detail.message || e.message)); if (!/Not implemented|error de prueba ZZ/.test(m)) errores.push(nombre + ': ' + m); });
+  vc.on('error', e => { if (!/Failed to fetch/.test(String(e))) errores.push(nombre + ': ' + e); }); // console.error; la librería avisa así cuando no hay red
   const dom = new JSDOM(html, { url: 'https://giulichiatti-star.github.io/terrafleet-prueba/', runScripts: 'dangerously', resources: new Loader(), pretendToBeVisual: true, virtualConsole: vc,
-    beforeParse(w) { w.fetch = (u, o) => String(u).startsWith('http') ? fetch(u, o) : Promise.resolve(new Response('', { status: 404 })); w.Headers = Headers; w.Request = Request; w.Response = Response;
+    beforeParse(w) { w.__off = !!sinRed; if (semilla) Object.keys(semilla).forEach(k => w.localStorage.setItem(k, semilla[k]));
+      w.fetch = (u, o) => w.__off ? Promise.reject(new TypeError('Failed to fetch')) : (String(u).startsWith('http') ? fetch(u, o) : Promise.resolve(new Response('', { status: 404 }))); w.Headers = Headers; w.Request = Request; w.Response = Response;
       w.AbortController = AbortController; w.confirm = () => true; w.scrollTo = () => {}; } });
   return dom.window;
 }
@@ -62,7 +65,7 @@ D.close();
 const S = abrir('taller');
 await ingresar(S, T_STAFF);
 t(S.document.body.classList.contains('nube') && ev(S, "currentRole==='admin'"), 'taller: modo nube y rol empresa');
-t(S.document.querySelector('.brandsub').textContent === 'ZZ PRUEBA NUBE', 'taller: muestra el nombre de la agencia');
+t(S.document.querySelector('.brandname').textContent === 'ZZ PRUEBA NUBE', 'taller: muestra el nombre de la agencia');
 t(S.localStorage.getItem('terrafleet_prueba_v1') !== null && !/Estancia/.test(S.localStorage.getItem('terrafleet_prueba_v1')), 'los datos locales de demo no se tocan');
 // alta de máquina por el formulario real
 ev(S, "APP.openMachineModal()");
@@ -126,7 +129,73 @@ x = await N.load(sb, prof);
 t(x.db.machines[0].hours === 75 && x.db.machines[0].serial !== 'SERIE-TALLER', 'conflicto: el taller no pisa las horas del cliente con datos viejos');
 t(ev(S, 'db.machines[0].hours') === 75, 'conflicto: la pantalla del taller se actualizó sola a 75 h');
 
-S.close(); C.close();
+// ── Funciones pro ──
+t(ev(S, "TFPro._search('te254').some(r=>r.k==='m')") && ev(S, "TFPro._search('OT-4102').some(r=>r.k==='o')") && ev(S, "TFPro._search('estancia').some(r=>r.k==='c')"), 'buscador: encuentra equipo, orden y cliente');
+t(ev(C, "TFPro._search('estancia').every(r=>r.k!=='c')") && ev(C, "TFPro._search('te254').length>=1"), 'buscador: el cliente no ve clientes, sí su equipo');
+ev(S, "TFPro.openSearch()"); S.document.getElementById('tfSearchIn').value = 'lovol'; S.document.getElementById('tfSearchIn').dispatchEvent(new S.Event('input'));
+t(S.document.querySelectorAll('#tfSearchRes .tfs-item').length >= 1, 'buscador: muestra resultados en pantalla');
+ev(S, "TFPro.closeSearch()");
+ev(S, "gotoPage('workshop')");
+t(S.document.querySelectorAll('#tfKanban .kb-card').length === ev(S, "db.ots.filter(o=>TFPro._colOf(o)).length") && S.document.querySelectorAll('#tfKanban .kb-card').length >= 1, 'tablero: una tarjeta por orden en curso');
+ev(S, "TFPro.move('OT-4102','diagnostico')");
+t(ev(S, "db.ots.find(o=>o.id==='OT-4102').status==='diagnostico'") && !!S.document.querySelector('.kb-col[data-col="diagnostico"] .kb-card[data-id="OT-4102"]'), 'tablero: mover una tarjeta cambia el estado');
+ev(S, "TFPro.openQR('" + mid + "')");
+t(!!S.document.querySelector('#tfQRBody svg') && S.document.getElementById('tfQR').classList.contains('show'), 'QR: se genera el código del equipo');
+ev(S, "APP.closeModal('tfQR')");
+ev(S, "db.meta.costoHora=10000");
+t(ev(S, "TFPro._otMoney({invoiced:true,invoiceBase:100000,horasTrabajo:2,costoMateriales:30000}).margen") === 50000, 'rentabilidad: 100.000 − (2 h × 10.000 + 30.000) = 50.000');
+t(ev(S, "TFPro._otMoney({horasTrabajo:1}).margen") === null, 'rentabilidad: sin ingreso cargado no inventa margen');
+t(ev(S, "Array.isArray(TFPro._forecast())"), 'pronóstico: se calcula');
+ev(S, "gotoPage('reports')");
+t(!!S.document.getElementById('tfRent').innerHTML && !!S.document.getElementById('tfFore').innerHTML, 'informes: muestra rentabilidad y pronóstico');
+ev(S, "gotoPage('settings')");
+t(!!S.document.getElementById('tfCostoHora'), 'ajustes: aparece marca, costos y apariencia');
+ev(S, "TFPro.setColor('#ffd166')");
+t(S.document.documentElement.style.getPropertyValue('--lime') === '#ffd166', 'marca: aplica el color de resalte');
+ev(S, "TFPro.setColor('#112211')");
+t(ev(S, "db.meta.brand.color") === '#ffd166', 'marca: rechaza un color oscuro');
+ev(S, "TFPro.setTheme('oscuro')"); const osc = S.document.documentElement.getAttribute('data-theme') === 'dark'; ev(S, "TFPro.setTheme('claro')");
+t(osc && S.document.documentElement.getAttribute('data-theme') === 'light', 'modo oscuro: se activa y se desactiva');
+ev(S, "saveDb()");
+t(await guardado(S), 'pro: cambios guardados');
+x = await N.load(sb, prof);
+t(x.db.meta.costoHora === 10000 && x.db.meta.brand && x.db.meta.brand.color === '#ffd166', 'marca y costo por hora quedan en la nube');
+await ev(C, 'NUBE.reload(true)');
+t(ev(C, "db.meta.brand&&db.meta.brand.color") === '#ffd166', 'el cliente recibe la marca de la agencia');
+C.location.hash = '#m=' + mid; ev(C, "TFPro.deepLink()");
+t(C.document.getElementById('mMachineInfo').classList.contains('show'), 'QR: el enlace abre la ficha del equipo al cliente');
+ev(C, "APP.closeModal('mMachineInfo')");
+
+// ── Sin señal ──
+S.__off = true;
+ev(S, "APP.openClientModal('c1')");
+S.document.getElementById('cliPhone').value = '3329 555 000';
+ev(S, "APP.saveClient()");
+t(await hasta(() => /Sin conexión/.test(S.document.getElementById('footStatus').textContent)), 'sin señal: avisa que está sin conexión');
+t(/3329 555 000/.test(S.localStorage.getItem('terrafleet_nube_copia') || ''), 'sin señal: el cambio queda en la copia local');
+// se cierra la pestaña y se vuelve a abrir, todavía sin señal
+const semilla = {}; for (let i = 0; i < S.localStorage.length; i++) { const k = S.localStorage.key(i); semilla[k] = S.localStorage.getItem(k); }
+S.close();
+const S2 = abrir('taller-sin-red', semilla, true);
+t(await hasta(() => ev(S2, "typeof NUBE!=='undefined'&&NUBE.on")), 'sin señal: la app abre igual con la copia local');
+t(ev(S2, "db.clients[0].phone==='3329 555 000'&&db.machines.length===1"), 'sin señal: muestra los datos, incluido el cambio sin subir');
+t(await hasta(() => /Sin conexión/.test(S2.document.getElementById('footStatus').textContent)), 'sin señal: lo indica en pantalla');
+x = await N.load(sb, prof);
+t(x.db.clients[0].phone !== '3329 555 000', 'sin señal: la nube todavía no tiene el cambio');
+// vuelve la señal
+S2.__off = false;
+ev(S2, "window.dispatchEvent(new Event('online'))");
+t(await guardado(S2), 'vuelve la señal: sube solo (' + S2.document.getElementById('footStatus').textContent + ')');
+x = await N.load(sb, prof);
+t(x.db.clients[0].phone === '3329 555 000', 'vuelve la señal: el cambio llegó a la nube');
+
+// ── Registro de errores ──
+ev(S2, "setTimeout(()=>{throw new Error('error de prueba ZZ')},0)");
+await sleep(2500);
+const er = await sb.rpc('log_error', { p: { message: 'ping' } });
+t(!er.error, 'registro de errores: la función responde');
+
+S2.close(); C.close();
 t(errores.length === 0, 'errores de JavaScript en la página: ' + errores.join(' | '));
 console.log('RESULTADO UI: ' + ok + ' pruebas OK. Fallos: ' + (fallos.length ? '\n - ' + fallos.join('\n - ') : 'ninguno'));
 process.exit(fallos.length ? 1 : 0);

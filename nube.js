@@ -90,6 +90,8 @@
   /* ───────── Perfil del usuario con sesión ───────── */
   async function profile(sb) {
     const { data: u, error: e1 } = await sb.auth.getUser();
+    // sin red no es lo mismo que sin cuenta: se avisa con un error para que la app use su copia local
+    if (e1 && (e1.name === 'AuthRetryableFetchError' || !e1.status)) throw e1;
     if (e1 || !u || !u.user) return null;
     const { data, error } = await sb.from('profiles').select('user_id,agency_id,role,client_id,full_name,active').eq('user_id', u.user.id).maybeSingle();
     if (error) throw error;
@@ -258,7 +260,19 @@
       snap: { clients: new Map(), machines: new Map(), ots: new Map(), parts: new Map(), notifs: new Map(), hist: new Set(), meta: '' } };
   }
 
-  const api = { canon: canon, profile: profile, load: load, push: push, pending: pending, signature: signature, emptyState: emptyState, MAP: MAP, metaRow: metaRow };
+  // Copia local (modo sin señal): el estado se guarda como texto y se rearma al abrir.
+  function pack(state) {
+    const s = state.snap;
+    return { aid: state.aid, role: state.role, staff: state.staff, snap: { meta: s.meta, hist: Array.from(s.hist),
+      clients: Array.from(s.clients), machines: Array.from(s.machines), ots: Array.from(s.ots), parts: Array.from(s.parts), notifs: Array.from(s.notifs) } };
+  }
+  function unpack(o) {
+    const s = o.snap;
+    return { aid: o.aid, role: o.role, staff: o.staff, snap: { meta: s.meta, hist: new Set(s.hist),
+      clients: new Map(s.clients), machines: new Map(s.machines), ots: new Map(s.ots), parts: new Map(s.parts), notifs: new Map(s.notifs) } };
+  }
+
+  const api = { pack: pack, unpack: unpack, canon: canon, profile: profile, load: load, push: push, pending: pending, signature: signature, emptyState: emptyState, MAP: MAP, metaRow: metaRow };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.TFNube = api;
 })(typeof window !== 'undefined' ? window : globalThis);

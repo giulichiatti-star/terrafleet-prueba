@@ -6,7 +6,7 @@
 # Requiere: .env con SUPABASE_URL y SUPABASE_ANON_KEY, supabase CLI vinculada, node.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
-set -a; . ./.env; set +a
+[ -f ./.env ] && { set -a; . ./.env; set +a; }
 
 DEPS="${TMPDIR:-/tmp}/terrafleet-test-deps"
 [ -d "$DEPS/node_modules/jsdom" ] || npm install --silent --prefix "$DEPS" @supabase/supabase-js@2.45.4 jsdom@24 >/dev/null
@@ -16,7 +16,12 @@ export SUPABASE_JS="$DEPS/node_modules/@supabase/supabase-js"
 RND="$(openssl rand -hex 6)"
 export T_PW="$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 20)"
 export T_STAFF="zz-staff-$RND@test.invalid" T_CLI="zz-cli-$RND@test.invalid"
-q() { supabase db query --linked "$1" 2>&1 | grep -E "ERROR|error" | grep -v -i "version" ; }
+# SQL de administración: en GitHub Actions va por psql (docker); en la Mac, por la CLI de Supabase.
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  q() { printf '%s' "$1" | docker run --rm -i -e SUPABASE_DB_URL postgres:17 sh -c 'psql "$SUPABASE_DB_URL" -q -v ON_ERROR_STOP=1 -f -' 2>&1 | grep -E "ERROR|error" ; }
+else
+  q() { supabase db query --linked "$1" 2>&1 | grep -E "ERROR|error" | grep -v -i "version" ; }
+fi
 
 limpiar() {
   q "do \$\$ declare a uuid; begin
@@ -30,8 +35,10 @@ limpiar() {
          delete from auth.users where id in (select user_id from public.profiles where agency_id = a);
          delete from public.clients where agency_id = a;
          delete from public.audit_log where agency_id = a;
+         delete from public.client_errors where agency_id = a;
          delete from public.agencies where id = a;
        end loop;
+       delete from public.client_errors where message in ('ping') or message like '%error de prueba ZZ%';
        delete from public.audit_log where table_name = 'agencies' and coalesce(new_row->>'name', old_row->>'name') = 'ZZ PRUEBA NUBE';
      end \$\$;"
 }
