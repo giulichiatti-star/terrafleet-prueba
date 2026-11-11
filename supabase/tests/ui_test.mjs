@@ -61,6 +61,30 @@ await hasta(() => /incorrectos/.test(D.document.getElementById('nbMsg').textCont
 t(/incorrectos/.test(D.document.getElementById('nbMsg').textContent) && ev(D, '!NUBE.on'), 'clave equivocada: no entra y avisa');
 D.close();
 
+// ── Datos de demo en el navegador + nube vacía: se ofrece subirlos sin bloquear ──
+{
+  const demo = { meta: { otSeq: 4100, satSeq: 80, invSeq: 0, seenWelcome: true, biz: { name: 'Demo', cif: '', phone: '', city: '' } }, session: { clientId: null },
+    clients: [{ id: 'cDemo', name: 'Cliente de demo', contact: '', phone: '', email: '', cuit: '' }], machines: [], ots: [], notifs: [], parts: [] };
+  const sbAdm = createClient(URL_, KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  await sbAdm.auth.signInWithPassword({ email: T_STAFF, password: T_PW });
+  const pr = await N.profile(sbAdm);
+  // la agencia de prueba trae un cliente c1: con eso la nube NO está vacía y no debe ofrecer nada
+  const W = abrir('demo-con-datos', { terrafleet_prueba_v1: JSON.stringify(demo) });
+  let confirmo = false; W.confirm = () => { confirmo = true; return true; };
+  await ingresar(W, T_STAFF);
+  t(!confirmo, 'ingreso: nunca usa el cartel bloqueante del navegador');
+  t(!W.document.getElementById('mSubida') && ev(W, "db.clients.length===1&&db.clients[0].id==='c1'"), 'ingreso: con la nube ya cargada no ofrece subir ni mezcla datos');
+  t(/Cliente de demo/.test(W.localStorage.getItem('terrafleet_prueba_v1')), 'ingreso: los datos de demo siguen en el navegador');
+  // simular nube vacía para probar el ofrecimiento y las dos respuestas
+  ev(W, "NUBE.ofrecerSubida(" + JSON.stringify(demo) + ")");
+  t(W.document.getElementById('mSubida').classList.contains('show'), 'ofrecimiento: aparece dentro de la app');
+  ev(W, "NUBE.responderSubida(true)");
+  t(ev(W, "db.clients.length===1&&db.clients[0].id==='c1'"), 'ofrecimiento: si la nube tiene datos, no sube aunque se acepte');
+  ev(W, "NUBE.ofrecerSubida(" + JSON.stringify(demo) + ");NUBE.responderSubida(false)");
+  t(W.localStorage.getItem('tf_subida_' + pr.agency_id) === 'no' && !W.document.getElementById('mSubida').classList.contains('show'), 'ofrecimiento: «Empezar vacío» se recuerda y no vuelve a preguntar');
+  W.close();
+}
+
 // ── Taller ──
 const S = abrir('taller');
 await ingresar(S, T_STAFF);

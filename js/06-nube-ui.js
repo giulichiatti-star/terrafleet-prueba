@@ -77,19 +77,14 @@ Object.assign(NUBE,{
       const local=db;
       const hayLocal=(local.clients||[]).length>0;
       const nubeVacia=!x.db.clients.length&&!x.db.machines.length&&!x.db.ots.length;
-      let subir=false;
-      if(!offline&&prof.role!=='cliente'&&nubeVacia&&hayLocal){
-        subir=confirm('Este navegador tiene datos cargados: '+local.clients.length+' clientes, '+local.machines.length+' máquinas y '+local.ots.length+' órdenes.\n\n¿Subirlos a la nube de '+x.db.meta.biz.name+'?\n\nAceptar: se suben y pasan a ser los datos de la agencia.\nCancelar: se empieza con la nube vacía (los datos de este navegador no se borran).');
-      }
+      /* ¿hay datos de este navegador para ofrecer subir? Se pregunta dentro de la app, una sola vez
+         (un confirm() del navegador congelaba la pestaña y volvía a aparecer en cada carga). */
+      let ofrecer=null;
+      try{
+        if(!offline&&prof.role!=='cliente'&&nubeVacia&&hayLocal&&localStorage.getItem('tf_subida_'+prof.agency_id)!=='no')ofrecer=JSON.parse(JSON.stringify(local));
+      }catch(e){}
       this.prof=prof;this.state=x.state;this.sig=x.sig;
-      if(subir){
-        const d=JSON.parse(JSON.stringify(local));
-        d.session={clientId:null};
-        d.machines.forEach(m=>{delete m.foto});
-        d.meta=Object.assign({},d.meta,{biz:x.db.meta.biz,seenWelcome:true,
-          otSeq:Math.max(d.meta.otSeq||0,x.db.meta.otSeq||0),satSeq:Math.max(d.meta.satSeq||0,x.db.meta.satSeq||0),invSeq:d.meta.invSeq||0});
-        db=d;
-      }else db=x.db;
+      db=x.db;
       this.on=true;this.entering=false;
       document.body.classList.add('nube');
       $('#welcomeOverlay').classList.add('off');hideLogin();
@@ -111,7 +106,7 @@ Object.assign(NUBE,{
       }
       window.addEventListener('online',()=>{if(this.dirty||TFNube.pending(db,this.state))this.flush();else this.reload(false)});
       window.addEventListener('pagehide',()=>this.saveCache());
-      if(subir)toast('Subiendo tus datos a la nube…');
+      if(ofrecer)this.ofrecerSubida(ofrecer);
       setInterval(()=>this.reload(false),45000);
       window.addEventListener('focus',()=>this.reload(false));
       document.addEventListener('visibilitychange',()=>{if(!document.hidden)this.reload(false)});
@@ -120,6 +115,34 @@ Object.assign(NUBE,{
       this.entering=false;this.show('login');
       this.msg('No pudimos cargar tus datos. Revisá la conexión y probá de nuevo.');
     }
+  },
+  /* Ofrece pasar a la nube lo que estaba cargado en este navegador (modo demo). */
+  ofrecerSubida(local){
+    this._local=local;
+    let m=document.getElementById('mSubida');
+    if(!m){
+      m=document.createElement('div');m.className='modal-backdrop';m.id='mSubida';
+      m.innerHTML='<div class="modal"><h3>¿Subir los datos de este navegador?</h3><p id="mSubidaTxt"></p>'+
+        '<div class="notice"><svg class="ic"><use href="#i-bulb"/></svg><div>Si eran datos de prueba, elegí <b>Empezar vacío</b>. No se borran de este navegador: siguen ahí al cerrar sesión.</div></div>'+
+        '<div class="modal-actions"><button class="outline-btn" onclick="NUBE.responderSubida(false)">Empezar vacío</button><button class="solid-btn" onclick="NUBE.responderSubida(true)">Subir a la nube</button></div></div>';
+      document.body.appendChild(m);
+    }
+    document.getElementById('mSubidaTxt').textContent='Antes de ingresar, en este navegador había '+local.clients.length+' clientes, '+local.machines.length+' máquinas y '+local.ots.length+' órdenes. La nube de '+db.meta.biz.name+' está vacía.';
+    m.classList.add('show');
+  },
+  responderSubida(si){
+    const local=this._local;this._local=null;
+    document.getElementById('mSubida').classList.remove('show');
+    if(!si||!local){try{localStorage.setItem('tf_subida_'+this.prof.agency_id,'no')}catch(e){}return}
+    if(db.clients.length||db.machines.length||db.ots.length){toast('La nube ya tiene datos: no se sube para no mezclar');return}
+    const d=local;
+    d.session={clientId:null};
+    d.machines.forEach(m=>{delete m.foto});
+    d.meta=Object.assign({},d.meta,db.meta,{biz:db.meta.biz,seenWelcome:true,
+      otSeq:Math.max(d.meta.otSeq||0,db.meta.otSeq||0),satSeq:Math.max(d.meta.satSeq||0,db.meta.satSeq||0),invSeq:Math.max(d.meta.invSeq||0,db.meta.invSeq||0)});
+    db=d;
+    recomputeStages(true);renderAll();
+    toast('Subiendo tus datos a la nube…');
   },
   /* Copia local para trabajar sin señal. Solo vale si la sesión guardada es de la misma persona. */
   CACHE_KEY:'terrafleet_nube_copia',
