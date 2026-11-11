@@ -122,6 +122,30 @@ productor dueño de las máquinas, portal simplificado).
 - Sin Docker en la Mac no hay base local: se prueba contra producción con datos de
   mentira que se borran.
 
+## Estructura del código y funciones nuevas (2026-11-11)
+
+- `index.html` ya no contiene código: solo el HTML. Estilos en `css/app.css` y
+  `css/pro.css`; código en `js/01-base.js` … `js/08-pro.js` (scripts clásicos que
+  comparten variables globales, cargados en orden con `defer`), más `nube.js`.
+- `js/08-pro.js`: buscador global (Ctrl/⌘+K o `/`), tablero kanban del taller,
+  QR por máquina (`#m=<id>` abre la ficha), rentabilidad por orden, pronóstico de
+  services a 90 días, marca por agencia (logo y color en `meta.brand`), costo de la
+  hora (`meta.costoHora`) y modo oscuro (por equipo, `localStorage tf_tema`).
+- **Sin señal**: `sw.js` guarda la app para abrirla offline; `js/06-nube-ui.js`
+  guarda una copia de los datos en `localStorage` (`terrafleet_nube_copia`) y sube
+  los cambios al volver la conexión. App instalable (`manifest.webmanifest`, `icons/`).
+- **Errores**: todo error de JavaScript se manda a la tabla `client_errors`
+  (función `log_error`, máximo 5 por visita y 300 por hora). Consultar con
+  `select * from client_errors order by at desc`.
+- **Publicar**: `bash publicar.sh "mensaje"` corre sintaxis + pruebas y recién
+  entonces sube. `.github/workflows/pruebas.yml` repite las pruebas en GitHub.
+- **Respaldo diario**: preparado en `infra/`. Falta correr UNA vez
+  `bash infra/instalar-respaldo.sh` (crea el repo privado `terrafleet-respaldos`,
+  guarda los secretos y lanza el primer respaldo).
+- **Pendiente de revisión visual**: la versión 2026.11.10-2232 se publicó con las
+  pruebas funcionales pasando pero sin mirar en pantalla el tablero, el modo oscuro
+  ni la vista de celular.
+
 ## Roadmap (lo que falta, en prioridad)
 
 1. **FASE NUBE — Supabase (confirmada, pendiente del token de la dueña)**:
