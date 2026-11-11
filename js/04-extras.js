@@ -522,6 +522,11 @@ Object.assign(APP,{
     document.getElementById('turnoDate').value=isoOf(d.getTime());
     document.getElementById('turnoTime').value='';
     document.getElementById('turnoNote').value='';
+    const pide=ot.origin==='cliente';
+    const h=document.querySelector('#mTurno h3'),bt=document.querySelector('#mTurno .modal-actions .solid-btn'),nt=document.querySelector('#mTurno .notice div');
+    if(h)h.textContent=pide?'Proponer turno':'Agendar turno';
+    if(bt)bt.innerHTML='<svg class="ic ic-xs"><use href="#i-send"/></svg>'+(pide?'Enviar propuesta':'Agendar y avisar');
+    if(nt)nt.innerHTML=pide?'La propuesta llega como <b>alerta en la app del cliente</b>, con botones para <b>aceptar o rechazar</b>. Si la rechaza, te llega el aviso para proponer otro día.':'El turno queda <b>confirmado</b> y el cliente recibe una <b>alerta con el día, la hora y tu nota</b> (por ejemplo, qué tiene que traer).';
     this.openModal('mTurno');
   },
   saveTurno(){
@@ -540,9 +545,11 @@ Object.assign(APP,{
       pushNotif('client','i-cal','Turno propuesto para tu '+mLabel(m),fmtDate(date)+(time?' · '+time:'')+(note?' — '+note:'')+'. Aceptalo o rechazalo acá.',m.clientId,{kind:'cita',otId:ot.id});
       this.toast('Propuesta enviada al cliente: '+fmtDate(date));
     }else{
+      const cambio=ot.cita==='confirmada';
       ot.cita='confirmada';
-      if(m)m.history.unshift({ts:Date.now(),title:'Agendado · '+ot.id,detail:fmtDate(date)+(time?' '+time:'')});
-      this.toast('Turno agendado: '+fmtDate(date));
+      if(m)m.history.unshift({ts:Date.now(),title:(cambio?'Turno cambiado · ':'Agendado · ')+ot.id,detail:fmtDate(date)+(time?' '+time:'')});
+      if(m)pushNotif('client','i-cal',(cambio?'Se cambió el turno de tu ':'Turno agendado para tu ')+mLabel(m),fmtDate(date)+(time?' · '+time:'')+(note?' — '+note:''),m.clientId,{kind:'cita',otId:ot.id});
+      this.toast((cambio?'Turno cambiado: ':'Turno agendado: ')+fmtDate(date)+' · el cliente fue avisado');
     }
     saveDb();this.closeModal('mTurno');renderAll();
   },

@@ -292,7 +292,8 @@ t(!er.error, 'registro de errores: la función responde');
   await sb.from('machines').insert({ agency_id: aid, id: 'mt1', client_id: 'c1', brand: 'Lovol', model: 'TE254', serial: 'T1', hours: 10, data: {} });
   await sb.from('work_orders').insert([
     { agency_id: aid, id: 'OT-T1', machine_id: 'mt1', type: 'Cita preventiva', status: 'cita', data: { cita: 'solicitada', origin: 'cliente', issue: 'Revisión de las 50 horas' } },
-    { agency_id: aid, id: 'OT-T2', machine_id: 'mt1', type: 'Avería', status: 'taller', data: { issue: 'No arranca', tech: '' } }]);
+    { agency_id: aid, id: 'OT-T2', machine_id: 'mt1', type: 'Avería', status: 'taller', data: { issue: 'No arranca', tech: '' } },
+    { agency_id: aid, id: 'OT-T3', machine_id: 'mt1', type: 'Revisión preventiva', status: 'recibida', data: { origin: 'taller', issue: 'Service 50 h' } }]);
   const TW = abrir('tecnico');
   await ingresar(TW, T_TEC);
   t(ev(TW, 'esTecnico()') && TW.document.body.classList.contains('rol-tec'), 'técnico: la app lo reconoce');
@@ -321,6 +322,16 @@ t(!er.error, 'registro de errores: la función responde');
   t(await guardado(TW), 'técnico: propone día');
   r = await sb.from('work_orders').select('data').eq('agency_id', aid).eq('id', 'OT-T1').single();
   t(r.data && r.data.data.cita === 'propuesta' && r.data.data.proposedDate === '2026-12-01', 'técnico: la propuesta de turno llegó a la nube');
+  // turno interno (lo creó la agencia): se agenda y el cliente recibe alerta con la nota
+  ev(TW, "TFTec.proponer('OT-T3')");
+  t(/Agendar y avisar/.test(TW.document.querySelector('#mTurno .modal-actions .solid-btn').textContent), 'turno interno: el botón dice agendar y avisar');
+  TW.document.getElementById('turnoDate').value = '2026-12-03'; TW.document.getElementById('turnoTime').value = '10:00'; TW.document.getElementById('turnoNote').value = 'Traer la libreta de service';
+  ev(TW, 'APP.saveTurno()');
+  t(await guardado(TW), 'turno interno: se agenda');
+  const na = await sb.from('notifications').select('title,detail').eq('agency_id', aid).eq('audience', 'client').ilike('title', '%Turno agendado%');
+  t(na.data && na.data.length === 1 && /libreta de service/.test(na.data[0].detail), 'turno interno: el cliente recibe la alerta con lo que tiene que traer');
+  r = await sb.from('work_orders').select('data').eq('agency_id', aid).eq('id', 'OT-T3').single();
+  t(r.data && r.data.data.cita === 'confirmada', 'turno interno: queda confirmado');
   // cierra la orden sin tocar costos
   ev(TW, "TFTec.cerrar('OT-T2')");
   t(TW.document.getElementById('doneCosto').parentNode.style.display === 'none', 'técnico: el cierre no muestra costos');

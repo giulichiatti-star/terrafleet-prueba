@@ -195,6 +195,7 @@ const APP={
     db.ots.unshift(ot);
     m.history.unshift({ts:Date.now(),title:'OT creada · '+ot.id,detail:ot.type+(ot.issue?' · '+ot.issue:'')});
     pushNotif('admin','i-clip','OT creada',ot.id+' · '+mLabel(m));
+    if(m.clientId)pushNotif('client','i-clip','Se abrió una orden para tu '+mLabel(m),ot.type+' · '+ot.id+(ot.issue?' — '+ot.issue:''),m.clientId);
     saveDb();this.closeModal('mOT');this.toast('Orden '+ot.id+' creada');renderAll();
   },
   setOTStatus(id,status){
