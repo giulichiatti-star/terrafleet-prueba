@@ -190,6 +190,64 @@ C.location.hash = '#m=' + mid; ev(C, "TFPro.deepLink()");
 t(C.document.getElementById('mMachineInfo').classList.contains('show'), 'QR: el enlace abre la ficha del equipo al cliente');
 ev(C, "APP.closeModal('mMachineInfo')");
 
+// ── Gestión: catálogo, repuestos, usuarios, fotos e informe ──
+ev(S, "TFGest.precargarLovol()");
+t(ev(S, "db.catalog.length") >= 10 && ev(S, "db.catalog.every(c=>c.brand==='Lovol'&&c.serviceGroup==='lovol')"), 'catálogo: precarga los modelos Lovol');
+ev(S, "TFGest.precargarLovol()");
+t(ev(S, "new Set(db.catalog.map(c=>c.model)).size===db.catalog.length"), 'catálogo: precargar dos veces no duplica');
+ev(S, "TFGest.editarModelo()"); S.document.getElementById('catBrand').value = 'Roland'; S.document.getElementById('catModel').value = 'H001'; S.document.getElementById('catGroup').value = 'mini';
+S.document.getElementById('catIntH').value = '100'; S.document.getElementById('catServ').value = '85000'; ev(S, "TFGest.guardarModelo()");
+ev(S, "gotoPage('templates')");
+t(/Roland H001/.test(S.document.getElementById('tfCat').textContent), 'catálogo: el modelo cargado a mano aparece en pantalla');
+ev(S, "APP.openMachineModal()");
+t(S.document.getElementById('maCatBox').style.display === 'block' && S.document.getElementById('maCat').options.length === ev(S, "db.catalog.length") + 1, 'alta de máquina: ofrece elegir del catálogo');
+ev(S, "TFGest.usarModelo(db.catalog.find(c=>c.model==='H001').id)");
+t(S.document.getElementById('maBrand').value === 'Roland' && S.document.getElementById('maModel').value === 'H001' && S.document.getElementById('maGroup').value === 'mini' && S.document.getElementById('maIntH').value === '100' && S.document.getElementById('maServicePrice').value === '85000', 'alta de máquina: el catálogo completa marca, modelo, plantilla, intervalo y precio');
+ev(S, "APP.closeModal('mMachine')");
+ev(S, "gotoPage('parts');TFGest.editarRepuesto()");
+S.document.getElementById('ptRef').value = 'OF-2210'; S.document.getElementById('ptName').value = 'Filtro de aceite'; S.document.getElementById('ptStock').value = '5'; S.document.getElementById('ptMin').value = '2'; S.document.getElementById('ptCost').value = '4000';
+ev(S, "TFGest.guardarRepuesto()");
+t(ev(S, "db.parts.length===1&&db.parts[0].cost===4000") && /Filtro de aceite/.test(S.document.getElementById('partsTable').textContent), 'repuestos: alta con costo');
+const pid = ev(S, "db.parts[0].id");
+t(ev(S, "TFGest.usarRepuesto('OT-4102','" + pid + "',10)") === false && ev(S, "db.parts[0].stock") === 5, 'repuestos: no deja usar más de lo que hay');
+t(ev(S, "TFGest.usarRepuesto('OT-4102','" + pid + "',2)") === true && ev(S, "db.parts[0].stock") === 3, 'repuestos: usar 2 en la orden descuenta el stock a 3');
+t(ev(S, "TFGest.costoRepuestos(db.ots.find(o=>o.id==='OT-4102'))") === 8000 && ev(S, "TFPro._otMoney(db.ots.find(o=>o.id==='OT-4102')).mat") === 8000, 'repuestos: el costo entra en la rentabilidad de la orden');
+ev(S, "APP.openOtInfo('OT-4102')");
+t(/Filtro de aceite/.test(S.document.getElementById('oiExtras').textContent) && !!S.document.getElementById('exPart'), 'orden: muestra los repuestos usados y permite agregar');
+ev(S, "TFGest.devolverRepuesto('OT-4102',0)");
+t(ev(S, "db.parts[0].stock") === 5 && ev(S, "db.ots.find(o=>o.id==='OT-4102').partsUsed.length") === 0, 'repuestos: quitar de la orden devuelve al stock');
+ev(S, "TFGest.usarRepuesto('OT-4102','" + pid + "',1)");
+t(await guardado(S), 'gestión: catálogo y repuestos guardados');
+// fotos
+S.__foto = new Uint8Array([255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1]).buffer;
+const subio = await ev(S, "TFGest._subirFoto('OT-4102','antes',window.__foto)");
+t(subio === true && ev(S, "db.ots.find(o=>o.id==='OT-4102').fotos.length") === 1, 'fotos: se sube una foto «antes» a la orden');
+t(await guardado(S), 'fotos: la orden queda guardada con su foto');
+const html9 = ev(S, "buildReportHTML(db.ots.find(o=>o.id==='OT-4102'))");
+t(/Repuestos utilizados/.test(html9) && /Filtro de aceite/.test(html9) && /<h3>Antes<\/h3>/.test(html9) && /<img src="https:\/\//.test(html9), 'informe: incluye repuestos usados y la foto');
+t(!/Costo materiales|4\.000|\$ /.test(html9), 'informe: no muestra costos internos al cliente');
+x = await N.load(sb, prof);
+t(x.db.catalog.length === ev(S, "db.catalog.length") && x.db.parts[0].cost === 4000 && x.db.parts[0].stock === 4 && x.db.ots.find(o => o.id === 'OT-4102').partsUsed[0].qty === 1, 'base: catálogo, costo, stock y repuestos de la orden');
+await ev(C, 'NUBE.reload(true)');
+t(ev(C, "db.catalog.length") === x.db.catalog.length && ev(C, "db.parts.length") === 0, 'cliente: recibe el catálogo pero no ve repuestos');
+const rutaFoto = ev(S, "db.ots.find(o=>o.id==='OT-4102').fotos[0].p");
+await ev(S, "TFGest.borrarFoto('OT-4102','" + rutaFoto + "')");
+t(ev(S, "db.ots.find(o=>o.id==='OT-4102').fotos.length") === 0, 'fotos: se puede borrar');
+// usuarios
+ev(S, "gotoPage('settings')");
+t(await hasta(() => /zz-staff/.test(S.document.getElementById('tfUsers').textContent)), 'usuarios: lista a los usuarios de la agencia');
+const mailU = 'zz-ui-' + Date.now() + '@test.invalid';
+ev(S, "TFGest.nuevoUsuario()"); S.document.getElementById('uNombre').value = 'Tec UI'; S.document.getElementById('uEmail').value = mailU; S.document.getElementById('uRol').value = 'tecnico';
+ev(S, "TFGest.crearUsuario()");
+t(await hasta(() => !!S.document.getElementById('uClaveOut')), 'usuarios: crea la cuenta y muestra la contraseña provisoria');
+const claveU = S.document.getElementById('uClaveOut').textContent;
+const sbU = createClient(URL_, KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+const rU = await sbU.auth.signInWithPassword({ email: mailU, password: claveU });
+const pU = rU.error ? null : await N.profile(sbU);
+t(!rU.error && pU && pU.role === 'tecnico', 'usuarios: la persona entra con esos datos como técnico');
+ev(S, "TFGest.cerrar('mUser')");
+await guardado(S);
+
 // ── Sin señal ──
 S.__off = true;
 ev(S, "APP.openClientModal('c1')");

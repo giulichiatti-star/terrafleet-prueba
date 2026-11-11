@@ -137,7 +137,7 @@ const TFPro={};
   const costoHora=()=>Number(db.meta.costoHora)||0;
   function otMoney(o){
     const ingreso=o.invoiced?Number(o.invoiceBase||0):((o.presupuesto&&o.presupuesto.approved===true)?Number(o.presupuesto.base||0):null);
-    const horas=Number(o.horasTrabajo)||0,mat=Number(o.costoMateriales)||0;
+    const horas=Number(o.horasTrabajo)||0,mat=(Number(o.costoMateriales)||0)+(typeof TFGest!=='undefined'?TFGest.costoRepuestos(o):0);
     const costo=horas*costoHora()+mat;
     return {ingreso,horas,mat,costo,margen:ingreso==null?null:ingreso-costo};
   }

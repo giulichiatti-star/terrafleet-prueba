@@ -55,6 +55,16 @@
         data: rest(p, ['id', 'ref', 'name', 'stock', 'min']) }),
       fromRow: r => Object.assign({}, r.data || {}, { id: r.id, ref: r.ref || '', name: r.name, stock: Number(r.stock) || 0, min: Number(r.min_stock) || 0 })
     },
+    catalog: {
+      table: 'catalog_models', stamped: true,
+      toRow: (c, aid) => ({ agency_id: aid, id: c.id, brand: c.brand || '', model: c.model || '', icon_key: c.iconKey || null, service_group: c.serviceGroup || null,
+        interval_h: c.intervalH == null || c.intervalH === '' ? null : Number(c.intervalH), interval_m: c.intervalM == null || c.intervalM === '' ? null : Number(c.intervalM),
+        sale_price: c.salePrice == null || c.salePrice === '' ? null : Number(c.salePrice), service_price: c.servicePrice == null || c.servicePrice === '' ? null : Number(c.servicePrice),
+        active: c.active !== false, data: rest(c, ['id', 'brand', 'model', 'iconKey', 'serviceGroup', 'intervalH', 'intervalM', 'salePrice', 'servicePrice', 'active']) }),
+      fromRow: r => Object.assign({}, r.data || {}, { id: r.id, brand: r.brand, model: r.model, iconKey: r.icon_key || '', serviceGroup: r.service_group || '',
+        intervalH: r.interval_h == null ? '' : Number(r.interval_h), intervalM: r.interval_m == null ? '' : Number(r.interval_m),
+        salePrice: r.sale_price == null ? '' : Number(r.sale_price), servicePrice: r.service_price == null ? '' : Number(r.service_price), active: r.active !== false })
+    },
     notifs: {
       table: 'notifications', stamped: false,
       toRow: (n, aid) => clean({ agency_id: aid, id: n.id, audience: n.audience === 'client' ? 'client' : 'admin', client_id: n.clientId || null, icon: n.icon || null,
@@ -63,7 +73,7 @@
     }
   };
   // Orden de subida: respeta las relaciones (cliente → máquina → orden).
-  const ORDER = ['clients', 'machines', 'ots', 'parts', 'notifs'];
+  const ORDER = ['clients', 'machines', 'ots', 'parts', 'catalog', 'notifs'];
 
   const histKey = (mid, h) => mid + '|' + iso(h.ts) + '|' + (h.title || '');
   const histRow = (aid, mid, h) => ({ agency_id: aid, machine_id: mid, ts: iso(h.ts), title: h.title || '', detail: h.detail || null, data: rest(h, ['ts', 'title', 'detail']) });
@@ -103,18 +113,19 @@
   /* ───────── Bajar todo ───────── */
   async function load(sb, prof) {
     const aid = prof.agency_id;
-    const [ag, cl, ma, hi, ot, pa, no] = await Promise.all([
+    const [ag, cl, ma, hi, ot, pa, no, ca] = await Promise.all([
       sb.from('agencies').select('*').eq('id', aid).single().then(r => { if (r.error) throw r.error; return r.data; }),
       fetchAll(sb, 'clients', aid, 'created_at', true),
       fetchAll(sb, 'machines', aid, 'created_at', true),
       fetchAll(sb, 'machine_history', aid, 'ts', false),
       fetchAll(sb, 'work_orders', aid, 'created_at', false),
       fetchAll(sb, 'parts', aid, 'created_at', true),
-      fetchAll(sb, 'notifications', aid, 'ts', false, 200)
+      fetchAll(sb, 'notifications', aid, 'ts', false, 200),
+      fetchAll(sb, 'catalog_models', aid, 'created_at', true)
     ]);
-    const snap = { clients: new Map(), machines: new Map(), ots: new Map(), parts: new Map(), notifs: new Map(), hist: new Set(), meta: '' };
-    const db = { meta: null, session: { clientId: prof.role === 'cliente' ? prof.client_id : null }, clients: [], machines: [], ots: [], notifs: [], parts: [] };
-    const src = { clients: cl, machines: ma, ots: ot, parts: pa, notifs: no };
+    const snap = { clients: new Map(), machines: new Map(), ots: new Map(), parts: new Map(), catalog: new Map(), notifs: new Map(), hist: new Set(), meta: '' };
+    const db = { meta: null, session: { clientId: prof.role === 'cliente' ? prof.client_id : null }, clients: [], machines: [], ots: [], notifs: [], parts: [], catalog: [] };
+    const src = { clients: cl, machines: ma, ots: ot, parts: pa, notifs: no, catalog: ca };
     ORDER.forEach(k => {
       src[k].forEach(r => {
         const o = MAP[k].fromRow(r);
@@ -140,14 +151,14 @@
 
   function signature(snap) {
     let s = snap.meta;
-    ORDER.forEach(k => { snap[k].forEach((v, id) => { s += '\n' + id + v.c; }); });
+    ORDER.forEach(k => { (snap[k] || []).forEach((v, id) => { s += '\n' + id + v.c; }); });
     return s + '\n#h' + snap.hist.size;
   }
 
   // ¿Hay algo en `db` que todavía no esté en la nube?
   function pending(db, state) {
     const aid = state.aid, snap = state.snap;
-    for (const k of ORDER) for (const o of db[k]) { const s = snap[k].get(o.id); if (!s || s.c !== canon(MAP[k].toRow(o, aid))) return true; }
+    for (const k of ORDER) { if (k === 'catalog' && !state.staff) continue; for (const o of (db[k] || [])) { const s = snap[k] && snap[k].get(o.id); if (!s || s.c !== canon(MAP[k].toRow(o, aid))) return true; } }
     for (const m of db.machines) for (const h of (m.history || [])) if (!snap.hist.has(histKey(m.id, h))) return true;
     return state.staff && canon(metaRow(db)) !== snap.meta;
   }
@@ -168,7 +179,9 @@
     };
 
     for (const k of ORDER) {
-      const M = MAP[k], S = snap[k], news = [], upds = [];
+      const M = MAP[k], S = snap[k] || (snap[k] = new Map()), news = [], upds = [];
+      if (!db[k]) db[k] = [];
+      if (k === 'catalog' && !state.staff) continue; // el cliente solo lo lee
       db[k].forEach(o => {
         const row = M.toRow(o, aid), c = canon(row), s = S.get(o.id);
         if (!s) news.push({ o: o, row: row, c: c }); else if (s.c !== c) upds.push({ o: o, row: row, c: c, s: s });
@@ -257,19 +270,19 @@
   // Estado vacío: para subir por primera vez los datos que estaban en el navegador.
   function emptyState(prof) {
     return { aid: prof.agency_id, role: prof.role, staff: prof.role !== 'cliente',
-      snap: { clients: new Map(), machines: new Map(), ots: new Map(), parts: new Map(), notifs: new Map(), hist: new Set(), meta: '' } };
+      snap: { clients: new Map(), machines: new Map(), ots: new Map(), parts: new Map(), catalog: new Map(), notifs: new Map(), hist: new Set(), meta: '' } };
   }
 
   // Copia local (modo sin señal): el estado se guarda como texto y se rearma al abrir.
   function pack(state) {
     const s = state.snap;
     return { aid: state.aid, role: state.role, staff: state.staff, snap: { meta: s.meta, hist: Array.from(s.hist),
-      clients: Array.from(s.clients), machines: Array.from(s.machines), ots: Array.from(s.ots), parts: Array.from(s.parts), notifs: Array.from(s.notifs) } };
+      clients: Array.from(s.clients), machines: Array.from(s.machines), ots: Array.from(s.ots), parts: Array.from(s.parts), catalog: Array.from(s.catalog || []), notifs: Array.from(s.notifs) } };
   }
   function unpack(o) {
     const s = o.snap;
     return { aid: o.aid, role: o.role, staff: o.staff, snap: { meta: s.meta, hist: new Set(s.hist),
-      clients: new Map(s.clients), machines: new Map(s.machines), ots: new Map(s.ots), parts: new Map(s.parts), notifs: new Map(s.notifs) } };
+      clients: new Map(s.clients), machines: new Map(s.machines), ots: new Map(s.ots), parts: new Map(s.parts), catalog: new Map(s.catalog || []), notifs: new Map(s.notifs) } };
   }
 
   const api = { pack: pack, unpack: unpack, canon: canon, profile: profile, load: load, push: push, pending: pending, signature: signature, emptyState: emptyState, MAP: MAP, metaRow: metaRow };

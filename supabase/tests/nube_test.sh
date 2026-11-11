@@ -31,6 +31,8 @@ limpiar() {
          delete from public.work_orders where agency_id = a;
          delete from public.notifications where agency_id = a;
          delete from public.parts where agency_id = a;
+         delete from public.catalog_models where agency_id = a;
+         delete from public.invitations where agency_id = a;
          delete from public.machines where agency_id = a;
          delete from auth.users where id in (select user_id from public.profiles where agency_id = a);
          delete from public.clients where agency_id = a;
