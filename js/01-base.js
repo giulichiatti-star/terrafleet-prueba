@@ -20,6 +20,15 @@ function tfFlushErrors(){
 window.addEventListener('error',function(e){tfLogError(e.message,(e.error&&e.error.stack)||((e.filename||'')+':'+(e.lineno||'')))});
 window.addEventListener('unhandledrejection',function(e){const r=e.reason;tfLogError('Promesa: '+((r&&r.message)||r),r&&r.stack)});
 
+/* ================= MARCA =================
+   Paleta de la agencia (la calcula js/08-pro.js). Los documentos que se imprimen
+   (informe, factura) no heredan las variables CSS de la app: leen los colores de acá. */
+let TF_PAL=null;
+function brandP(){return (TF_PAL&&TF_PAL.green)||'#14402c'}     /* principal */
+function brandS(){return (TF_PAL&&TF_PAL.green2)||'#2f7a52'}    /* principal, tono medio */
+function brandA(){return (TF_PAL&&TF_PAL.lime)||'#c9f464'}      /* resalte */
+function brandOnA(){return (TF_PAL&&TF_PAL.onLime)||'#12331f'}  /* texto sobre el resalte */
+
 /* ================= UTILIDADES ================= */
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);

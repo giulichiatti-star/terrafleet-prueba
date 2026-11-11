@@ -186,15 +186,57 @@ const TFPro={};
         return '<div class="req" style="border-left-color:'+(x.dias<=0?'var(--red)':(x.dias<=30?'var(--amber)':'var(--green2)'))+'" onclick="APP.openMachineInfo(\''+x.m.id+'\')"><div style="flex:1"><b>'+esc(mLabel(x.m))+'</b> <span class="small">'+esc(c?c.name:'')+'</span><div class="small">'+esc(x.label)+'</div></div><div style="text-align:right"><b>'+(x.precio?money(x.precio):'<span class="small">sin precio</span>')+'</b></div></div>'}).join('');
   }
 
-  /* ───────────── Marca por agencia ───────────── */
-  function lum(hex){const n=parseInt(hex.slice(1),16),r=(n>>16)/255,g=((n>>8)&255)/255,b=(n&255)/255;return .2126*r+.7152*g+.0722*b}
+  /* ───────────── Marca por agencia ─────────────
+     La agencia elige dos colores: PRINCIPAL (barra lateral, botones, títulos) y RESALTE
+     (detalles y botón de ingresar). El resto de la paleta se calcula de ahí, cuidando
+     que el texto siempre se lea. Los colores de estado (rojo/ámbar/verde) no cambian. */
+  const hx=h=>{const n=parseInt(h.slice(1),16);return [(n>>16)&255,(n>>8)&255,n&255]};
+  const toHex=(r,g,b)=>'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+  function lum(hex){const c=hx(hex).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+  const contraste=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+  function hsl(hex){let [r,g,b]=hx(hex).map(v=>v/255);const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let h=0,s=0;
+    if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}return [h,s,l]}
+  function fromHsl(h,s,l){s=Math.max(0,Math.min(1,s));l=Math.max(0,Math.min(1,l));
+    const f=(p,q,t)=>{t=(t+1)%1;return t<1/6?p+(q-p)*6*t:t<1/2?q:t<2/3?p+(q-p)*(2/3-t)*6:p};
+    if(!s)return toHex(l*255,l*255,l*255);const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;return toHex(f(p,q,h+1/3)*255,f(p,q,h)*255,f(p,q,h-1/3)*255)}
+  const esHex=v=>/^#[0-9a-f]{6}$/i.test(v||'');
+  /* Texto sobre un color: el tono oscuro de la marca si alcanza; si no, blanco o negro, el que más contraste dé. */
+  function sobre(fondo,oscuroMarca){
+    if(contraste(oscuroMarca,fondo)>=4.5)return oscuroMarca;
+    return contraste('#ffffff',fondo)>=contraste('#000000',fondo)?'#ffffff':'#000000';
+  }
+  /* Devuelve la paleta completa, o null si la agencia no eligió colores. */
+  function paleta(b){
+    const p0=esHex(b.primary)?b.primary:null,a0=esHex(b.accent)?b.accent:(esHex(b.color)?b.color:null);
+    if(!p0&&!a0)return null;
+    let [h,s,l]=hsl(p0||'#14402c');
+    /* el principal lleva texto blanco encima: si es muy claro, se oscurece hasta que se lea */
+    let green=fromHsl(h,s,l),ajustado=false;
+    while(contraste(green,'#ffffff')<5.2&&l>.04){l-=.02;green=fromHsl(h,s,l);ajustado=true}
+    let l2=Math.max(l+.14,.34),green2=fromHsl(h,Math.min(s,.62),l2);
+    while(contraste(green2,'#ffffff')<4.2&&l2>.1){l2-=.02;green2=fromHsl(h,Math.min(s,.62),l2)}
+    const lime=a0||'#c9f464',sg=Math.min(s,.5);
+    return {ajustado,green,green2,greenH:fromHsl(h,s,Math.min(l+.07,.5)),side1:fromHsl(h,s,Math.min(l+.015,.4)),side2:fromHsl(h,s,l*.66),
+      ov1:fromHsl(h,s*.9,Math.min(l,.2)*.9),ov2:fromHsl(h,s*.9,Math.min(l,.2)*.5),
+      lime,onLime:sobre(lime,fromHsl(h,Math.min(s,.5),.13)),
+      ink:fromHsl(h,Math.min(s,.4),.11),muted:fromHsl(h,Math.min(s,.08),.44),line:fromHsl(h,sg*.28,.895),bg:fromHsl(h,sg*.32,.955),
+      tint:fromHsl(h,sg*.45,.95),tint2:fromHsl(h,sg*.4,.86),limeSoft:fromHsl(h,Math.min(s,.55),.93)};
+  }
+  TFPro._paleta=paleta;TFPro._contraste=contraste;
+  const VARS={green:'--green',green2:'--green2',greenH:'--green-h',side1:'--side1',side2:'--side2',ov1:'--ov1',ov2:'--ov2',lime:'--lime',onLime:'--on-lime'};
+  const VARS_CLARO={ink:'--ink',muted:'--muted',line:'--line',bg:'--bg',tint:'--tint',tint2:'--tint2',limeSoft:'--lime-soft'};
   function applyBrand(){
     const b=(db.meta&&db.meta.brand)||{},biz=(db.meta&&db.meta.biz)||{};
     const mark=document.querySelector('.brandmark'),name=document.querySelector('.brandname'),sub=document.querySelector('.brandsub');
     if(mark){if(b.logo){mark.innerHTML='<img src="'+b.logo+'" alt="">';mark.classList.add('has-logo')}else{mark.innerHTML='<svg class="ic"><use href="#i-tractor"/></svg>';mark.classList.remove('has-logo')}}
     if(NUBE.on){if(name)name.textContent=biz.name||'TerraFleet';if(sub)sub.textContent='Servicio técnico · TerraFleet'}
-    const root=document.documentElement.style;
-    if(b.color&&/^#[0-9a-f]{6}$/i.test(b.color)&&lum(b.color)>.45){root.setProperty('--lime',b.color)}else root.removeProperty('--lime');
+    const root=document.documentElement.style,pal=paleta(b),oscuro=document.documentElement.getAttribute('data-theme')==='dark';
+    TF_PAL=pal;
+    Object.keys(VARS).forEach(k=>{if(pal)root.setProperty(VARS[k],pal[k]);else root.removeProperty(VARS[k])});
+    /* en modo oscuro los fondos y textos los pone el tema, no la marca */
+    Object.keys(VARS_CLARO).forEach(k=>{if(pal&&!oscuro)root.setProperty(VARS_CLARO[k],pal[k]);else root.removeProperty(VARS_CLARO[k])});
+    if(pal&&oscuro)root.setProperty('--green2',fromHsl(hsl(pal.green)[0],Math.min(hsl(pal.green)[1],.55),.56));
+    const tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content=oscuro?'#0b1711':(pal?pal.green:'#14402c');
   }
   TFPro.applyBrand=applyBrand;
   TFPro.logoHTML=function(h){const b=(db.meta&&db.meta.brand)||{};return b.logo?'<img src="'+b.logo+'" alt="" style="height:'+(h||44)+'px;max-width:160px;object-fit:contain;vertical-align:middle;margin-right:10px">':''};
@@ -209,12 +251,16 @@ const TFPro={};
     r.readAsDataURL(file);
   };
   TFPro.clearLogo=function(){if(db.meta.brand){delete db.meta.brand.logo;saveDb();applyBrand();renderSettings()}};
-  TFPro.setColor=function(v){
-    if(!/^#[0-9a-f]{6}$/i.test(v))return;
-    if(lum(v)<=.45){toast('Elegí un color claro: se usa de resalte sobre fondo oscuro');return}
-    db.meta.brand=Object.assign({},db.meta.brand,{color:v});saveDb();applyBrand();
+  const TEMAS=[['Azul y blanco','#12407a','#ffffff'],['Azul y celeste','#143a66','#7cc4ff'],['Gris y naranja','#2b2f36','#ff9f43'],['Bordó y dorado','#5a1f2b','#e8c468'],['Negro y lima','#141614','#c9f464'],['Petróleo y turquesa','#0f3b46','#5fe0d0']];
+  TFPro.setColors=function(primary,accent){
+    const b=Object.assign({},db.meta.brand);
+    if(primary!==undefined){if(!esHex(primary))return;b.primary=primary}
+    if(accent!==undefined){if(!esHex(accent))return;b.accent=accent;delete b.color}
+    db.meta.brand=b;saveDb();applyBrand();renderSettings();
+    if(TF_PAL&&TF_PAL.ajustado&&primary!==undefined)toast('Oscurecimos un poco el color principal para que el texto se lea');
   };
-  TFPro.resetColor=function(){if(db.meta.brand){delete db.meta.brand.color;saveDb();applyBrand();renderSettings()}};
+  TFPro.setColor=function(v){TFPro.setColors(undefined,v)};
+  TFPro.resetColor=function(){if(db.meta.brand){delete db.meta.brand.color;delete db.meta.brand.primary;delete db.meta.brand.accent;saveDb();applyBrand();renderSettings()}};
   TFPro.saveCostoHora=function(){const v=Number($('#tfCostoHora').value);db.meta.costoHora=v>0?v:0;saveDb();toast('Costo de la hora guardado')};
 
   /* ───────────── Modo oscuro (por equipo, no por agencia) ───────────── */
@@ -222,8 +268,8 @@ const TFPro={};
   function applyTheme(){
     let t='claro';try{t=localStorage.getItem('tf_tema')||'claro'}catch(e){}
     document.documentElement.setAttribute('data-theme',t==='oscuro'?'dark':'light');
-    const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='oscuro'?'#0b1711':'#14402c';
     document.querySelectorAll('[data-tema]').forEach(b=>b.classList.toggle('active',b.dataset.tema===t));
+    try{applyBrand()}catch(e){}
   }
 
   /* ───────────── Montaje ───────────── */
@@ -271,8 +317,12 @@ const TFPro={};
       '<label>Logo de la agencia</label><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px"><div class="logo-prev">'+(b.logo?'<img src="'+b.logo+'" alt="">':'<svg class="ic"><use href="#i-image"/></svg>')+'</div>'+
         '<button class="outline-btn" onclick="document.getElementById(\'tfLogoFile\').click()">Subir logo…</button>'+(b.logo?'<button class="outline-btn" onclick="TFPro.clearLogo()">Quitar</button>':'')+
         '<input type="file" id="tfLogoFile" accept="image/*" style="display:none" onchange="TFPro.setLogo(this.files[0]);this.value=\'\'"></div>'+
-      '<label>Color de resalte</label><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px"><input type="color" value="'+esc(b.color||'#c9f464')+'" onchange="TFPro.setColor(this.value)" style="width:46px;height:36px;border:1px solid var(--line);border-radius:10px;background:none;padding:2px">'+
-        (b.color?'<button class="outline-btn" onclick="TFPro.resetColor()">Volver al original</button>':'<span class="small">Tiene que ser un color claro.</span>')+'</div>'+
+      '<label>Colores de la agencia</label><div class="col-row">'+
+        '<div><input type="color" aria-label="Color principal" value="'+esc(esHex(b.primary)?b.primary:'#14402c')+'" onchange="TFPro.setColors(this.value)"><span><b>Principal</b><small>Barra lateral, botones y títulos</small></span></div>'+
+        '<div><input type="color" aria-label="Color de resalte" value="'+esc(esHex(b.accent)?b.accent:(esHex(b.color)?b.color:'#c9f464'))+'" onchange="TFPro.setColors(undefined,this.value)"><span><b>Resalte</b><small>Detalles y botón de ingresar</small></span></div></div>'+
+      '<div class="temas">'+TEMAS.map(t=>'<button class="tema" title="'+esc(t[0])+'" onclick="TFPro.setColors(\''+t[1]+'\',\''+t[2]+'\')"><i style="background:'+t[1]+'"></i><i style="background:'+t[2]+'"></i><span>'+esc(t[0])+'</span></button>').join('')+
+        '<button class="tema" onclick="TFPro.resetColor()"><i style="background:#14402c"></i><i style="background:#c9f464"></i><span>Verde original</span></button></div>'+
+      '<div class="small" style="margin:6px 0 14px">Se aplica a la app, al portal del cliente, al informe y a la factura. Los colores de estado (vencido, próximo, correcto) no cambian.</div>'+
       '<label>Costo de la hora de taller ($)</label><div style="display:flex;gap:8px;margin-bottom:14px"><input class="field" id="tfCostoHora" type="number" min="0" step="100" value="'+(Number(db.meta.costoHora)||'')+'" placeholder="Ej. 18000" style="max-width:180px"><button class="outline-btn" onclick="TFPro.saveCostoHora()">Guardar</button></div>'+
       '<div class="small" style="margin:-8px 0 14px">Lo que le cuesta a la agencia una hora de técnico. Se usa para calcular el margen de cada orden en Informes.</div>'+
       '<label>Apariencia en este equipo</label><div class="filters" style="margin:0 0 14px"><button class="filter" data-tema="claro" onclick="TFPro.setTheme(\'claro\')">Claro</button><button class="filter" data-tema="oscuro" onclick="TFPro.setTheme(\'oscuro\')">Oscuro</button></div>'+

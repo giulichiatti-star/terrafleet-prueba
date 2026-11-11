@@ -7,6 +7,17 @@ body.nube .brandname{font-size:15px;line-height:1.2;white-space:normal;overflow-
 .logo-prev{width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;overflow:hidden;color:var(--muted);flex:none}
 .logo-prev img{width:100%;height:100%;object-fit:contain}
 
+.col-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.col-row>div{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.col-row input[type=color]{width:42px;height:36px;border:1px solid var(--line);border-radius:9px;background:none;padding:2px;flex:none;cursor:pointer}
+.col-row b{display:block;font-size:13px}.col-row small{display:block;font-size:11px;color:var(--muted);line-height:1.3}
+.temas{display:flex;flex-wrap:wrap;gap:6px}
+.tema{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px 4px 5px;font-size:11.5px;color:var(--ink);font-family:inherit;font-weight:600;cursor:pointer}
+.tema:hover{border-color:var(--green2)}
+.tema i{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.15);display:inline-block}
+.tema i+i{margin-left:-5px}.tema span{margin-left:7px}
+@media(max-width:720px){.col-row{grid-template-columns:1fr}}
+
 /* ───────── Buscador ───────── */
 .modal-backdrop.tfs{align-items:flex-start;padding-top:10vh}
 .tfs-panel{width:min(620px,100%);background:var(--panel);border-radius:18px;box-shadow:0 30px 70px rgba(0,0,0,.3);overflow:hidden;animation:modin .22s cubic-bezier(.2,.7,.3,1)}
@@ -105,6 +116,7 @@ th.num,td.num{text-align:right;white-space:nowrap}
 :root[data-theme=dark]{
   color-scheme:dark;
   --bg:#0b1711; --panel:#13221b; --ink:#e7f0ea; --muted:#93a89b; --line:#24382d;
+  --tint:#1b2e24; --tint2:#2a4234;
   --lime-soft:#1f3322; --amber-soft:#3a2f14; --red-soft:#3d1f1b; --blue-soft:#1a2b40;
   --shadow:0 14px 36px rgba(0,0,0,.4);
 }
@@ -148,11 +160,6 @@ th.num,td.num{text-align:right;white-space:nowrap}
 :root[data-theme=dark] .lov-ic,
 :root[data-theme=dark] .meta,
 :root[data-theme=dark] .tile.t-green{background:#1b2e24}
-:root[data-theme=dark] [style*="background:#edf4ec"],
-:root[data-theme=dark] [style*="background:#fbfdfc"],
-:root[data-theme=dark] [style*="background:#e9f1e8"],
-:root[data-theme=dark] [style*="background:#e4efe7"],
-:root[data-theme=dark] [style*="background:#f4f7f3"]{background:#1b2e24!important}
 :root[data-theme=dark] .sigpad,
 :root[data-theme=dark] .qr-box,
 :root[data-theme=dark] .logo-prev,

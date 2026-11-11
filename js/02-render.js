@@ -68,7 +68,7 @@ function machineCardHTML(m,clientView){
   const pix=machinePix(m);
   const fotoHTML=pix?'<img src="'+pix+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block"/>':'';
   return '<div class="card machine-card hov" style="cursor:pointer" onclick="APP.openMachineInfo(\''+m.id+'\')">'+
-    (clientView&&pix?'<div style="height:150px;border-radius:14px;overflow:hidden;background:#edf4ec">'+fotoHTML+'</div>':'')+
+    (clientView&&pix?'<div style="height:150px;border-radius:14px;overflow:hidden;background:var(--tint)">'+fotoHTML+'</div>':'')+
     '<div class="machine-card-top" onclick="event.stopPropagation()"><div class="machine-hero-icon" style="overflow:hidden">'+(pix?fotoHTML:'<svg class="ic ic-lg"><use href="'+iconOf(m)+'"/></svg>')+'</div>'+badge+'</div>'+
     '<h3>'+esc(mLabel(m))+'</h3><div class="serial">SN '+esc(m.serial||'—')+(clientView?'':' · '+esc(c?c.name:'—'))+'</div>'+
     '<div class="meter"><div><div class="small">Horómetro</div><div class="big">'+nf(m.hours)+' h</div></div><button class="outline-btn" onclick="APP.openHours(\''+m.id+'\')"><svg class="ic ic-xs"><use href="#i-gauge"/></svg>Actualizar</button></div>'+
@@ -317,7 +317,7 @@ function renderWsDay(){
       const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
       const firma=o.signature?'<span class="badge ok">Firmado por el cliente ✓</span>':(o.ready?'<span class="badge warn">Retiro desde '+fmtDate(o.pickupDate||todayISO())+(o.pickupTime?' '+o.pickupTime:'')+'</span>':'');
       const demora=Math.max(0,Math.round((o.closedAt-o.createdAt)/86400000));
-      return '<div class="apt done"><div class="apt-time" style="background:#e4efe7;color:#335"><div>✓</div><span>'+esc(o.workDone?o.workDone.slice(0,10):o.type)+'</span></div>'+
+      return '<div class="apt done"><div class="apt-time" style="background:var(--tint);color:#335"><div>✓</div><span>'+esc(o.workDone?o.workDone.slice(0,10):o.type)+'</span></div>'+
         '<div style="flex:1;min-width:0"><b>'+esc(m?mLabel(m):'—')+'</b> <span class="badge ok">Completado</span> '+firma+
         '<div class="small">'+esc(c?c.name:'—')+(m&&m.serial?' · SN '+esc(m.serial):'')+' · '+esc(o.tech||'—')+' · tardó '+demora+' día'+(demora===1?'':'s')+'</div>'+
         '<div class="small">'+esc(o.workDone||o.issue||o.type)+'</div></div>'+
@@ -512,17 +512,17 @@ function renderClientHome(){
     const npix=machinePix(next);
     $('#chNextCard').innerHTML=(npix?'<div style="height:130px;border-radius:12px;overflow:hidden;margin:-4px -4px 14px"><img src="'+npix+'" style="width:100%;height:100%;object-fit:cover"/></div>':'')+'<span class="badge"><svg class="ic ic-xs"><use href="#i-clock"/></svg>Próximo mantenimiento</span>'+
       '<div class="service-number">'+(info.hoursLeft>0?nf(info.hoursLeft)+' h':'¡Ya!')+'</div>'+
-      '<div style="font-size:13px;color:#d7e7dc">'+esc(mLabel(next))+' · revisión cada '+nf(next.intervalH)+' h</div>'+
+      '<div style="font-size:13px;color:var(--tint2)">'+esc(mLabel(next))+' · revisión cada '+nf(next.intervalH)+' h</div>'+
       '<div class="progress" style="background:rgba(255,255,255,.15);margin-top:22px"><div style="width:'+info.pct+'%;background:'+(info.state==='overdue'?'#f1b94c':'var(--lime)')+'"></div></div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#cde0d2"><span>'+nf(next.hours)+' h actuales</span><span>'+nf(next.lastServiceHours+next.intervalH)+' h servicio</span></div>'+
-      (info.state!=='ok'?'<div class="action-row" style="justify-content:center"><button class="solid-btn" style="background:var(--lime);color:#17321f" onclick="APP.requestCita(\''+next.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>Pedir turno ahora</button></div>':'');
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tint2)"><span>'+nf(next.hours)+' h actuales</span><span>'+nf(next.lastServiceHours+next.intervalH)+' h servicio</span></div>'+
+      (info.state!=='ok'?'<div class="action-row" style="justify-content:center"><button class="solid-btn" style="background:var(--lime);color:var(--on-lime)" onclick="APP.requestCita(\''+next.id+'\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>Pedir turno ahora</button></div>':'');
   }else{
-    $('#chNextCard').innerHTML='<span class="badge">Sin máquinas</span><div class="service-number">—</div><div style="font-size:13px;color:#d7e7dc">Cuando el taller registre tus equipos, van a aparecer acá.</div>';
+    $('#chNextCard').innerHTML='<span class="badge">Sin máquinas</span><div class="service-number">—</div><div style="font-size:13px;color:var(--tint2)">Cuando el taller registre tus equipos, van a aparecer acá.</div>';
   }
   document.getElementById('chMachines').innerHTML=ms.map(mm=>{
     const pix=machinePix(mm);
     return '<div title="'+esc(mLabel(mm))+'" onclick="APP.gotoPage(\'clientmachines\')" style="flex:none;cursor:pointer;text-align:center">'+
-      '<div style="width:120px;height:78px;border-radius:12px;overflow:hidden;background:#e9f1e8;display:grid;place-items:center">'+(pix?'<img src="'+pix+'" style="width:100%;height:100%;object-fit:cover"/>':'<svg class="ic" style="width:30px;height:30px;color:#2f7a52"><use href="'+iconOf(mm)+'"/></svg>')+'</div>'+
+      '<div style="width:120px;height:78px;border-radius:12px;overflow:hidden;background:var(--tint);display:grid;place-items:center">'+(pix?'<img src="'+pix+'" style="width:100%;height:100%;object-fit:cover"/>':'<svg class="ic" style="width:30px;height:30px;color:var(--green2)"><use href="'+iconOf(mm)+'"/></svg>')+'</div>'+
       '<div class="small" style="margin-top:3px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(mLabel(mm))+'</div></div>';
   }).join('');
   const myOpen=db.ots.filter(o=>otAbierta(o)&&ms.some(m=>m.id===o.machineId));
@@ -533,7 +533,7 @@ function renderClientHome(){
   let att='';
   if(propuestas||paraFirmar){
     att='<div style="display:flex;flex-direction:column;gap:8px;margin:0 0 4px">'+
-      (paraFirmar?'<button class="solid-btn" style="background:var(--lime);color:#17321f" onclick="APP.gotoPage(\'clientservices\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>'+paraFirmar+' informe'+(paraFirmar>1?'s':'')+' para firmar — tu máquina está lista</button>':'')+
+      (paraFirmar?'<button class="solid-btn" style="background:var(--lime);color:var(--on-lime)" onclick="APP.gotoPage(\'clientservices\')"><svg class="ic ic-xs"><use href="#i-check"/></svg>'+paraFirmar+' informe'+(paraFirmar>1?'s':'')+' para firmar — tu máquina está lista</button>':'')+
       (propuestas?'<button class="solid-btn" onclick="APP.gotoPage(\'clientservices\')"><svg class="ic ic-xs"><use href="#i-cal"/></svg>'+propuestas+' turno'+(propuestas>1?'s':'')+' esperando tu respuesta</button>':'')+
       '</div>';
   }
@@ -606,7 +606,7 @@ function renderCsTrack(ms){
   $('#csTrack').innerHTML='<div class="section-head" style="margin-bottom:8px"><div><div class="section-title">Seguimiento del servicio</div><div class="section-sub">Con tu equipo en el taller, ves el avance paso a paso.</div></div></div>'+
     act.map(o=>{
       const m=machineOf(o.machineId);
-      return '<div class="planm" style="background:#fbfdfc"><div class="planm-h">'+mThumb(m)+'<div style="flex:1;min-width:0"><b>'+esc(m?mLabel(m):'')+'</b><div class="small">'+esc(o.id)+(o.tech?' · Técnico: '+esc(o.tech):'')+' · '+esc(OT_ESTADOS[o.status]||'')+'</div></div></div>'+
+      return '<div class="planm" style="background:var(--tint)"><div class="planm-h">'+mThumb(m)+'<div style="flex:1;min-width:0"><b>'+esc(m?mLabel(m):'')+'</b><div class="small">'+esc(o.id)+(o.tech?' · Técnico: '+esc(o.tech):'')+' · '+esc(OT_ESTADOS[o.status]||'')+'</div></div></div>'+
         '<ul class="tl">'+otSteps(o).map(s=>'<li class="'+s.st+'"><span class="dot">'+(s.st==='done'?'<svg><use href="#i-check"/></svg>':'')+'</span><div class="t">'+esc(s.t)+'</div>'+(s.s?'<div class="s">'+esc(s.s)+'</div>':'')+'</li>').join('')+'</ul></div>';
     }).join('');
 }

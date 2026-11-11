@@ -76,7 +76,7 @@ const APP={
   clearMachinePhoto(){
     this._fotoTmp=null;
     const p=document.getElementById('maFotoPrev');
-    p.innerHTML='<svg class="ic" style="width:26px;height:26px;color:#2f7a52"><use href="#i-tractor"/></svg>';
+    p.innerHTML='<svg class="ic" style="width:26px;height:26px;color:var(--green2)"><use href="#i-tractor"/></svg>';
     document.getElementById('maFotoDel').style.display='none';
   },
   renderThumbs(sel){
@@ -120,7 +120,7 @@ const APP={
     this._fotoTmp=undefined;
     const fp=document.getElementById('maFotoPrev');
     if(m&&m.foto){fp.innerHTML='<img src="'+m.foto+'" style="width:100%;height:100%;object-fit:cover"/>';document.getElementById('maFotoDel').style.display='inline-flex'}
-    else{fp.innerHTML='<svg class="ic" style="width:26px;height:26px;color:#2f7a52"><use href="#i-tractor"/></svg>';document.getElementById('maFotoDel').style.display='none'}
+    else{fp.innerHTML='<svg class="ic" style="width:26px;height:26px;color:var(--green2)"><use href="#i-tractor"/></svg>';document.getElementById('maFotoDel').style.display='none'}
     this.openModal('mMachine');
   },
   saveMachine(){

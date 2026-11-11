@@ -4,18 +4,18 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="light" />
-<meta name="theme-color" content="#14402c" />
+<meta name="theme-color" content="var(--green)" />
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2026.11.11-0738" />
+<meta name="app-version" content="2026.11.11-0752" />
 <title>TerraFleet — Servicio técnico</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=2026.11.11-0738">
-<link rel="stylesheet" href="css/pro.css?v=2026.11.11-0738">
+<link rel="stylesheet" href="css/app.css?v=2026.11.11-0752">
+<link rel="stylesheet" href="css/pro.css?v=2026.11.11-0752">
 </head>
 <body>
 
@@ -98,7 +98,7 @@
       <button data-page="clientservices"><span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span><span>Servicios</span></button>
       <button data-page="clientdocs"><span class="ico"><svg class="ic"><use href="#i-file"/></svg></span><span>Documentos</span></button>
       <button data-page="clientsupport"><span class="ico"><svg class="ic"><use href="#i-headset"/></svg></span><span>Soporte</span></button>
-      <button id="btnSwitchClient" style="margin-top:8px;color:#c9f464"><span class="ico"><svg class="ic"><use href="#i-swap"/></svg></span><span>Cambiar de cliente</span></button>
+      <button id="btnSwitchClient" style="margin-top:8px;color:var(--lime)"><span class="ico"><svg class="ic"><use href="#i-swap"/></svg></span><span>Cambiar de cliente</span></button>
     </div>
 
     <div class="sidebar-foot">
@@ -420,7 +420,7 @@
     <div style="margin-top:12px;display:none" id="maFotoBox">
       <label>Foto del equipo (se ve en el portal del cliente y en el informe)</label>
       <div style="display:flex;gap:10px;align-items:center">
-        <div id="maFotoPrev" style="width:74px;height:74px;border-radius:14px;background:#edf4ec;display:grid;place-items:center;overflow:hidden;flex:none"><svg class="ic" style="width:26px;height:26px;color:#2f7a52"><use href="#i-tractor"/></svg></div>
+        <div id="maFotoPrev" style="width:74px;height:74px;border-radius:14px;background:var(--tint);display:grid;place-items:center;overflow:hidden;flex:none"><svg class="ic" style="width:26px;height:26px;color:var(--green2)"><use href="#i-tractor"/></svg></div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <button class="outline-btn" type="button" onclick="document.getElementById('maFotoFile').click()"><svg class="ic ic-xs"><use href="#i-image"/></svg>Subir foto…</button>
           <button class="outline-btn" type="button" id="maFotoDel" style="display:none" onclick="APP.clearMachinePhoto()">Quitar foto</button>
@@ -571,7 +571,7 @@
       <div id="oiBloqueoRow" style="display:none"><label>Bloqueada por</label><select class="field" id="oiBloqueo"><option value="pieza">Falta repuesto</option><option value="autorizacion">Falta autorización</option><option value="tecnico">Falta técnico</option></select></div>
     </div>
     <div style="margin-top:10px"><label>Detalle del bloqueo (opcional)</label><input class="field" id="oiBloqueoNota" placeholder="Ej. esperando manguera hidráulica" /></div>
-    <div id="oiTasks" class="small" style="display:none;margin-top:14px;line-height:1.8;background:#f7f9f6;border-radius:10px;padding:10px 12px"></div>
+    <div id="oiTasks" class="small" style="display:none;margin-top:14px;line-height:1.8;background:var(--tint);border-radius:10px;padding:10px 12px"></div>
     <div style="margin-top:14px"><label>Nota del turno</label><textarea id="oiNote" class="field" style="height:80px;resize:vertical" placeholder="Interno: qué preparar, repuestos pedidos, indicaciones para el cliente…"></textarea></div>
     <div class="action-row" id="oiActions" style="margin-top:12px"></div>
     <div class="modal-actions"><button class="outline-btn" onclick="APP.closeModal('mOtInfo')">Cerrar</button><button class="solid-btn" onclick="APP.saveOtNote()">Guardar nota</button></div>
@@ -640,7 +640,7 @@
   <div class="modal">
     <h3>Tu máquina está lista — firma del service</h3><p id="csSub"></p>
     <input type="hidden" id="csOtId" />
-    <div id="csTasks" style="max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#fbfdf9"></div>
+    <div id="csTasks" style="max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:var(--tint)"></div>
     <label>Firma del cliente (con el dedo o el mouse)</label>
     <div class="sigpad"><canvas id="sigCanvas2"></canvas></div>
     <div class="action-row"><button class="outline-btn" onclick="APP.sig2Clear()"><svg class="ic ic-xs"><use href="#i-replay"/></svg>Limpiar firma</button></div>
@@ -676,7 +676,7 @@
 <!-- CLIENT LOGIN -->
 <div class="overlay off" id="loginOverlay">
   <div class="login-card">
-    <div class="np-ic" style="background:rgba(201,244,100,.14);color:#c9f464"><svg class="ic"><use href="#i-users"/></svg></div>
+    <div class="np-ic" style="background:rgba(201,244,100,.14);color:var(--lime)"><svg class="ic"><use href="#i-users"/></svg></div>
     <h2>Entrar como cliente</h2>
     <p>Esta es la vista que verían tus clientes. Elegí con qué cliente querés probar el portal:</p>
     <label>Cliente</label>
@@ -690,7 +690,7 @@
 <!-- NUBE: ingreso con cuenta -->
 <div class="overlay off" id="nubeOverlay" style="z-index:700">
   <div class="login-card">
-    <div class="np-ic" style="background:rgba(201,244,100,.14);color:#c9f464"><svg class="ic"><use href="#i-users"/></svg></div>
+    <div class="np-ic" style="background:rgba(201,244,100,.14);color:var(--lime)"><svg class="ic"><use href="#i-users"/></svg></div>
     <h2 id="nbTitle">Ingresar</h2>
     <p id="nbText"></p>
     <form id="nbForm" onsubmit="return false">
@@ -706,7 +706,7 @@
 <!-- WELCOME -->
 <div class="overlay off" id="welcomeOverlay">
   <div class="welcome-card">
-    <div class="np-ic" style="width:54px;height:54px;background:var(--lime);color:#12331f;margin:0 auto"><svg class="ic" style="width:28px;height:28px"><use href="#i-tractor"/></svg></div>
+    <div class="np-ic" style="width:54px;height:54px;background:var(--lime);color:var(--on-lime);margin:0 auto"><svg class="ic" style="width:28px;height:28px"><use href="#i-tractor"/></svg></div>
     <h2>Bienvenido a TerraFleet</h2>
     <p class="lead">La app arranca <b>vacía</b>: es tuya. Registrá tus clientes y máquinas reales y todo queda guardado en este dispositivo. Si preferís verla con datos de ejemplo primero, están en <b>Ajustes</b>.</p>
     <div class="wsteps">
@@ -716,7 +716,7 @@
       <div class="wstep"><span class="n">4</span><div><b>Cerrá OTs y facturá</b> — cada servicio queda en el historial y se imprime su factura.</div></div>
     </div>
     <button class="bigplay" id="welcomeBtn" style="margin:0 auto">Empezar con mis datos<svg class="ic ic-sm"><use href="#i-arrowr"/></svg></button>
-    <div style="margin-top:14px"><a href="https://giulichiatti-star.github.io/terrafleet-guia/" target="_blank" style="color:#c9f464;font-size:13px;font-weight:600;text-decoration:none;border-bottom:1px dashed rgba(201,244,100,.5)">Ver la guía ilustrada paso a paso →</a></div>
+    <div style="margin-top:14px"><a href="https://giulichiatti-star.github.io/terrafleet-guia/" target="_blank" style="color:var(--lime);font-size:13px;font-weight:600;text-decoration:none;border-bottom:1px dashed rgba(201,244,100,.5)">Ver la guía ilustrada paso a paso →</a></div>
   </div>
 </div>
 
@@ -751,16 +751,16 @@
 </div>
 
 <script defer src="vendor/supabase-2.45.4.js"></script>
-<script defer src="nube.js?v=2026.11.11-0738"></script>
-<script defer src="js/01-base.js?v=2026.11.11-0738"></script>
-<script defer src="js/02-render.js?v=2026.11.11-0738"></script>
-<script defer src="js/03-acciones.js?v=2026.11.11-0738"></script>
-<script defer src="js/04-extras.js?v=2026.11.11-0738"></script>
-<script defer src="js/05-inicio.js?v=2026.11.11-0738"></script>
-<script defer src="js/06-nube-ui.js?v=2026.11.11-0738"></script>
+<script defer src="nube.js?v=2026.11.11-0752"></script>
+<script defer src="js/01-base.js?v=2026.11.11-0752"></script>
+<script defer src="js/02-render.js?v=2026.11.11-0752"></script>
+<script defer src="js/03-acciones.js?v=2026.11.11-0752"></script>
+<script defer src="js/04-extras.js?v=2026.11.11-0752"></script>
+<script defer src="js/05-inicio.js?v=2026.11.11-0752"></script>
+<script defer src="js/06-nube-ui.js?v=2026.11.11-0752"></script>
 <script defer src="vendor/qrcode-1.4.4.js"></script>
-<script defer src="js/08-pro.js?v=2026.11.11-0738"></script>
-<script defer src="js/09-gestion.js?v=2026.11.11-0738"></script>
-<script defer src="js/07-version.js?v=2026.11.11-0738"></script>
+<script defer src="js/08-pro.js?v=2026.11.11-0752"></script>
+<script defer src="js/09-gestion.js?v=2026.11.11-0752"></script>
+<script defer src="js/07-version.js?v=2026.11.11-0752"></script>
 </body>
 </html>

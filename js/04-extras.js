@@ -160,12 +160,12 @@ function buildReportHTML(ot){
   return '<!doctype html><html><head><meta charset="utf-8"><title>Informe '+ot.id+'</title>'+
       '<style>body{font-family:Inter,system-ui,sans-serif;color:#111;margin:0;padding:26px;font-size:13px}'+
       '.wrap{max-width:700px;margin:0 auto}'+
-      '.rhead{display:flex;justify-content:space-between;align-items:flex-start;background:#14402c;color:#fff;border-radius:12px;padding:16px 20px}'+
+      '.rhead{display:flex;justify-content:space-between;align-items:flex-start;background:'+brandP()+';color:#fff;border-radius:12px;padding:16px 20px}'+
       '.rhead h1{margin:0;font-size:17px}.rhead .rno{text-align:right;font-size:12px;opacity:.9;line-height:1.6}'+
       '.biz{margin-top:10px;font-size:11px;color:#555}'+
       '.gridinfo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}'+
       '.box{border:1px solid #dde5dd;border-radius:10px;padding:12px 14px}'+
-      '.box h3{margin:0 0 6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:#2f7a52}'+
+      '.box h3{margin:0 0 6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:'+brandS()+'}'+
       '.box div{font-size:13px;line-height:1.6}'+
       '.works{margin-top:14px;border:1px solid #dde5dd;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.7}'+
       '.firmas{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}'+
@@ -658,13 +658,13 @@ Object.assign(APP,{
     const html='<!doctype html><html><head><meta charset="utf-8"><title>'+ot.invoiceNo+'</title>'+
       '<style>body{font-family:Inter,system-ui,sans-serif;color:#111;margin:0;padding:32px;font-size:13px}'+
       '.wrap{max-width:700px;margin:0 auto}'+
-      '.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #14402c;padding-bottom:16px}'+
-      '.biz h1{margin:0;font-size:20px;color:#14402c}.biz div{color:#555;margin-top:3px}'+
+      '.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid '+brandP()+';padding-bottom:16px}'+
+      '.biz h1{margin:0;font-size:20px;color:'+brandP()+'}.biz div{color:#555;margin-top:3px}'+
       '.num{text-align:right}.num b{font-size:22px;display:block}.num div{color:#555;margin-top:3px}'+
       '.client{margin:22px 0;background:#f4f7f3;border-radius:10px;padding:14px}'+
       'table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#777;border-bottom:1px solid #ddd;padding:8px 4px}'+
       'td{padding:10px 4px;border-bottom:1px solid #eee}.r{text-align:right}'+
-      '.tot td{border:0;font-size:15px;padding:6px 4px}.tot.big td{font-weight:800;font-size:18px;color:#14402c}'+
+      '.tot td{border:0;font-size:15px;padding:6px 4px}.tot.big td{font-weight:800;font-size:18px;color:'+brandP()+'}'+
       '.foot{margin-top:34px;color:#888;font-size:11px;text-align:center}</style></head><body><div class="wrap">'+
       '<div class="head"><div class="biz">'+(typeof TFPro!=='undefined'?TFPro.logoHTML(48):'')+'<h1>'+esc(biz.name||'Mi Empresa')+'</h1>'+(biz.cif?'<div>CUIT: '+esc(biz.cif)+'</div>':'')+(biz.phone?'<div>Tel. '+esc(biz.phone)+'</div>':'')+(biz.city?'<div>'+esc(biz.city)+'</div>':'')+'</div>'+
       '<div class="num"><b>FACTURA</b><div>'+ot.invoiceNo+'</div><div>'+fmtDate(todayISO())+'</div></div></div>'+

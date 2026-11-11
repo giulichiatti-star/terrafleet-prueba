@@ -11,10 +11,10 @@
       if(!viva||viva===mia||aviso)return;
       aviso=document.createElement('div');
       aviso.id='updAviso';
-      aviso.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#14402c;color:#fff;padding:10px 14px;display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13.5px;box-shadow:0 8px 24px rgba(15,39,28,.35);font-family:inherit';
-      aviso.innerHTML='<svg class="ic ic-sm" style="color:#c9f464"><use href="#i-replay"/></svg>'+
+      aviso.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:var(--green);color:#fff;padding:10px 14px;display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13.5px;box-shadow:0 8px 24px rgba(15,39,28,.35);font-family:inherit';
+      aviso.innerHTML='<svg class="ic ic-sm" style="color:var(--lime)"><use href="#i-replay"/></svg>'+
         '<span style="flex:1;min-width:220px;text-align:center"><b>Hay una versión nueva de TerraFleet.</b> Actualizá para ver los últimos cambios — no perdés nada de lo cargado.</span>'+
-        '<button id="updBtn" style="background:#c9f464;color:#17321f;border:0;border-radius:9px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13.5px">Actualizar ahora</button>';
+        '<button id="updBtn" style="background:var(--lime);color:var(--on-lime);border:0;border-radius:9px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13.5px">Actualizar ahora</button>';
       document.body.appendChild(aviso);
       document.getElementById('updBtn').onclick=function(){location.reload()};
       document.body.style.paddingTop=aviso.offsetHeight+'px';
