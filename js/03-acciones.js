@@ -266,7 +266,7 @@ const APP={
     ot.tech=$('#doneTech').value.trim()||'—';
     ot.workDone=$('#doneWork').value.trim()||ot.type;
     ot.horasTrabajo=Number($('#doneHoras').value||0);
-    ot.costoMateriales=Number($('#doneCosto').value||0);
+    if(!esTecnico())ot.costoMateriales=Number($('#doneCosto').value||0);
     ot.materiales=$('#doneMateriales').value.trim();
     const newH=Math.max(m.hours,Number($('#doneHours').value||m.hours));
     if(newH!==m.hours){m.history.unshift({ts:Date.now(),title:'Actualización de horómetro',detail:nf(m.hours)+' h → '+nf(newH)+' h · en taller'});m.hours=newH}

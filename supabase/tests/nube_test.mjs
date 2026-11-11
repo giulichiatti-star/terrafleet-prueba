@@ -151,7 +151,7 @@ r = await A.sb.rpc('admin_reset_password', { p_user: uidNuevo, p_password: 'rese
 const sbN2 = mk(); const r2 = await sbN2.auth.signInWithPassword({ email: nuevo, password: 'reseteada-12345' });
 t(!r.error && !r2.error, 'el admin le pone una contraseña nueva y funciona');
 r = await A.sb.from('profiles').select('email,role,active').eq('agency_id', A.prof.agency_id);
-t(!r.error && r.data.length === 3 && r.data.some(p => p.email === nuevo), 'el admin lista los 3 usuarios de la agencia con su email');
+t(!r.error && r.data.length === 4 && r.data.some(p => p.email === nuevo), 'el admin lista los 4 usuarios de la agencia con su email');
 r = await A.sb.from('profiles').update({ active: false }).eq('user_id', A.prof.user_id).select('user_id');
 t(!!r.error, 'el admin no puede desactivarse a sí mismo');
 r = await A.sb.from('profiles').update({ active: false }).eq('user_id', uidNuevo).select('user_id');

@@ -256,7 +256,7 @@ Object.assign(APP,{
       '<div class="timeline-item"><div class="ticon"><svg class="ic ic-sm"><use href="#i-clock"/></svg></div><div><div class="tname">'+esc(h.title)+'</div><div class="tdetail">'+esc(h.detail||'')+'</div></div><div class="date">'+fmtTs(h.ts)+'</div></div>').join('')+'</div>';
     const mpix=machinePix(m);if(mpix)html='<img src="'+mpix+'" alt="" style="width:100%;max-height:190px;object-fit:cover;border-radius:12px;margin-bottom:12px"/>'+html;
     document.getElementById('miBody').innerHTML=html;
-    const admin=currentRole==='admin';
+    const admin=currentRole==='admin'&&!esTecnico();
     document.getElementById('miActions').innerHTML=(admin?'<button class="solid-btn" onclick="APP.closeModal(\'mMachineInfo\');APP.openOTModal(\''+mid+'\')">Nueva OT</button>'+
       '<button class="outline-btn" onclick="APP.closeModal(\'mMachineInfo\');APP.openMachineModal(\''+mid+'\')">Editar</button>':'')+
       '<button class="outline-btn" onclick="APP.closeModal(\'mMachineInfo\');APP.openHours(\''+mid+'\')">Actualizar horas</button>'+

@@ -2,6 +2,7 @@
 let currentRole='admin';
 let machFilter='all';
 const titles={
+  tec:['Mi trabajo','Taller · lo que hay para hacer'],
   dashboard:['Panel','Panel interno / Resumen'],
   clients:['Clientes','Panel interno / CRM'],
   machines:['Maquinaria','Panel interno / Activos'],
@@ -737,6 +738,7 @@ function hideLogin(){$('#loginOverlay').classList.add('off')}
 
 /* ---------- CAMPANA ---------- */
 function myNotifs(){
+  if(esTecnico())return db.notifs.filter(n=>n.audience==='admin'&&(n.otId||/turno|asistencia|orden|\bOT\b|servicio|fallo|repuesto|aviso del taller/i.test(n.title||''))&&!/presupuesto|factura|stock|garant|precio|costo|planilla/i.test((n.title||'')+' '+(n.detail||'')));
   if(currentRole==='admin')return db.notifs.filter(n=>n.audience==='admin');
   const cid=db.session.clientId;
   return db.notifs.filter(n=>n.audience==='client'&&(!n.clientId||n.clientId===cid));

@@ -8,7 +8,7 @@ const deps = process.env.TEST_DEPS;
 const { JSDOM, ResourceLoader, VirtualConsole } = require(deps + '/node_modules/jsdom');
 const { createClient } = require(process.env.SUPABASE_JS);
 const N = require('../../nube.js');
-const { SUPABASE_URL: URL_, SUPABASE_ANON_KEY: KEY, T_STAFF, T_CLI, T_PW } = process.env;
+const { SUPABASE_URL: URL_, SUPABASE_ANON_KEY: KEY, T_STAFF, T_CLI, T_TEC, T_PW } = process.env;
 const root = path.resolve(new URL('../..', import.meta.url).pathname);
 const html = fs.readFileSync(path.join(decodeURIComponent(root), 'index.html'), 'utf8');
 
@@ -285,6 +285,62 @@ ev(S2, "setTimeout(()=>{throw new Error('error de prueba ZZ')},0)");
 await sleep(2500);
 const er = await sb.rpc('log_error', { p: { message: 'ping' } });
 t(!er.error, 'registro de errores: la función responde');
+
+// ── Técnico: solo ve y hace trabajo de taller ──
+{
+  const aid = prof.agency_id;
+  await sb.from('machines').insert({ agency_id: aid, id: 'mt1', client_id: 'c1', brand: 'Lovol', model: 'TE254', serial: 'T1', hours: 10, data: {} });
+  await sb.from('work_orders').insert([
+    { agency_id: aid, id: 'OT-T1', machine_id: 'mt1', type: 'Cita preventiva', status: 'cita', data: { cita: 'solicitada', origin: 'cliente', issue: 'Revisión de las 50 horas' } },
+    { agency_id: aid, id: 'OT-T2', machine_id: 'mt1', type: 'Avería', status: 'taller', data: { issue: 'No arranca', tech: '' } }]);
+  const TW = abrir('tecnico');
+  await ingresar(TW, T_TEC);
+  t(ev(TW, 'esTecnico()') && TW.document.body.classList.contains('rol-tec'), 'técnico: la app lo reconoce');
+  t(await hasta(() => /Pedido de turno/.test((TW.document.getElementById('tec') || {}).textContent || '')), 'técnico: ve el pedido de turno en "Mi trabajo"');
+  const tx = TW.document.getElementById('tec').textContent;
+  t(/Proponer día/.test(tx) && /No arranca/.test(tx) && !/\$/.test(tx), 'técnico: ve pedido y trabajo en curso, sin dinero');
+  const visibles = Array.from(TW.document.querySelectorAll('.admin-nav button')).filter(b => b.style.display !== 'none').length;
+  t(visibles === 1, 'técnico: el menú tiene un solo botón (' + visibles + ')');
+  ev(TW, "gotoPage('settings')");
+  t(TW.document.getElementById('tec').classList.contains('active') && !TW.document.getElementById('settings').classList.contains('active'), 'técnico: no puede entrar a Ajustes');
+  ev(TW, "gotoPage('reports')");
+  t(!TW.document.getElementById('reports').classList.contains('active'), 'técnico: no puede entrar a Informes');
+  // detalle: acciones del pedido y de la reparación
+  ev(TW, "TFTec.abrir('OT-T2')");
+  const md = TW.document.getElementById('mTec');
+  t(md.classList.contains('show') && /Terminar y cerrar/.test(md.textContent) && !/Presupuesto|Factura|Anular/.test(md.textContent), 'técnico: el detalle muestra terminar y no muestra presupuesto, factura ni anular');
+  TW.document.getElementById('tecNote').value = 'Cambié el filtro de combustible';
+  ev(TW, "TFTec.nota('OT-T2')");
+  t(await guardado(TW), 'técnico: guarda una nota');
+  let r = await sb.from('work_orders').select('data').eq('agency_id', aid).eq('id', 'OT-T2').single();
+  t(r.data && r.data.data.techNotes && r.data.data.techNotes.length === 1 && r.data.data.tech, 'técnico: la nota y su nombre llegaron a la nube');
+  // pide día para el turno (acepta el pedido)
+  ev(TW, "TFTec.proponer('OT-T1')");
+  TW.document.getElementById('turnoDate').value = '2026-12-01'; TW.document.getElementById('turnoTime').value = '09:00';
+  ev(TW, 'APP.saveTurno()');
+  t(await guardado(TW), 'técnico: propone día');
+  r = await sb.from('work_orders').select('data').eq('agency_id', aid).eq('id', 'OT-T1').single();
+  t(r.data && r.data.data.cita === 'propuesta' && r.data.data.proposedDate === '2026-12-01', 'técnico: la propuesta de turno llegó a la nube');
+  // cierra la orden sin tocar costos
+  ev(TW, "TFTec.cerrar('OT-T2')");
+  t(TW.document.getElementById('doneCosto').parentNode.style.display === 'none', 'técnico: el cierre no muestra costos');
+  TW.document.getElementById('doneWork').value = 'Filtro y purga';
+  TW.document.getElementById('doneHoras').value = '2';
+  ev(TW, 'APP.completeOT()');
+  t(await guardado(TW), 'técnico: cierra la orden (' + TW.document.getElementById('footStatus').textContent + ')');
+  r = await sb.from('work_orders').select('status,data').eq('agency_id', aid).eq('id', 'OT-T2').single();
+  t(r.data && r.data.status === 'terminada' && r.data.data.horasTrabajo === 2 && r.data.data.costoMateriales === undefined, 'técnico: la orden quedó terminada en la nube');
+  // avisa al cliente que está lista
+  ev(TW, "TFTec.avisarLista('OT-T2')");
+  TW.document.getElementById('readyDate').value = '2026-12-02';
+  ev(TW, 'APP.sendReady()');
+  t(await guardado(TW), 'técnico: avisa que está lista');
+  r = await sb.from('work_orders').select('data').eq('agency_id', aid).eq('id', 'OT-T2').single();
+  t(r.data && r.data.data.ready === true, 'técnico: el aviso de retiro llegó a la nube');
+  const nn = await sb.from('notifications').select('id').eq('agency_id', aid).eq('audience', 'client').ilike('title', '%lista para retirar%');
+  t(nn.data && nn.data.length >= 1, 'técnico: el cliente recibió la alerta de equipo listo');
+  TW.close();
+}
 
 S2.close(); C.close();
 t(errores.length === 0, 'errores de JavaScript en la página: ' + errores.join(' | '));

@@ -21,7 +21,7 @@ const TFPro={};
       if(hit(m.brand,m.model,m.serial,c?c.name:''))out.push({k:'m',id:m.id,icon:iconOf(m),t:mLabel(m),s:(m.serial?'SN '+m.serial+' · ':'')+(c?c.name:'')+' · '+nf(m.hours)+' h'})});
     myOts().forEach(o=>{const m=machineOf(o.machineId),c=m?clientOf(m.clientId):null;
       if(hit(o.id,o.issue,o.type,m?mLabel(m):'',c?c.name:''))out.push({k:'o',id:o.id,icon:'#i-wrench',t:o.id+' · '+(OT_ESTADOS[o.status]||o.status),s:(m?mLabel(m)+' · ':'')+(o.issue||o.type||'')})});
-    if(!isClient()){
+    if(!isClient()&&!esTecnico()){
       db.clients.forEach(c=>{if(hit(c.name,c.contact,c.cuit,c.phone,c.email))out.push({k:'c',id:c.id,icon:'#i-users',t:c.name,s:[c.contact,c.phone,c.cuit].filter(Boolean).join(' · ')})});
       db.parts.forEach(p=>{if(hit(p.ref,p.name))out.push({k:'p',id:p.id,icon:'#i-package',t:p.name,s:(p.ref?p.ref+' · ':'')+'stock '+nf(p.stock)})});
     }

@@ -46,6 +46,7 @@ function toast(msg){const t=document.getElementById('toast');if(!t)return;t.text
 
 /* ================= BASE DE DATOS LOCAL ================= */
 const DB_KEY='terrafleet_prueba_v1';
+function esTecnico(){return !!(NUBE.on&&NUBE.prof&&NUBE.prof.role==='tecnico')}
 const NUBE={on:false,queue(){}}; /* con cuenta: los datos van a la nube (ver sección NUBE) */
 let storageOk=true;
 try{const k='__tf';localStorage.setItem(k,'1');localStorage.removeItem(k)}catch(e){storageOk=false}

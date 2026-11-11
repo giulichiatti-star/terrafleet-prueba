@@ -167,3 +167,31 @@ th.num,td.num{text-align:right;white-space:nowrap}
 :root[data-theme=dark] .kb-chip.late{color:#ffb4a8}
 :root[data-theme=dark] input[type=date],
 :root[data-theme=dark] input[type=time]{color-scheme:dark}
+
+/* ── Vista del técnico: "Mi trabajo" ── */
+.tec-hello{margin-bottom:14px}
+.tec-hi{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.tec-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.tec-stats>div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.tec-stats b{display:block;font-size:26px;line-height:1.1}
+.tec-stats span{font-size:12px;color:var(--muted)}
+.tec-sec{margin-bottom:22px}
+.tec-sec-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:15px}
+.tec-sec-h span{background:var(--tint2);border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700}
+.tec-vacio{padding:14px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:13.5px}
+.tec-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;min-height:64px}
+.tec-card:active{background:var(--tint)}
+.tc-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.tc-top b{font-size:15.5px}
+.tc-date{font-size:13px;font-weight:700;white-space:nowrap}
+.tc-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.tc-issue{font-size:13.5px;margin-top:6px}
+.tc-foot{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.tec-pedido{background:var(--tint);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:13.5px;line-height:1.5}
+.tec-acts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.tec-acts .tec-big{width:100%;min-height:48px;justify-content:center;font-size:15px}
+.tec-acts .badge{align-self:flex-start;white-space:normal}
+.tec-blk{margin-top:16px}
+.tec-nota{background:var(--tint);border-radius:10px;padding:8px 12px;margin-bottom:6px;font-size:13.5px;line-height:1.45}
+.tec-nota div{font-size:11.5px;color:var(--muted);margin-bottom:2px}
+@media(max-width:520px){.tec-stats b{font-size:22px}.tec-hi{font-size:19px}}

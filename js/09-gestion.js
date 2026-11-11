@@ -240,13 +240,16 @@ const TFGest={};
   TFGest.verFoto=function(ruta){const u=urlDe(ruta);if(u)window.open(u,'_blank','noopener')};
 
   /* Sección extra dentro del detalle de la orden: repuestos y fotos */
+  let extrasSel='#oiExtras',extrasOt=null;
   function renderOtExtras(otId){
-    const host=$('#oiExtras');if(!host)return;
+    extrasOt=otId;
+    const host=$(extrasSel);if(!host)return;
+    const tec=esTecnico();
     const o=db.ots.find(x=>x.id===otId);
     if(!o||!staff()||o.status==='anulada'||o.type==='Cita preventiva'&&o.status==='cita'){host.innerHTML='';return}
     const us=o.partsUsed||[],total=TFGest.costoRepuestos(o);
-    let h='<div class="ex-sec"><div class="ex-h"><b>Repuestos usados</b>'+(us.length?'<span>Costo: '+money(total)+'</span>':'')+'</div>'+
-      (us.length?us.map((u,i)=>'<div class="ex-row"><span><b>'+nf(u.qty)+' ×</b> '+esc(u.name)+(u.ref?' <small>'+esc(u.ref)+'</small>':'')+'</span><span>'+(u.cost?money(u.qty*u.cost):'')+' <button class="mini-btn" title="Quitar y devolver al stock" onclick="TFGest.devolverRepuesto(\''+o.id+'\','+i+')"><svg class="ic ic-xs"><use href="#i-x"/></svg></button></span></div>').join(''):'<div class="small">Ninguno todavía.</div>');
+    let h='<div class="ex-sec"><div class="ex-h"><b>Repuestos usados</b>'+(us.length?(tec?'':'<span>Costo: '+money(total)+'</span>'):'')+'</div>'+
+      (us.length?us.map((u,i)=>'<div class="ex-row"><span><b>'+nf(u.qty)+' ×</b> '+esc(u.name)+(u.ref?' <small>'+esc(u.ref)+'</small>':'')+'</span><span>'+(u.cost&&!tec?money(u.qty*u.cost):'')+' <button class="mini-btn" title="Quitar y devolver al stock" onclick="TFGest.devolverRepuesto(\''+o.id+'\','+i+')"><svg class="ic ic-xs"><use href="#i-x"/></svg></button></span></div>').join(''):'<div class="small">Ninguno todavía.</div>');
     if(db.parts.length)h+='<div class="ex-add"><select class="field" id="exPart">'+db.parts.map(p=>'<option value="'+esc(p.id)+'"'+(p.stock<=0?' disabled':'')+'>'+esc(p.name)+(p.ref?' · '+esc(p.ref):'')+' (hay '+nf(p.stock)+')</option>').join('')+'</select>'+
       '<input class="field" id="exQty" type="number" min="1" value="1" aria-label="Cantidad"><button class="outline-btn" onclick="TFGest.usarRepuesto(\''+o.id+'\',document.getElementById(\'exPart\').value,document.getElementById(\'exQty\').value)">Agregar</button></div>';
     else h+='<div class="small">Cargá repuestos en la sección Repuestos para poder usarlos acá.</div>';
@@ -257,9 +260,10 @@ const TFGest={};
         '<button class="ex-addf" onclick="TFGest.elegirFoto(\''+o.id+'\',\''+t+'\')"><svg class="ic"><use href="#i-image"/></svg><span>Agregar</span></button></div>'});
     h+=(NUBE.on?'':'<div class="small">Las fotos se guardan en la nube: hace falta ingresar con tu cuenta.</div>')+'</div>';
     host.innerHTML=h;
-    if((o.fotos||[]).some(f=>!urlDe(f.p)))ensureUrls(o).then(()=>{if($('#oiOtId').value===otId&&(o.fotos||[]).some(f=>urlDe(f.p)))renderOtExtras(otId)});
+    if((o.fotos||[]).some(f=>!urlDe(f.p)))ensureUrls(o).then(()=>{if(extrasOt===otId&&(o.fotos||[]).some(f=>urlDe(f.p)))renderOtExtras(otId)});
   }
   TFGest._renderOtExtras=renderOtExtras;
+  TFGest._extrasEn=function(sel){extrasSel=sel};
 
   /* ═════════════ INFORME DE SERVICIO ═════════════ */
   buildReportHTML=function(ot){

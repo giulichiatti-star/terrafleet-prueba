@@ -81,7 +81,7 @@ Object.assign(NUBE,{
          (un confirm() del navegador congelaba la pestaña y volvía a aparecer en cada carga). */
       let ofrecer=null;
       try{
-        if(!offline&&prof.role!=='cliente'&&nubeVacia&&hayLocal&&localStorage.getItem('tf_subida_'+prof.agency_id)!=='no')ofrecer=JSON.parse(JSON.stringify(local));
+        if(!offline&&prof.role==='admin'&&nubeVacia&&hayLocal&&localStorage.getItem('tf_subida_'+prof.agency_id)!=='no')ofrecer=JSON.parse(JSON.stringify(local));
       }catch(e){}
       this.prof=prof;this.state=x.state;this.sig=x.sig;
       db=x.db;
@@ -97,6 +97,7 @@ Object.assign(NUBE,{
       this.show(null);
       tfFlushErrors();
       if(typeof TFPro!=='undefined')TFPro.afterEnter();
+      if(typeof TFTec!=='undefined')TFTec.apply();
       if(offline){
         this.status('Sin conexión — viendo la última copia guardada. Los cambios se suben al volver la señal.',true);
         if(TFNube.pending(db,this.state))this.queue();

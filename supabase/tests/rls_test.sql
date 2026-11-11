@@ -93,6 +93,69 @@ begin
   get diagnostics n = row_count;
   if n = 1 then ok := ok+1; else fallos := fallos || ' [técnico no pudo avanzar una OT]'; end if;
 
+  -- el técnico NO toca presupuestos, costos, facturas ni anula
+  begin
+    update public.work_orders set data = jsonb_set(data,'{presupuesto,base}','1') where id = 'OT-2';
+    fallos := fallos || ' [técnico cambió un presupuesto]';
+  exception when others then ok := ok+1; end;
+  begin
+    update public.work_orders set data = data || '{"costoMateriales":5}' where id = 'OT-3';
+    fallos := fallos || ' [técnico cargó costos]';
+  exception when others then ok := ok+1; end;
+  begin
+    update public.work_orders set data = data || '{"invoiceNo":"A-1"}' where id = 'OT-3';
+    fallos := fallos || ' [técnico facturó]';
+  exception when others then ok := ok+1; end;
+  begin
+    update public.work_orders set status = 'anulada' where id = 'OT-3';
+    fallos := fallos || ' [técnico anuló una OT]';
+  exception when others then ok := ok+1; end;
+  -- sí: notas y fotos de la orden
+  update public.work_orders set data = data || '{"techNotes":[{"t":"cambié filtro"}],"fotos":[]}' where id = 'OT-3';
+  get diagnostics n = row_count;
+  if n = 1 then ok := ok+1; else fallos := fallos || ' [técnico no pudo dejar notas]'; end if;
+  -- no crea órdenes, clientes, máquinas ni repuestos
+  begin
+    insert into public.work_orders (agency_id,id,machine_id,type,status) values (a1,'OT-9','m1','Avería','recibida');
+    fallos := fallos || ' [técnico creó una OT]';
+  exception when others then ok := ok+1; end;
+  begin
+    insert into public.clients (agency_id,id,name) values (a1,'c9','Nuevo');
+    fallos := fallos || ' [técnico creó un cliente]';
+  exception when others then ok := ok+1; end;
+  update public.clients set name = 'Cambiado' where id = 'c1';
+  get diagnostics n = row_count;
+  if n = 0 then ok := ok+1; else fallos := fallos || ' [técnico editó un cliente]'; end if;
+  begin
+    insert into public.machines (agency_id,id,client_id,brand) values (a1,'m9','c1','X');
+    fallos := fallos || ' [técnico creó una máquina]';
+  exception when others then ok := ok+1; end;
+  begin
+    insert into public.parts (agency_id,id,name,stock) values (a1,'p9','Nuevo',1);
+    fallos := fallos || ' [técnico creó un repuesto]';
+  exception when others then ok := ok+1; end;
+  -- máquinas: solo horas y último service
+  update public.machines set hours = 15, data = data || '{"lastServiceHours":15}' where id = 'm1';
+  get diagnostics n = row_count;
+  if n = 1 then ok := ok+1; else fallos := fallos || ' [técnico no pudo cargar horas]'; end if;
+  begin
+    update public.machines set brand = 'Otra' where id = 'm1';
+    fallos := fallos || ' [técnico cambió la marca de una máquina]';
+  exception when others then ok := ok+1; end;
+  -- repuestos: solo stock
+  update public.parts set stock = 4 where id = 'p1';
+  get diagnostics n = row_count;
+  if n = 1 then ok := ok+1; else fallos := fallos || ' [técnico no pudo descontar stock]'; end if;
+  begin
+    update public.parts set name = 'Otro' where id = 'p1';
+    fallos := fallos || ' [técnico renombró un repuesto]';
+  exception when others then ok := ok+1; end;
+  delete from public.parts where id = 'p1';
+  get diagnostics n = row_count;
+  if n = 0 then ok := ok+1; else fallos := fallos || ' [técnico borró un repuesto]'; end if;
+  select count(*) into n from public.clients;
+  if n = 2 then ok := ok+1; else fallos := fallos || ' [técnico ve '||n||' clientes, esperaba 2]'; end if;
+
   -- ═══ CLIENTE c1 de la agencia 1 ═══
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub',u_cli,'role','authenticated')::text, true);
