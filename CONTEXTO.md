@@ -142,9 +142,14 @@ productor dueño de las máquinas, portal simplificado).
 - **Respaldo diario**: preparado en `infra/`. Falta correr UNA vez
   `bash infra/instalar-respaldo.sh` (crea el repo privado `terrafleet-respaldos`,
   guarda los secretos y lanza el primer respaldo).
-- **Pendiente de revisión visual**: la versión 2026.11.10-2232 se publicó con las
-  pruebas funcionales pasando pero sin mirar en pantalla el tablero, el modo oscuro
-  ni la vista de celular.
+- `js/09-gestion.js`: usuarios (el admin crea la cuenta con contraseña provisoria vía
+  `admin_create_user`; no se envían correos), catálogo de modelos (`db.catalog` ⇄
+  `catalog_models`), repuestos usados por orden (`ot.partsUsed`, descuenta
+  `parts.stock` y suma al costo de la orden), fotos antes/después (`ot.fotos`,
+  archivos en el bucket privado `ot-fotos`, carpeta `<agencia>/<orden>/`) e informe
+  de servicio rediseñado (`buildReportHTML`, sin costos internos).
+- El respaldo diario ya está instalado y corrió (repo privado `terrafleet-respaldos`).
+- Las tablas `invitations` y `work_order_parts` existen pero la app no las usa hoy.
 
 ## Roadmap (lo que falta, en prioridad)
 
